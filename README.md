@@ -1,3 +1,5 @@
+[![Test and Build](https://github.com/european-epc-competence-center/key-service/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/european-epc-competence-center/key-service/actions/workflows/ci-cd.yml)
+
 # Key Service
 
 A secure NestJS-based cryptographic signing service for W3C Verifiable Credentials (VC Data Model 2.0) and Verifiable Presentations. The service implements multiple signature formats with enterprise-grade key management and multi-layer encryption.
@@ -97,6 +99,7 @@ The test database runs PostgreSQL 17 in Docker and is automatically configured w
 ### Test Coverage
 
 The test suite includes:
+
 - ✅ Key generation and storage
 - ✅ Multi-secret encryption/decryption
 - ✅ JWT-VC signing
@@ -215,6 +218,7 @@ docker compose -f docker/docker-compose.yml down -v
 ```
 
 The Docker Compose setup includes:
+
 - PostgreSQL 17 database with persistent storage
 - Key Service with health checks
 - Network isolation
@@ -238,6 +242,7 @@ docker run -p 3000:3000 \
 ### Docker Health Checks
 
 The container includes health checks that verify:
+
 - Application is running
 - HTTP server is responding
 - Health endpoint returns 200 OK
@@ -533,11 +538,13 @@ Keys are encrypted using multiple secrets to ensure security even if one secret 
 ## Key Dependencies
 
 ### Core Framework
+
 - **@nestjs/core** & **@nestjs/common**: NestJS framework
 - **@nestjs/typeorm**: TypeORM integration for database operations
 - **@nestjs/terminus**: Health check endpoints
 
 ### Cryptography & Verifiable Credentials
+
 - **@digitalbazaar/vc**: W3C Verifiable Credentials implementation
 - **@digitalbazaar/ed25519-signature-2020**: Ed25519 signature suite for Data Integrity proofs
 - **@digitalbazaar/ed25519-verification-key-2020**: Ed25519 key handling
@@ -546,11 +553,13 @@ Keys are encrypted using multiple secrets to ensure security even if one secret 
 - **jsonld-signatures**: JSON-LD signature support
 
 ### Validation & Security
+
 - **class-validator**: DTO validation decorators
 - **class-transformer**: Request payload transformation
 - **node-cache**: In-memory caching for failed attempts
 
 ### Database
+
 - **typeorm**: TypeScript ORM
 - **pg**: PostgreSQL client
 

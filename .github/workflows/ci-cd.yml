@@ -1,11 +1,11 @@
-name: CI/CD Pipeline
+name: Tests and Build
 
 on:
   push:
     branches:
       - main
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   pull_request:
     branches:
       - main
@@ -18,7 +18,7 @@ jobs:
   # Unit Tests Job
   unit-tests:
     runs-on: ubuntu-latest
-    
+
     # PostgreSQL service for tests
     services:
       postgres:
@@ -34,7 +34,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,8 +42,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -132,7 +132,7 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
+
           # Extract the changelog section for this version
           CHANGELOG_CONTENT=$(awk -v version="$VERSION" '
             /^## \[/ {
@@ -145,12 +145,12 @@ jobs:
             found && /^## \[/ { exit }
             found { print }
           ' CHANGELOG.md | sed '/^$/d' | head -c 65000)
-          
+
           # If no specific changelog found, use a default message
           if [ -z "$CHANGELOG_CONTENT" ]; then
             CHANGELOG_CONTENT="Release version $VERSION"
           fi
-          
+
           # Write to output using heredoc for multiline content
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
@@ -166,4 +166,3 @@ jobs:
           body: ${{ steps.changelog.outputs.content }}
           draft: false
           prerelease: false
-
