@@ -256,13 +256,12 @@ function main() {
   log("\nNext steps:", "yellow");
   if (!skipGit) {
     log("1. The changes and tags have been pushed to remote", "green");
+    log("2. The CI/CD pipeline will automatically:", "green");
+    log("   - Create a GitHub release with changelog content", "cyan");
+    log("   - Build and tag the Docker image", "cyan");
   }
-  log("2. Set SERVICE_VERSION environment variable in deployment", "cyan");
+  log("3. Set SERVICE_VERSION environment variable in deployment", "cyan");
   log(`   export SERVICE_VERSION=${newVersion}`, "cyan");
-  log(
-    "3. The GitLab pipeline will automatically build and tag the Docker image",
-    "cyan"
-  );
 }
 
 // Handle Ctrl+C gracefully
