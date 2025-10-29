@@ -2,25 +2,6 @@
 
 A secure NestJS-based cryptographic signing service for W3C Verifiable Credentials (VC Data Model 2.0) and Verifiable Presentations. The service implements multiple signature formats with enterprise-grade key management and multi-layer encryption.
 
-**Version:** 1.5.0  
-**License:** AGPL-3.0  
-**Author:** Christian Fries  
-**Node.js:** ≥22.0.0
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Environment Variables](#environment-variables)
-- [Database Setup](#database-setup)
-- [Testing](#testing)
-- [Docker](#docker)
-- [API Endpoints](#api-endpoints)
-- [Sample Requests](#sample-requests)
-- [Security Features](#security-features)
-- [Key Dependencies](#key-dependencies)
-- [Project Structure](#project-structure)
-
 ## Features
 
 - **Multiple Signature Formats**: JWT-VC, Data Integrity proofs (Ed25519Signature2020), and SD-JWT
@@ -36,7 +17,7 @@ A secure NestJS-based cryptographic signing service for W3C Verifiable Credentia
 - **Testing**: Comprehensive unit and integration test coverage
 - **Docker Support**: Production-ready containers with PostgreSQL integration
 
-## Installation
+## Local Testing
 
 ```bash
 # Install dependencies
@@ -48,8 +29,6 @@ npm run dev
 # Run in production mode
 npm start
 ```
-
-## Testing
 
 The service includes comprehensive test coverage with both unit tests (using mocks) and end-to-end (E2E) tests (using a real PostgreSQL database).
 
@@ -602,23 +581,25 @@ key-service/
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+Copyright 2025 European EPC Competence Center GmbH (EECC). Corresponding Author: Christian Fries <christian.fries@eecc.de>
 
-See the [LICENSE](LICENSE) file for details.
+<a href="https://www.gnu.org/licenses/agpl-3.0.html">
+<img alt="AGPLV3" style="border-width:0" src="https://www.gnu.org/graphics/agplv3-with-text-162x68.png" /><br />
+</a>
 
-## Author
+All code published in this repository is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+</a>
 
-**Christian Fries**
-
-## Repository
-
-Repository: `git@gitlab.eecc.info:ssi/key-service.git`
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 ## Contributing
 
-This is a security-critical component. All changes should be thoroughly tested and reviewed for security implications.
+This is a security-critical component. Please open [issues](https://github.com/european-epc-competence-center/key-service/issues) to discuss any proposed changes. PRs are welcome but will be critically reviewed by the maintainers. Please first discuss changes before opening PRs.
 
-## Documentation
+## Further Documentation
 
 - [Security and Key Management Concept](docs/security_and_key_management_concept.md)
 - [Changelog](CHANGELOG.md)
