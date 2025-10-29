@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: key-service-postgres
+    environment:
+      POSTGRES_DB: key_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - key-service-network
+
+  key-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_NAME=key_service
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_SSL=false
+      # CORS Configuration (optional)
+      # - CORS_ENABLED=true
+      # - CORS_ORIGINS=https://example.com,https://app.example.com
+      # - CORS_METHODS=GET,POST,PUT,DELETE
+      # - CORS_CREDENTIALS=false
+      # - CORS_MAX_AGE=86400
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      - ./signing-key:/run/secrets/signing-key:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - key-service-network
+
+networks:
+  key-service-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

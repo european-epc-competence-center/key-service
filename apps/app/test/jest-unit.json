@@ -1,0 +1,32 @@
+{
+  "preset": "ts-jest/presets/default-esm",
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "src/.*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "useESM": true
+      }
+    ]
+  },
+  "transformIgnorePatterns": ["node_modules/(?!.*\\.(mjs|js)$)"],
+  "extensionsToTreatAsEsm": [".ts"],
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/main.ts",
+    "!src/**/*.dto.ts",
+    "!src/**/*.entity.ts",
+    "!src/**/*.enum.ts"
+  ],
+  "coverageDirectory": "../coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/test-setup.ts"],
+  "testTimeout": 60000,
+  "detectOpenHandles": true
+}
