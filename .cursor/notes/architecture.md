@@ -9,6 +9,7 @@ AppModule
 ├── KeyService (core key operations)
 ├── KeyStorageService (database layer)
 ├── SecretService (encryption/decryption)
+├── PayloadEncryptionService (AES-256-GCM payload encryption)
 ├── FailedAttemptsCacheService (security)
 ├── JwtSigningService (JWT-VC signing)
 ├── DataIntegritySigningService (DI proofs)
@@ -41,12 +42,21 @@ AppModule
 - `cors.config.ts` - CORS policy configuration
 - `database.config.ts` - PostgreSQL connection
 - `failed-attempts.config.ts` - Security rate limiting
+- `payload-encryption.config.ts` - Request decryption settings (AES-256-GCM)
+
+### Request Decryption Architecture
+- **Service-layer decryption** (in `AppService`) for enhanced security
+  - Detects requests with `encryptedData` field
+  - Decrypts payload after controller, in the service layer
+  - Keeps decrypted secrets isolated from request pipeline (reduces logging exposure risk)
+  - Controllers pass raw request body to service methods
 
 ### Environment Variables
 - Database connection (DB_HOST, DB_PORT, etc.)
 - CORS settings (CORS_ENABLED, CORS_ORIGINS)
 - Node environment (NODE_ENV)
 - Signing key path (SIGNING_KEY_PATH)
+- Inter-service request decryption (INTER_SERVICE_ENCRYPTION_ENABLED, INTER_SERVICE_SHARED_SECRET)
 
 ## Signing Service Architecture
 

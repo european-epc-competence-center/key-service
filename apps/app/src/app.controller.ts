@@ -1,15 +1,14 @@
 import {
   Controller,
-  Get,
   Post,
   Param,
   Body,
   ParseEnumPipe,
-  Query,
 } from "@nestjs/common";
 import { AppService } from "./app.service";
 import { SignType } from "./types/sign-types.enum";
 import { GenerateRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
+import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
 
 @Controller()
 export class AppController {
@@ -18,7 +17,7 @@ export class AppController {
   @Post("sign/vc/:type")
   async signVC(
     @Param("type", new ParseEnumPipe(SignType)) type: SignType,
-    @Body() body: SignRequestDto
+    @Body() body: SignRequestDto | EncryptedPayloadDto
   ) {
     return await this.appService.signVC(type, body);
   }
@@ -26,13 +25,13 @@ export class AppController {
   @Post("sign/vp/:type")
   async signVP(
     @Param("type", new ParseEnumPipe(SignType)) type: SignType,
-    @Body() body: PresentRequestDto
+    @Body() body: PresentRequestDto | EncryptedPayloadDto
   ) {
     return await this.appService.signVP(type, body);
   }
 
   @Post("generate")
-  generateKey(@Body() body: GenerateRequestDto) {
+  generateKey(@Body() body: GenerateRequestDto | EncryptedPayloadDto) {
     return this.appService.generateKey(body);
   }
 }

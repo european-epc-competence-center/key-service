@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-10-30
+
+### Added
+- **Automatic request payload decryption for inter-service communication**
+  - Implemented PayloadEncryptionService using AES-256-GCM encryption
+  - Service-layer decryption for enhanced security (decrypted data never exposed in request pipeline)
+  - Automatically detects and decrypts requests with `encryptedData` field in AppService
+  - Inter-service shared secret configuration via `INTER_SERVICE_SHARED_SECRET` environment variable
+  - Service decrypts incoming encrypted requests, returns plain JSON responses
+  - Simple format: base64(iv:authTag:ciphertext) - compatible with all major platforms
+  - Comprehensive unit tests for encryption service
+  - Spring Boot, Node.js, and Python client examples
+  - All existing endpoints (`/generate`, `/sign/vc/:type`, `/sign/vp/:type`) support both encrypted and plain requests
+
+### Documentation
+- Added `docs/payload-encryption-spring-boot.md` with full Spring Boot/Java integration guide
+- Added `docs/REQUEST_ENCRYPTION_USAGE.md` with multi-language client examples
+- Includes configuration, security best practices, and troubleshooting
+
 ## [1.6.1] - 2025-10-29
 
 - auto create github release on tag
