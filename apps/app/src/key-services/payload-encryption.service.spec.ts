@@ -7,14 +7,14 @@ describe("PayloadEncryptionService", () => {
 
   beforeAll(() => {
     // Set up environment for testing
-    process.env.INTER_SERVICE_ENCRYPTION_ENABLED = "true";
-    process.env.INTER_SERVICE_SHARED_SECRET = testSecret;
+    process.env.REQUEST_ENCRYPTION_ENABLED = "true";
+    process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
   });
 
   afterAll(() => {
     // Clean up
-    delete process.env.INTER_SERVICE_ENCRYPTION_ENABLED;
-    delete process.env.INTER_SERVICE_SHARED_SECRET;
+    delete process.env.REQUEST_ENCRYPTION_ENABLED;
+    delete process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
   });
 
   beforeEach(async () => {
@@ -208,8 +208,8 @@ describe("PayloadEncryptionService", () => {
 
   describe("configuration", () => {
     it("should throw error if encryption is enabled but no secret configured", () => {
-      process.env.INTER_SERVICE_ENCRYPTION_ENABLED = "true";
-      delete process.env.INTER_SERVICE_SHARED_SECRET;
+      process.env.REQUEST_ENCRYPTION_ENABLED = "true";
+      delete process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
 
       expect(() => {
         // Force re-import to trigger config validation
@@ -218,7 +218,7 @@ describe("PayloadEncryptionService", () => {
       }).toThrow();
 
       // Restore
-      process.env.INTER_SERVICE_SHARED_SECRET = testSecret;
+      process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
     });
   });
 
@@ -226,8 +226,8 @@ describe("PayloadEncryptionService", () => {
     let disabledService: PayloadEncryptionService;
 
     beforeEach(async () => {
-      process.env.INTER_SERVICE_ENCRYPTION_ENABLED = "false";
-      delete process.env.INTER_SERVICE_SHARED_SECRET;
+      process.env.REQUEST_ENCRYPTION_ENABLED = "false";
+      delete process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
 
       // Need to reload module to get new config
       jest.resetModules();
@@ -243,8 +243,8 @@ describe("PayloadEncryptionService", () => {
     });
 
     afterEach(() => {
-      process.env.INTER_SERVICE_ENCRYPTION_ENABLED = "true";
-      process.env.INTER_SERVICE_SHARED_SECRET = testSecret;
+      process.env.REQUEST_ENCRYPTION_ENABLED = "true";
+      process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
     });
 
     it("should report disabled status", () => {
@@ -253,13 +253,13 @@ describe("PayloadEncryptionService", () => {
 
     it("should throw error when trying to encrypt with disabled service", () => {
       expect(() => disabledService.encrypt("test")).toThrow(
-        "Inter-service encryption is not enabled or configured"
+        "Request encryption is not enabled or configured"
       );
     });
 
     it("should throw error when trying to decrypt with disabled service", () => {
       expect(() => disabledService.decrypt("test")).toThrow(
-        "Inter-service encryption is not enabled or configured"
+        "Request encryption is not enabled or configured"
       );
     });
   });

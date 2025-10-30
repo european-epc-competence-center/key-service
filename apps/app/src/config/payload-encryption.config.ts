@@ -1,12 +1,12 @@
 /**
- * Inter-Service Request Decryption Configuration
+ * Request Encryption Configuration
  * 
  * Enables automatic decryption of encrypted requests from other services.
- * Uses AES-256-GCM with a shared secret for service-to-service communication.
+ * Uses AES-256-GCM with a shared secret for request encryption.
  * 
  * Environment Variables:
- * - INTER_SERVICE_ENCRYPTION_ENABLED: Enable/disable request decryption (default: false)
- * - INTER_SERVICE_SHARED_SECRET: Shared secret for decryption (exactly 32 characters for AES-256)
+ * - REQUEST_ENCRYPTION_ENABLED: Enable/disable request decryption (default: false)
+ * - REQUEST_ENCRYPTION_SHARED_SECRET: Shared secret for decryption (exactly 32 characters for AES-256)
  * 
  * Security Notes:
  * - The shared secret MUST be exactly 32 characters (256 bits) for AES-256
@@ -21,10 +21,10 @@ export interface PayloadEncryptionConfig {
 }
 
 /**
- * Get the inter-service shared secret from environment variable
+ * Get the request encryption shared secret from environment variable
  */
-function getInterServiceSharedSecret(): Buffer | undefined {
-  const secretString = process.env.INTER_SERVICE_SHARED_SECRET;
+function getRequestEncryptionSharedSecret(): Buffer | undefined {
+  const secretString = process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
 
   if (!secretString) {
     return undefined;
@@ -34,7 +34,7 @@ function getInterServiceSharedSecret(): Buffer | undefined {
   const secretBuffer = Buffer.from(secretString, "utf8");
   if (secretBuffer.length !== 32) {
     throw new Error(
-      `INTER_SERVICE_SHARED_SECRET must be exactly 32 characters (256 bits). ` +
+      `REQUEST_ENCRYPTION_SHARED_SECRET must be exactly 32 characters (256 bits). ` +
       `Got ${secretBuffer.length} characters. Generate a 32-character secret.`
     );
   }
@@ -43,15 +43,15 @@ function getInterServiceSharedSecret(): Buffer | undefined {
 }
 
 export const payloadEncryptionConfig: PayloadEncryptionConfig = {
-  enabled: process.env.INTER_SERVICE_ENCRYPTION_ENABLED === "true",
-  secret: getInterServiceSharedSecret(),
+  enabled: process.env.REQUEST_ENCRYPTION_ENABLED === "true",
+  secret: getRequestEncryptionSharedSecret(),
 };
 
 // Validate configuration
 if (payloadEncryptionConfig.enabled && !payloadEncryptionConfig.secret) {
   throw new Error(
-    "Inter-service encryption is enabled but no shared secret is configured. " +
-    "Set INTER_SERVICE_SHARED_SECRET environment variable (32 characters)."
+    "Request encryption is enabled but no shared secret is configured. " +
+    "Set REQUEST_ENCRYPTION_SHARED_SECRET environment variable (32 characters)."
   );
 }
 

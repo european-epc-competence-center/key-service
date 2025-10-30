@@ -8,11 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.0] - 2025-10-30
 
 ### Added
-- **Automatic request payload decryption for inter-service communication**
+- **Automatic request payload decryption for request encryption**
   - Implemented PayloadEncryptionService using AES-256-GCM encryption
   - Service-layer decryption for enhanced security (decrypted data never exposed in request pipeline)
   - Automatically detects and decrypts requests with `encryptedData` field in AppService
-  - Inter-service shared secret configuration via `INTER_SERVICE_SHARED_SECRET` environment variable
+  - Request encryption shared secret configuration via `REQUEST_ENCRYPTION_SHARED_SECRET` environment variable
   - Service decrypts incoming encrypted requests, returns plain JSON responses
   - Simple format: base64(iv:authTag:ciphertext) - compatible with all major platforms
   - Comprehensive unit tests for encryption service

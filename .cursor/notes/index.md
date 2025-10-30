@@ -145,6 +145,6 @@ npm run build
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
 - `SECURITY_REPORT.md` - External security analysis report (read-only reference)
 - `CHANGELOG.md` - Version history and changes (current: v1.7.0)
-- `docs/INTER_SERVICE_ENCRYPTION.md` - **NEW** Quick configuration reference for inter-service encryption
+- `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
 - `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide
 - `docs/REQUEST_ENCRYPTION_USAGE.md` - **NEW** Multi-language client examples (Java, Node.js, Python)

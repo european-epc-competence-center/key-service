@@ -1,6 +1,6 @@
-# Inter-Service Request Encryption
+# Request Encryption Quick Start
 
-Quick reference for configuring inter-service request encryption.
+Quick reference for configuring request encryption.
 
 ## Configuration
 
@@ -8,10 +8,10 @@ Quick reference for configuring inter-service request encryption.
 
 ```bash
 # Enable automatic request decryption
-INTER_SERVICE_ENCRYPTION_ENABLED=true
+REQUEST_ENCRYPTION_ENABLED=true
 
 # Set the shared secret (exactly 32 characters)
-INTER_SERVICE_SHARED_SECRET="your-32-character-secret-key!"
+REQUEST_ENCRYPTION_SHARED_SECRET="your-32-character-secret-key!"
 ```
 
 ### Generate a Secret
@@ -45,8 +45,8 @@ services:
   key-service:
     image: key-service:latest
     environment:
-      - INTER_SERVICE_ENCRYPTION_ENABLED=true
-      - INTER_SERVICE_SHARED_SECRET=${INTER_SERVICE_SHARED_SECRET}
+      - REQUEST_ENCRYPTION_ENABLED=true
+      - REQUEST_ENCRYPTION_SHARED_SECRET=${REQUEST_ENCRYPTION_SHARED_SECRET}
 ```
 
 ## Kubernetes Example
@@ -55,7 +55,7 @@ services:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: inter-service-secret
+  name: request-encryption-secret
 stringData:
   shared-secret: "your-32-character-secret-key!"
 ---
@@ -69,12 +69,12 @@ spec:
       containers:
       - name: key-service
         env:
-        - name: INTER_SERVICE_ENCRYPTION_ENABLED
+        - name: REQUEST_ENCRYPTION_ENABLED
           value: "true"
-        - name: INTER_SERVICE_SHARED_SECRET
+        - name: REQUEST_ENCRYPTION_SHARED_SECRET
           valueFrom:
             secretKeyRef:
-              name: inter-service-secret
+              name: request-encryption-secret
               key: shared-secret
 ```
 
@@ -91,4 +91,5 @@ See detailed implementation guides:
 - ✅ **Environment variable only** (no file paths)
 - ✅ **Always use HTTPS/TLS** for transport security
 - ✅ **Rotate secrets** regularly
+
 

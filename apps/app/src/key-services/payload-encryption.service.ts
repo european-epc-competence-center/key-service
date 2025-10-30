@@ -38,12 +38,12 @@ export class PayloadEncryptionService {
 
     if (this.enabled && !this.secret) {
       throw new Error(
-        "PayloadEncryptionService enabled but no inter-service shared secret configured"
+        "PayloadEncryptionService enabled but no request encryption shared secret configured"
       );
     }
 
     if (this.enabled) {
-      logInfo("Inter-service request decryption (AES-256-GCM) is enabled");
+      logInfo("Request encryption (AES-256-GCM) is enabled");
     }
   }
 
@@ -68,7 +68,7 @@ export class PayloadEncryptionService {
    */
   encrypt(data: string): string {
     if (!this.enabled || !this.secret) {
-      throw new Error("Inter-service encryption is not enabled or configured");
+      throw new Error("Request encryption is not enabled or configured");
     }
 
     // Generate random IV (12 bytes is optimal for GCM)
@@ -112,7 +112,7 @@ export class PayloadEncryptionService {
    */
   decrypt(encryptedData: string): string {
     if (!this.enabled || !this.secret) {
-      throw new Error("Inter-service encryption is not enabled or configured");
+      throw new Error("Request encryption is not enabled or configured");
     }
 
     // Decode base64

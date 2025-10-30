@@ -17,11 +17,11 @@ The key-service can decrypt incoming request payloads using AES-256-GCM encrypti
 ### On the Key Service (NestJS)
 
 ```bash
-# Enable inter-service request decryption
-export INTER_SERVICE_ENCRYPTION_ENABLED=true
+# Enable request encryption
+export REQUEST_ENCRYPTION_ENABLED=true
 
-# Set the inter-service shared secret (exactly 32 characters)
-export INTER_SERVICE_SHARED_SECRET="your-32-character-secret-key!"
+# Set the request encryption shared secret (exactly 32 characters)
+export REQUEST_ENCRYPTION_SHARED_SECRET="your-32-character-secret-key!"
 ```
 
 ### On the Client (Spring Boot, Node.js, etc.)
@@ -351,14 +351,14 @@ services:
   key-service:
     image: key-service:latest
     environment:
-      - INTER_SERVICE_ENCRYPTION_ENABLED=true
-      - INTER_SERVICE_SHARED_SECRET=${INTER_SERVICE_SHARED_SECRET}
+      - REQUEST_ENCRYPTION_ENABLED=true
+      - REQUEST_ENCRYPTION_SHARED_SECRET=${REQUEST_ENCRYPTION_SHARED_SECRET}
   
   your-app:
     image: your-app:latest
     environment:
       - KEY_SERVICE_URL=http://key-service:3000
-      - INTER_SERVICE_SHARED_SECRET=${INTER_SERVICE_SHARED_SECRET}
+      - REQUEST_ENCRYPTION_SHARED_SECRET=${REQUEST_ENCRYPTION_SHARED_SECRET}
 ```
 
 ### Kubernetes
@@ -367,7 +367,7 @@ services:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: inter-service-secret
+  name: request-encryption-secret
 type: Opaque
 stringData:
   shared-secret: "your-32-character-secret-key!"
@@ -383,12 +383,12 @@ spec:
       containers:
       - name: key-service
         env:
-        - name: INTER_SERVICE_ENCRYPTION_ENABLED
+        - name: REQUEST_ENCRYPTION_ENABLED
           value: "true"
-        - name: INTER_SERVICE_SHARED_SECRET
+        - name: REQUEST_ENCRYPTION_SHARED_SECRET
           valueFrom:
             secretKeyRef:
-              name: inter-service-secret
+              name: request-encryption-secret
               key: shared-secret
 ---
 # Your App Deployment
@@ -402,10 +402,10 @@ spec:
       containers:
       - name: your-app
         env:
-        - name: INTER_SERVICE_SHARED_SECRET
+        - name: REQUEST_ENCRYPTION_SHARED_SECRET
           valueFrom:
             secretKeyRef:
-              name: inter-service-secret
+              name: request-encryption-secret
               key: shared-secret
 ```
 
@@ -427,9 +427,9 @@ This pattern is useful when:
 
 ## Troubleshooting
 
-### "Inter-service encryption is not enabled"
-- Set `INTER_SERVICE_ENCRYPTION_ENABLED=true` on the key-service
-- Verify `INTER_SERVICE_SHARED_SECRET` is configured (exactly 32 characters)
+### "Request encryption is not enabled"
+- Set `REQUEST_ENCRYPTION_ENABLED=true` on the key-service
+- Verify `REQUEST_ENCRYPTION_SHARED_SECRET` is configured (exactly 32 characters)
 
 ### "Invalid encrypted data format"
 - Check that your client is formatting as: `base64(iv:authTag:ciphertext)`
