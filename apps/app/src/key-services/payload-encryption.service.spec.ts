@@ -1,15 +1,14 @@
+// Set environment variables BEFORE importing the service
+// This is critical because payloadEncryptionConfig is evaluated at import time
+const testSecret = "12345678901234567890123456789012"; // 32 characters
+process.env.REQUEST_ENCRYPTION_ENABLED = "true";
+process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
+
 import { Test, TestingModule } from "@nestjs/testing";
 import { PayloadEncryptionService } from "./payload-encryption.service";
 
 describe("PayloadEncryptionService", () => {
   let service: PayloadEncryptionService;
-  const testSecret = "12345678901234567890123456789012"; // 32 characters
-
-  beforeAll(() => {
-    // Set up environment for testing
-    process.env.REQUEST_ENCRYPTION_ENABLED = "true";
-    process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
-  });
 
   afterAll(() => {
     // Clean up
@@ -174,9 +173,9 @@ describe("PayloadEncryptionService", () => {
     });
 
     it("should throw error on invalid auth tag size", () => {
-      // Create data with 12-byte IV but invalid auth tag
+      // Create data with valid 12-byte IV but invalid auth tag (only 3 bytes instead of 16)
       const invalidData = Buffer.from(
-        "aabbccddeeff00112233:aabbcc:ciphertext",
+        "aabbccddeeff001122334455:aabbcc:ciphertext",
         "utf8"
       ).toString("base64");
 
@@ -208,6 +207,7 @@ describe("PayloadEncryptionService", () => {
 
   describe("configuration", () => {
     it("should throw error if encryption is enabled but no secret configured", () => {
+      const originalSecret = process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
       process.env.REQUEST_ENCRYPTION_ENABLED = "true";
       delete process.env.REQUEST_ENCRYPTION_SHARED_SECRET;
 
@@ -218,7 +218,7 @@ describe("PayloadEncryptionService", () => {
       }).toThrow();
 
       // Restore
-      process.env.REQUEST_ENCRYPTION_SHARED_SECRET = testSecret;
+      process.env.REQUEST_ENCRYPTION_SHARED_SECRET = originalSecret;
     });
   });
 
