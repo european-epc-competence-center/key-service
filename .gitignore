@@ -7,3 +7,4 @@ npm-debug.log
 __pycache__/
 .DS_Store
 mermaid-filter.err
+/security_crew/
