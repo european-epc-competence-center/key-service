@@ -44,6 +44,21 @@ npm run test:unit:with-db
 - Test error conditions and edge cases
 - Verify proper async/await handling
 
+### Environment Variable Configuration in Tests
+**Critical Pattern**: When testing services that use configuration modules evaluated at import time:
+- Set environment variables **before** any imports (at module top level)
+- Config modules like `payload-encryption.config.ts` evaluate `process.env` at import time
+- Setting env vars in `beforeAll()` or `beforeEach()` is too late
+- Example pattern:
+```typescript
+// Set env vars FIRST (before imports)
+process.env.MY_CONFIG = "value";
+
+// Then import modules
+import { MyService } from "./my.service";
+```
+- See `payload-encryption.service.spec.ts` for reference implementation
+
 ### E2E Testing Strategy  
 - Full HTTP request/response testing
 - Real database interactions

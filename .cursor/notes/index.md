@@ -4,7 +4,7 @@
 
 The Key Service is a NestJS-based API for signing verifiable credentials using multiple signature formats (JWT, Data Integrity, SD-JWT). It provides secure key management, credential signing, and public key retrieval capabilities.
 
-**Current Version**: v1.5.0  
+**Current Version**: v1.7.0  
 **License**: AGPL-3.0 (GNU Affero General Public License v3.0)  
 **Author**: Christian Fries  
 **Technology Stack**: NestJS, TypeScript, PostgreSQL, Docker  
@@ -37,6 +37,7 @@ key-service/
 - **Multiple Signature Types**: JWT, Data Integrity, SD-JWT
 - **Key Management**: Ed25519, ES256, PS256 algorithm support
 - **Encrypted Storage**: Keys encrypted using secret service
+- **Request Encryption**: AES-256-GCM decryption of encrypted incoming requests in service layer (responses are plain JSON)
 - **Verifiable Credentials**: W3C VC Data Model 2.0 compliant
 - **Health Checks**: Kubernetes-ready health endpoints
 - **Docker Support**: Production-ready containers
@@ -48,9 +49,10 @@ key-service/
 1. **KeyService** - Core key generation and management
 2. **KeyStorageService** - Database operations for encrypted keys
 3. **SecretService** - Encryption/decryption of key materials
-4. **JwtSigningService** - JWT-VC signing implementation
-5. **DataIntegritySigningService** - Data Integrity proof signing
-6. **FailedAttemptsCacheService** - Security rate limiting
+4. **PayloadEncryptionService** - AES-256-GCM request decryption (clients send encrypted, service responds plain)
+5. **JwtSigningService** - JWT-VC signing implementation
+6. **DataIntegritySigningService** - Data Integrity proof signing
+7. **FailedAttemptsCacheService** - Security rate limiting
 
 ### Database
 
@@ -89,6 +91,7 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 - `POST /sign/vc/:type` - Sign verifiable credentials (type: jwt, data-integrity, sd-jwt)
 - `POST /sign/vp/:type` - Sign verifiable presentations (type: jwt, data-integrity, sd-jwt)
 - `POST /generate` - Generate new key pairs (algorithms: Ed25519, ES256, PS256)
+- **Note**: All POST endpoints automatically support encrypted requests (decryption handled in AppService layer for enhanced security)
 - `GET /health` - General health check
 - `GET /health/liveness` - Kubernetes liveness probe
 - `GET /health/readiness` - Kubernetes readiness probe
@@ -141,4 +144,7 @@ npm run build
 - `docs/security_and_key_management_concept.md` - Security architecture concept
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
 - `SECURITY_REPORT.md` - External security analysis report (read-only reference)
-- `CHANGELOG.md` - Version history and changes (current: v1.5.0)
+- `CHANGELOG.md` - Version history and changes (current: v1.7.0)
+- `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
+- `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide
+- `docs/REQUEST_ENCRYPTION_USAGE.md` - **NEW** Multi-language client examples (Java, Node.js, Python)

@@ -8,6 +8,7 @@ import { KeyService } from "./key-services/key.service";
 import { SecretService } from "./key-services/secret.service";
 import { KeyStorageService } from "./key-services/key-storage.service";
 import { FailedAttemptsCacheService } from "./key-services/failed-attempts-cache.service";
+import { PayloadEncryptionService } from "./key-services/payload-encryption.service";
 import { DocumentLoaderService } from "./utils/document-loader.service";
 import { EncryptedKey } from "./key-services/entities/encrypted-key.entity";
 import { databaseConfig } from "./config/database.config";
@@ -28,6 +29,7 @@ import { HealthModule } from "./health/health.module";
     SecretService,
     KeyStorageService,
     FailedAttemptsCacheService,
+    PayloadEncryptionService,
     DocumentLoaderService,
   ],
 })
