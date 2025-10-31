@@ -106,7 +106,14 @@ export interface KeyPair extends RawKeypair {
    * Function to sign data
    */
   signer(): Promise<{
-    sign: (options: { data: string }) => Promise<Uint8Array>;
+    sign: (options: { data: string | Uint8Array }) => Promise<Uint8Array>;
+  }>;
+  
+  /**
+   * Optional function to verify signatures (for data integrity proofs)
+   */
+  verifier?(): Promise<{
+    verify: (options: { data: Uint8Array; signature: Uint8Array }) => Promise<boolean>;
   }>;
 }
 

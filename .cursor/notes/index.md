@@ -108,6 +108,7 @@ All signing and generation requests use:
 
 - [architecture.md](./architecture.md) - Detailed technical architecture
 - [security.md](./security.md) - Security implementation details and audit framework
+- [data-integrity-signatures.md](./data-integrity-signatures.md) - Data Integrity proof implementation (Ed25519, ES256)
 - [input-validation-implementation.md](./input-validation-implementation.md) - Input validation security implementation (2025-10-07)
 - [development.md](./development.md) - Development workflows and patterns
 - [deployment.md](./deployment.md) - Docker and deployment configuration

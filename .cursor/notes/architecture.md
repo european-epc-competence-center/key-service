@@ -12,7 +12,8 @@ AppModule
 ├── PayloadEncryptionService (AES-256-GCM payload encryption)
 ├── FailedAttemptsCacheService (security)
 ├── JwtSigningService (JWT-VC signing)
-├── DataIntegritySigningService (DI proofs)
+├── DataIntegritySigningService (DI proofs - Ed25519 & ES256)
+│   └── Uses ES256Signature2020 custom suite
 └── DocumentLoaderService (JSON-LD)
 ```
 
@@ -20,8 +21,10 @@ AppModule
 
 - **@nestjs/typeorm** - Database ORM integration
 - **@digitalbazaar/vc** - W3C Verifiable Credentials
-- **@digitalbazaar/ed25519-signature-2020** - Ed25519 signatures
-- **jose** - JWT operations
+- **@digitalbazaar/ed25519-signature-2020** - Ed25519 signatures for Data Integrity proofs
+- **jsonld-signatures** - Base library for Data Integrity signatures
+- **base58-universal** - Multibase encoding for signature proofs
+- **jose** - JWT operations and ES256 signing
 - **@noble/curves** - Cryptographic curve operations
 
 ## Database Architecture

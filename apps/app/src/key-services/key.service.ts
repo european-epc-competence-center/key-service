@@ -249,9 +249,10 @@ export class KeyService {
       keyType: storedKey.keyType,
       signatureType: storedKey.signatureType,
       id: storedKey.id,
+      controller: storedKey.controller,
       signer: () =>
         Promise.resolve({
-          sign: async (options: { data: string }): Promise<Uint8Array> => {
+          sign: async (options: { data: string | Uint8Array }): Promise<Uint8Array> => {
             // Use jose library for ES256 signing to get raw signature bytes
             const privateKeyJwk = storedKey.privateKey as JsonWebKey;
 
@@ -261,24 +262,69 @@ export class KeyService {
               alg: "ES256",
             } as jose.JWK);
 
-            // The data is already the JWT signing input (header.payload)
-            // For proper JWT signing, we need to split and use the payload only
-            const [headerPart, payloadPart] = options.data.split(".");
+            // Handle both JWT (string) and Data Integrity (Uint8Array) signing
+            if (typeof options.data === 'string') {
+              // JWT signing path - The data is already the JWT signing input (header.payload)
+              // For proper JWT signing, we need to split and use the payload only
+              const [headerPart, payloadPart] = options.data.split(".");
 
-            // Decode the header to get the algorithm and other claims
-            const headerBytes = jose.base64url.decode(headerPart);
-            const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
+              // Decode the header to get the algorithm and other claims
+              const headerBytes = jose.base64url.decode(headerPart);
+              const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
 
-            // Decode the payload
-            const payloadBytes = jose.base64url.decode(payloadPart);
+              // Decode the payload
+              const payloadBytes = jose.base64url.decode(payloadPart);
 
-            // Create a JWS with the decoded payload and header
-            const jws = await new jose.FlattenedSign(payloadBytes)
-              .setProtectedHeader(headerObj)
-              .sign(privateKey);
+              // Create a JWS with the decoded payload and header
+              const jws = await new jose.FlattenedSign(payloadBytes)
+                .setProtectedHeader(headerObj)
+                .sign(privateKey);
 
-            // Return the raw signature bytes
-            return jose.base64url.decode(jws.signature);
+              // Return the raw signature bytes
+              return jose.base64url.decode(jws.signature);
+            } else {
+              // Data Integrity signing path - sign the raw bytes directly
+              const jws = await new jose.FlattenedSign(options.data)
+                .setProtectedHeader({ alg: 'ES256' })
+                .sign(privateKey);
+
+              // Return the raw signature bytes
+              return jose.base64url.decode(jws.signature);
+            }
+          },
+        }),
+      verifier: () =>
+        Promise.resolve({
+          verify: async (options: { data: Uint8Array; signature: Uint8Array }): Promise<boolean> => {
+            try {
+              // Use jose library for ES256 verification
+              const publicKeyJwk = storedKey.publicKey as JsonWebKey;
+
+              // Import the public key using jose
+              const publicKey = await jose.importJWK({
+                ...publicKeyJwk,
+                alg: "ES256",
+              } as jose.JWK);
+
+              // Encode signature as base64url for JWS
+              const signatureB64 = jose.base64url.encode(options.signature);
+
+              // Create a compact JWS format for verification
+              // Format: <header>.<payload>.<signature>
+              const header = jose.base64url.encode(
+                new TextEncoder().encode(JSON.stringify({ alg: 'ES256' }))
+              );
+              const payload = jose.base64url.encode(options.data);
+              const compactJws = `${header}.${payload}.${signatureB64}`;
+
+              // Verify the signature
+              const { payload: verifiedPayload } = await jose.compactVerify(compactJws, publicKey);
+
+              // If we get here without an error, the signature is valid
+              return true;
+            } catch (error) {
+              return false;
+            }
           },
         }),
     };
@@ -293,7 +339,7 @@ export class KeyService {
       id: storedKey.id,
       signer: () =>
         Promise.resolve({
-          sign: async (options: { data: string }): Promise<Uint8Array> => {
+          sign: async (options: { data: string | Uint8Array }): Promise<Uint8Array> => {
             // Use jose library for PS256 signing to get raw signature bytes
             const privateKeyJwk = storedKey.privateKey as RSAPrivateJsonWebKey;
 
@@ -303,24 +349,35 @@ export class KeyService {
               alg: "PS256",
             } as jose.JWK);
 
-            // The data is already the JWT signing input (header.payload)
-            // For proper JWT signing, we need to split and use the payload only
-            const [headerPart, payloadPart] = options.data.split(".");
+            // Handle both JWT (string) and Data Integrity (Uint8Array) signing
+            if (typeof options.data === 'string') {
+              // JWT signing path - The data is already the JWT signing input (header.payload)
+              // For proper JWT signing, we need to split and use the payload only
+              const [headerPart, payloadPart] = options.data.split(".");
 
-            // Decode the header to get the algorithm and other claims
-            const headerBytes = jose.base64url.decode(headerPart);
-            const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
+              // Decode the header to get the algorithm and other claims
+              const headerBytes = jose.base64url.decode(headerPart);
+              const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
 
-            // Decode the payload
-            const payloadBytes = jose.base64url.decode(payloadPart);
+              // Decode the payload
+              const payloadBytes = jose.base64url.decode(payloadPart);
 
-            // Create a JWS with the decoded payload and header
-            const jws = await new jose.FlattenedSign(payloadBytes)
-              .setProtectedHeader(headerObj)
-              .sign(privateKey);
+              // Create a JWS with the decoded payload and header
+              const jws = await new jose.FlattenedSign(payloadBytes)
+                .setProtectedHeader(headerObj)
+                .sign(privateKey);
 
-            // Return the raw signature bytes
-            return jose.base64url.decode(jws.signature);
+              // Return the raw signature bytes
+              return jose.base64url.decode(jws.signature);
+            } else {
+              // Data Integrity signing path - sign the raw bytes directly
+              const jws = await new jose.FlattenedSign(options.data)
+                .setProtectedHeader({ alg: 'PS256' })
+                .sign(privateKey);
+
+              // Return the raw signature bytes
+              return jose.base64url.decode(jws.signature);
+            }
           },
         }),
     };

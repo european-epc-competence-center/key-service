@@ -19,6 +19,7 @@ import {
   SigningException,
   UnsupportedException,
 } from "../types/custom-exceptions";
+import { ES256Signature2020 } from "./ES256Signature2020";
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -32,7 +33,6 @@ export class DataIntegritySigningService {
    * @param credential - The verifiable credential to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
-   * @param keyType - Key type (currently only Ed25519_2020 supported)
    * @returns Signed verifiable credential with proof
    */
   async signVC(
@@ -46,15 +46,35 @@ export class DataIntegritySigningService {
       secrets
     );
 
-    if (keyPair.signatureType !== SignatureType.ED25519_2020) {
+    let suite;
+    if (keyPair.signatureType === SignatureType.ED25519_2020) {
+      suite = new Ed25519Signature2020({
+        key: keyPair,
+      });
+    } else if (keyPair.signatureType === SignatureType.ES256) {
+      // For ES256, we need to call the signer/verifier methods and pass the results
+      // directly to the suite, along with a key object for metadata
+      const signer = await keyPair.signer();
+      const verifier = keyPair.verifier ? await keyPair.verifier() : undefined;
+      
+      suite = new ES256Signature2020({
+        signer,
+        verifier,
+        // Pass key metadata (without signer/verifier methods)
+        // This will be used by getVerificationMethod
+      });
+      
+      // Store key reference on the suite for later use
+      (suite as any).keyId = keyPair.id;
+      (suite as any).keyController = keyPair.controller;
+      (suite as any).keyPublicKey = keyPair.publicKey;
+      // Set verification method on the suite
+      (suite as any).verificationMethod = keyPair.id;
+    } else {
       throw new UnsupportedException(
-        "Currently only Ed25519 is supported for data integrity proof"
+        `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );
     }
-    
-    const suite = new Ed25519Signature2020({
-      key: keyPair,
-    });
 
     if (!credential.issuer || typeof credential.issuer === "string") {
       credential.issuer = keyPair.id?.split("#")[0] as Issuer;
@@ -81,7 +101,8 @@ export class DataIntegritySigningService {
    * @param presentation - The verifiable presentation to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
-   * @param keyType - Key type (currently only Ed25519_2020 supported)
+   * @param challenge - Challenge string for the proof
+   * @param domain - Optional domain for the proof
    * @returns Signed verifiable presentation with proof
    */
   async signVP(
@@ -96,14 +117,36 @@ export class DataIntegritySigningService {
       verificationMethod,
       secrets
     );
-    if (keyPair.signatureType !== SignatureType.ED25519_2020) {
+    
+    let suite;
+    if (keyPair.signatureType === SignatureType.ED25519_2020) {
+      suite = new Ed25519Signature2020({
+        key: keyPair,
+      });
+    } else if (keyPair.signatureType === SignatureType.ES256) {
+      // For ES256, we need to call the signer/verifier methods and pass the results
+      // directly to the suite, along with a key object for metadata
+      const signer = await keyPair.signer();
+      const verifier = keyPair.verifier ? await keyPair.verifier() : undefined;
+      
+      suite = new ES256Signature2020({
+        signer,
+        verifier,
+        // Pass key metadata (without signer/verifier methods)
+        // This will be used by getVerificationMethod
+      });
+      
+      // Store key reference on the suite for later use
+      (suite as any).keyId = keyPair.id;
+      (suite as any).keyController = keyPair.controller;
+      (suite as any).keyPublicKey = keyPair.publicKey;
+      // Set verification method on the suite
+      (suite as any).verificationMethod = keyPair.id;
+    } else {
       throw new UnsupportedException(
-        "Currently only Ed25519 is supported for data integrity proof"
+        `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );
     }
-    const suite = new Ed25519Signature2020({
-      key: keyPair,
-    });
 
     if (!presentation.holder) {
       presentation.holder = keyPair.id?.split("#")[0] as string;
