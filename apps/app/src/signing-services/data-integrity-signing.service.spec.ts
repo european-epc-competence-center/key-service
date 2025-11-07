@@ -202,6 +202,11 @@ describe("DataIntegritySigningService", () => {
     // Clean up database before each test
     const repository = dataSource.getRepository(EncryptedKey);
     await repository.clear();
+
+    // Reset credential objects by removing any proofs that may have been added
+    // The @digitalbazaar/vc issue() function mutates the credential object
+    delete (exampleCredentialV1 as any).proof;
+    delete (exampleCredentialV2 as any).proof;
   });
 
   it("should be defined", () => {

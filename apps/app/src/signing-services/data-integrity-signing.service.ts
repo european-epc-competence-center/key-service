@@ -55,11 +55,8 @@ export class DataIntegritySigningService {
         key: keyPair,
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
-      // For ES256, we need to call the signer/verifier methods and pass the results
-      // directly to the suite, along with a key object for metadata
+      const ecdsaMultikey = await EcdsaMultikey.fromJwk({jwk: keyPair.privateKey, secretKey: true, id: keyPair.id, controller: keyPair.controller});
 
-      const ecdsaMultikey = await EcdsaMultikey.fromJwk({jwk: keyPair, secretKey: true, id: keyPair.id, controller: keyPair.controller});
-      
       suite = new ES256Signature2020({
         key: ecdsaMultikey
       });
