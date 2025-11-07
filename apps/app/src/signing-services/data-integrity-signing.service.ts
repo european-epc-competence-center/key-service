@@ -10,6 +10,8 @@ import {
 // @ts-ignore
 import { Ed25519Signature2020 } from "@digitalbazaar/ed25519-signature-2020";
 // @ts-ignore
+import { ES256Signature2020 } from "es256-signature-2020";
+// @ts-ignore
 import { issue, signPresentation } from "@digitalbazaar/vc";
 
 import { logDebug, logError } from "../utils/log/logger";
@@ -19,7 +21,8 @@ import {
   SigningException,
   UnsupportedException,
 } from "../types/custom-exceptions";
-import { ES256Signature2020 } from "./ES256Signature2020";
+// @ts-ignore
+import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -54,14 +57,11 @@ export class DataIntegritySigningService {
     } else if (keyPair.signatureType === SignatureType.ES256) {
       // For ES256, we need to call the signer/verifier methods and pass the results
       // directly to the suite, along with a key object for metadata
-      const signer = await keyPair.signer();
-      const verifier = keyPair.verifier ? await keyPair.verifier() : undefined;
+
+      const ecdsaMultikey = await EcdsaMultikey.fromJwk({jwk: keyPair, secretKey: true, id: keyPair.id, controller: keyPair.controller});
       
       suite = new ES256Signature2020({
-        signer,
-        verifier,
-        // Pass key metadata (without signer/verifier methods)
-        // This will be used by getVerificationMethod
+        key: ecdsaMultikey
       });
       
       // Store key reference on the suite for later use
