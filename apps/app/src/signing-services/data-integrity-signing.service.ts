@@ -61,12 +61,6 @@ export class DataIntegritySigningService {
         key: ecdsaMultikey
       });
       
-      // Store key reference on the suite for later use
-      (suite as any).keyId = keyPair.id;
-      (suite as any).keyController = keyPair.controller;
-      (suite as any).keyPublicKey = keyPair.publicKey;
-      // Set verification method on the suite
-      (suite as any).verificationMethod = keyPair.id;
     } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
@@ -127,12 +121,6 @@ export class DataIntegritySigningService {
         key: ecdsaMultikey
       });
       
-      // Store key reference on the suite for later use
-      (suite as any).keyId = keyPair.id;
-      (suite as any).keyController = keyPair.controller;
-      (suite as any).keyPublicKey = keyPair.publicKey;
-      // Set verification method on the suite
-      (suite as any).verificationMethod = keyPair.id;
     } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
