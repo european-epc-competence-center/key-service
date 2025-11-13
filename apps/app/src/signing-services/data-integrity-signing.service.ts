@@ -21,8 +21,6 @@ import {
   SigningException,
   UnsupportedException,
 } from "../types/custom-exceptions";
-// @ts-ignore
-import * as EcdsaMultikey from '@digitalbazaar/ecdsa-multikey';
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -55,10 +53,16 @@ export class DataIntegritySigningService {
         key: keyPair,
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
-      const ecdsaMultikey = await EcdsaMultikey.fromJwk({jwk: keyPair.privateKey, secretKey: true, id: keyPair.id, controller: keyPair.controller});
+
+      const key = {
+        id: keyPair.id,
+        type: 'JsonWebKey2020',
+        controller: keyPair.controller,
+        privateKey: keyPair.privateKey,
+      }
 
       suite = new ES256Signature2020({
-        key: ecdsaMultikey
+        key
       });
       
     } else {
@@ -115,10 +119,16 @@ export class DataIntegritySigningService {
         key: keyPair,
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
-      const ecdsaMultikey = await EcdsaMultikey.fromJwk({jwk: keyPair.privateKey, secretKey: true, id: keyPair.id, controller: keyPair.controller});
       
+      const key = {
+        id: keyPair.id,
+        type: 'JsonWebKey2020',
+        controller: keyPair.controller,
+        privateKey: keyPair.privateKey,
+      }
+
       suite = new ES256Signature2020({
-        key: ecdsaMultikey
+        key
       });
       
     } else {

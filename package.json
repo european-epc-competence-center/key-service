@@ -39,10 +39,10 @@
   "license": "AGPL-3.0",
   "description": "",
   "dependencies": {
-    "@digitalbazaar/ecdsa-multikey": "^1.8.0",
     "@digitalbazaar/ed25519-signature-2020": "^5.4.0",
     "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
     "@digitalbazaar/vc": "^7.0.0",
+    "@eecc/es256-signature-2020": "^1.1.0",
     "@nestjs/common": "^11.1.5",
     "@nestjs/core": "^11.1.5",
     "@nestjs/platform-express": "^11.1.5",
@@ -51,7 +51,6 @@
     "@noble/curves": "^1.9.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "@eecc/es256-signature-2020": "^1.0.1",
     "jose": "^6.1.0",
     "jsonld-signatures": "^11.5.0",
     "node-cache": "^5.1.2",
@@ -63,6 +62,7 @@
     "uint8arrays": "^3.1.1"
   },
   "devDependencies": {
+    "@digitalbazaar/ecdsa-multikey": "^1.8.0",
     "@jest/globals": "^30.0.5",
     "@nestjs/cli": "^11.0.10",
     "@nestjs/testing": "^11.1.5",
