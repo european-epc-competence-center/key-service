@@ -127,6 +127,56 @@ describe("DataIntegritySigningService", () => {
     },
   };
 
+  const exampleRenderedCredentialV2: any = {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://ref.gs1.org/gs1/vc/license-context",
+      "https://digitalbazaar.github.io/vc-render-method-context/contexts/v1.jsonld",
+      "https://www.w3.org/ns/credentials/examples/v2"
+    ],
+    "id": "https://example.com/credentials/123",
+    "type": [
+      "VerifiableCredential",
+      "ExampleCredential"
+    ],
+    "issuer": {
+      "id": "did:example:issuer",
+      "name": "Example Issuer"
+    },
+    "name": "Example Credential with Render Method",
+    "description": "This is a test credential with a renderMethod property.",
+    "validFrom": "2024-01-25T12:30:00.000Z",
+    "credentialSubject": {
+      "id": "did:web:gs1.github.io:GS1DigitalLicenses:dids:fake_mc_did",
+      "organization": {
+        "gs1:partyGLN": "0810159550000",
+        "gs1:organizationName": "Healthy Tots"
+      },
+      "extendsCredential": "https://gs1.github.io/GS1DigitalLicenses/samples/gs1-prefix-license-sample.jwt",
+      "licenseValue": "081015955",
+      "alternativeLicenseValue": "81015955"
+    },
+    "credentialSchema": {
+      "id": "https://gs1.github.io/GS1DigitalLicenses/schemas/companyprefix.json",
+      "type": "JsonSchema"
+    },
+    "credentialStatus": {
+      "id": "https://gs1.github.io/GS1DigitalLicenses/status/mo_status_list.jwt#10010",
+      "type": "BitstringStatusListEntry",
+      "statusPurpose": "revocation",
+      "statusListIndex": "10010",
+      "statusListCredential": "https://gs1.github.io/GS1DigitalLicenses/status/mo_status_list.jwt"
+    },
+    "renderMethod": [
+      {
+        "id": "https://example.com/templates/template.svg",
+        "type": "SvgRenderingTemplate2023",
+        "name": "Web Display",
+        "css3MediaQuery": "@media (min-aspect-ratio: 3/1)"
+      }
+    ]
+  }
+
   beforeAll(async () => {
     // Store original environment variable
     originalSigningKeyPath = process.env.SIGNING_KEY_PATH;
@@ -592,7 +642,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -603,6 +653,18 @@ describe("DataIntegritySigningService", () => {
       expect(result.type).toEqual(exampleCredentialV1.type);
       expect(result.credentialSubject).toEqual(
         exampleCredentialV1.credentialSubject
+      );
+
+      // Verify that the jws-2020 context is present for ES256 signatures
+      expect(result["@context"]).toContain(
+        "https://w3id.org/security/suites/jws-2020/v1"
+      );
+      // Verify original contexts are preserved
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/2018/credentials/v1"
+      );
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/2018/credentials/examples/v1"
       );
 
       // Verify issuer was updated to match the key pair controller
@@ -637,7 +699,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -649,6 +711,18 @@ describe("DataIntegritySigningService", () => {
       expect(result.validFrom).toEqual(exampleCredentialV2.validFrom);
       expect(result.credentialSubject).toEqual(
         exampleCredentialV2.credentialSubject
+      );
+
+      // Verify that the jws-2020 context is present for ES256 signatures
+      expect(result["@context"]).toContain(
+        "https://w3id.org/security/suites/jws-2020/v1"
+      );
+      // Verify original contexts are preserved
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/v2"
+      );
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/examples/v2"
       );
 
       // Verify issuer was updated to match the key pair controller
@@ -991,12 +1065,24 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
       expect(proof?.proofValue).toBeDefined();
       expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Verify that the jws-2020 context is present for ES256 signatures
+      expect(signedPresentation["@context"]).toContain(
+        "https://w3id.org/security/suites/jws-2020/v1"
+      );
+      // Verify original contexts are preserved
+      expect(signedPresentation["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/v2"
+      );
+      expect(signedPresentation["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/examples/v2"
+      );
 
       // Verify holder was automatically set
       expect(signedPresentation.holder).toBe("did:web:holder.com");
@@ -1040,6 +1126,338 @@ describe("DataIntegritySigningService", () => {
 
       // Verify holder was automatically set to the key's controller
       expect(signedPresentation.holder).toBe("did:web:holder.com");
+    });
+  });
+
+  describe("Render Credential Signing", () => {
+    it("should sign a V2 credential with renderMethod using Ed25519 and preserve all properties", async () => {
+      // Arrange
+      const verificationMethod = "did:example:issuer#render-key";
+
+      // Generate an Ed25519 key pair
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.VERIFICATION_KEY_2020,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Create a fresh copy of the credential for this test
+      const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
+
+      // Act
+      const result: any = await service.signVC(
+        credentialCopy,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert - Proof exists and is valid
+      expect(result).toBeDefined();
+      expect(result.proof).toBeDefined();
+
+      const proof = Array.isArray(result.proof)
+        ? result.proof[0]
+        : result.proof;
+      expect(proof).toBeDefined();
+      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.verificationMethod).toBeDefined();
+      expect(proof?.proofPurpose).toBe("assertionMethod");
+      expect(proof?.created).toBeDefined();
+      expect(proof?.proofValue).toBeDefined();
+
+      // Assert - RenderMethod is preserved
+      expect(result.renderMethod).toBeDefined();
+      expect(Array.isArray(result.renderMethod)).toBe(true);
+      expect(result.renderMethod).toHaveLength(1);
+      
+      const renderMethods = Array.isArray(result.renderMethod)
+        ? result.renderMethod
+        : [result.renderMethod!];
+      expect(renderMethods[0].id).toBe(
+        "https://example.com/templates/template.svg"
+      );
+      expect(renderMethods[0].type).toBe("SvgRenderingTemplate2023");
+      expect(renderMethods[0].name).toBe("Web Display");
+
+      // Assert - All contexts are preserved including render method context
+      expect(result["@context"]).toBeDefined();
+      expect(Array.isArray(result["@context"])).toBe(true);
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/v2"
+      );
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/examples/v2"
+      );
+      expect(result["@context"]).toContain(
+        "https://w3id.org/security/suites/ed25519-2020/v1"
+      );
+
+      // Assert - Other credential properties are preserved
+      expect(result.id).toBe(credentialCopy.id);
+      expect(result.type).toEqual(credentialCopy.type);
+      expect(result.name).toBe(credentialCopy.name);
+      expect(result.description).toBe(credentialCopy.description);
+      expect(result.validFrom).toBe(credentialCopy.validFrom);
+      expect(result.credentialSubject).toEqual(
+        credentialCopy.credentialSubject
+      );
+
+      // Assert - Issuer structure is preserved (with updated id)
+      expect(result.issuer).toBeDefined();
+      expect(typeof result.issuer).toBe("object");
+      expect((result.issuer as any).id).toBe("did:example:issuer");
+      expect((result.issuer as any).name).toBe("Example Issuer");
+    });
+
+    it("should sign a V2 credential with renderMethod using ES256 and preserve all properties", async () => {
+      // Arrange - Clear database for this test
+      const repository = dataSource.getRepository(EncryptedKey);
+      await repository.clear();
+      
+      const verificationMethod = "did:example:es256issuer#es256-render-key";
+
+      // Generate an ES256 key pair
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Create a fresh copy of the credential for this test
+      const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
+
+      // Act
+      const result: any = await service.signVC(
+        credentialCopy,
+        verificationMethod,
+        mockSecrets
+      );
+
+      console.log("result", JSON.stringify(result, null, 2));
+
+      // Assert - Proof exists and is valid
+      expect(result).toBeDefined();
+      expect(result.proof).toBeDefined();
+
+      const proof = Array.isArray(result.proof)
+        ? result.proof[0]
+        : result.proof;
+      expect(proof).toBeDefined();
+      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.verificationMethod).toBeDefined();
+      expect(proof?.proofPurpose).toBe("assertionMethod");
+      expect(proof?.created).toBeDefined();
+      expect(proof?.proofValue).toBeDefined();
+      expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Assert - RenderMethod is preserved
+      expect(result.renderMethod).toBeDefined();
+      expect(Array.isArray(result.renderMethod)).toBe(true);
+      expect(result.renderMethod).toHaveLength(1);
+      
+      const renderMethodsES256 = Array.isArray(result.renderMethod)
+        ? result.renderMethod
+        : [result.renderMethod!];
+      expect(renderMethodsES256[0].id).toBe(
+        "https://example.com/templates/template.svg"
+      );
+      expect(renderMethodsES256[0].type).toBe("SvgRenderingTemplate2023");
+      expect(renderMethodsES256[0].name).toBe("Web Display");
+
+      // Assert - All contexts are preserved including render method context
+      expect(result["@context"]).toBeDefined();
+      expect(Array.isArray(result["@context"])).toBe(true);
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/v2"
+      );
+      expect(result["@context"]).toContain(
+        "https://www.w3.org/ns/credentials/examples/v2"
+      );
+      // Verify that the jws-2020 context is present for ES256 signatures
+      expect(result["@context"]).toContain(
+        "https://w3id.org/security/suites/jws-2020/v1"
+      );
+
+      // Assert - Other credential properties are preserved
+      expect(result.id).toBe(credentialCopy.id);
+      expect(result.type).toEqual(credentialCopy.type);
+      expect(result.name).toBe(credentialCopy.name);
+      expect(result.description).toBe(credentialCopy.description);
+      expect(result.validFrom).toBe(credentialCopy.validFrom);
+      expect(result.credentialSubject).toEqual(
+        credentialCopy.credentialSubject
+      );
+
+      // Assert - Issuer structure is preserved (with updated id)
+      expect(result.issuer).toBeDefined();
+      expect(typeof result.issuer).toBe("object");
+      expect((result.issuer as any).id).toBe("did:example:es256issuer");
+      expect((result.issuer as any).name).toBe("Example Issuer");
+    });
+
+    it("should sign a credential with multiple renderMethod entries", async () => {
+      // Arrange - Clear database for this test
+      const repository = dataSource.getRepository(EncryptedKey);
+      await repository.clear();
+      
+      const verificationMethod = "did:web:example.com#multi-render-key";
+
+      const credentialWithMultipleRenders: any = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2"
+        ],
+        "id": "https://example.com/credentials/456",
+        "type": ["VerifiableCredential", "ExampleCredential"],
+        "issuer": "did:web:example.com",
+        "validFrom": "2024-01-01T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:example:subject",
+          "degree": {
+            "type": "MasterDegree",
+            "name": "Master of Science"
+          }
+        },
+        "renderMethod": [
+          {
+            "id": "https://example.com/templates/mobile.svg",
+            "type": "SvgRenderingTemplate2023",
+            "name": "Mobile Display"
+          },
+          {
+            "id": "https://example.com/templates/desktop.svg",
+            "type": "SvgRenderingTemplate2023",
+            "name": "Desktop Display"
+          }
+        ]
+      };
+
+      // Generate an Ed25519 key pair
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.VERIFICATION_KEY_2020,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result: any = await service.signVC(
+        credentialWithMultipleRenders,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert - Proof exists
+      expect(result).toBeDefined();
+      expect(result.proof).toBeDefined();
+
+      // Assert - All renderMethod entries are preserved
+      expect(result.renderMethod).toBeDefined();
+      expect(Array.isArray(result.renderMethod)).toBe(true);
+      expect(result.renderMethod).toHaveLength(2);
+
+      const multipleRenderMethods = Array.isArray(result.renderMethod)
+        ? result.renderMethod
+        : [result.renderMethod!];
+
+      expect(multipleRenderMethods[0].id).toBe(
+        "https://example.com/templates/mobile.svg"
+      );
+      expect(multipleRenderMethods[0].type).toBe("SvgRenderingTemplate2023");
+      expect(multipleRenderMethods[0].name).toBe("Mobile Display");
+
+      expect(multipleRenderMethods[1].id).toBe(
+        "https://example.com/templates/desktop.svg"
+      );
+      expect(multipleRenderMethods[1].type).toBe("SvgRenderingTemplate2023");
+      expect(multipleRenderMethods[1].name).toBe("Desktop Display");
+    });
+
+    it("should sign a credential with renderMethod and then include it in a presentation", async () => {
+      // Arrange - Clear database for this test
+      const repository = dataSource.getRepository(EncryptedKey);
+      await repository.clear();
+      
+      const credentialVerificationMethod = "did:example:issuer#cred-key";
+      const presentationVerificationMethod = "did:example:holder#pres-key";
+
+      // Generate keys
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.VERIFICATION_KEY_2020,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.VERIFICATION_KEY_2020,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Create a fresh copy of the credential for this test
+      const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
+
+      // Act - Sign the rendered credential
+      const signedCredential = await service.signVC(
+        credentialCopy,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      // Create and sign a presentation containing the rendered credential
+      const presentation: any = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2"
+        ],
+        "id": "urn:uuid:rendered-credential-presentation",
+        "type": ["VerifiablePresentation"],
+        "verifiableCredential": [signedCredential]
+      };
+
+      const signedPresentation: any = await service.signVP(
+        presentation,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Assert - Presentation is signed
+      expect(signedPresentation).toBeDefined();
+      expect(signedPresentation.proof).toBeDefined();
+
+      const presentationProof = Array.isArray(signedPresentation.proof)
+        ? signedPresentation.proof[0]
+        : signedPresentation.proof;
+      expect(presentationProof).toBeDefined();
+      expect(presentationProof?.type).toBe("Ed25519Signature2020");
+      expect(presentationProof?.proofPurpose).toBe("authentication");
+
+      // Assert - Embedded credential still has renderMethod
+      expect(signedPresentation.verifiableCredential).toBeDefined();
+      expect(Array.isArray(signedPresentation.verifiableCredential)).toBe(true);
+      expect(signedPresentation.verifiableCredential).toHaveLength(1);
+
+      const verifiableCredentials = Array.isArray(signedPresentation.verifiableCredential)
+        ? signedPresentation.verifiableCredential
+        : [signedPresentation.verifiableCredential];
+      const embeddedCredential = verifiableCredentials[0];
+      expect(embeddedCredential.renderMethod).toBeDefined();
+      expect(Array.isArray(embeddedCredential.renderMethod)).toBe(true);
+      expect(embeddedCredential.renderMethod).toHaveLength(1);
+      
+      const embeddedRenderMethods = Array.isArray(embeddedCredential.renderMethod)
+        ? embeddedCredential.renderMethod
+        : [embeddedCredential.renderMethod!];
+      expect(embeddedRenderMethods[0].id).toBe(
+        "https://example.com/templates/template.svg"
+      );
+
+      // Assert - Credential proof is preserved
+      expect(embeddedCredential.proof).toBeDefined();
     });
   });
 });

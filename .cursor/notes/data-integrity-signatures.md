@@ -15,11 +15,11 @@ The Key Service supports W3C Data Integrity proofs for Verifiable Credentials an
 
 ### ES256Signature2020 (EcdsaSecp256r1Signature2019)
 - **Algorithm**: ECDSA with P-256 curve (ES256)
-- **Implementation**: Custom suite extending `LinkedDataSignature` from `jsonld-signatures`
+- **Library**: `@eecc/es256-signature-2020` (npm package)
 - **Proof Type**: `EcdsaSecp256r1Signature2019`
 - **Key Type**: `JsonWebKey2020` with EC P-256
-- **Context**: `https://w3id.org/security/suites/jws-2020/v1`
-- **Location**: `apps/app/src/signing-services/ES256Signature2020.ts`
+- **Context**: `https://w3id.org/security/suites/jws-2020/v1` (automatically added by the library)
+- **Auto Context Injection**: The library automatically adds the jws-2020 context to signed credentials and presentations
 
 ## Implementation Details
 
@@ -123,7 +123,8 @@ const signedVP = await dataIntegritySigningService.signVP(
 Tests are located in `data-integrity-signing.service.spec.ts`:
 - ES256 VC V1 and V2 signing tests
 - ES256 VP signing with challenge/domain
-- Tests verify proof structure, signature format, and credential integrity
+- Tests verify proof structure, signature format, credential integrity, and context inclusion
+- **Context Verification**: All ES256 tests verify that `https://w3id.org/security/suites/jws-2020/v1` is present in the signed result's `@context`
 
 **Note**: ES256 tests pass in isolation but may have test ordering issues when run together. This is a test infrastructure issue, not an implementation problem.
 
