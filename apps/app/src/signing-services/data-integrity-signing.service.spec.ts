@@ -202,6 +202,11 @@ describe("DataIntegritySigningService", () => {
     // Clean up database before each test
     const repository = dataSource.getRepository(EncryptedKey);
     await repository.clear();
+
+    // Reset credential objects by removing any proofs that may have been added
+    // The @digitalbazaar/vc issue() function mutates the credential object
+    delete (exampleCredentialV1 as any).proof;
+    delete (exampleCredentialV2 as any).proof;
   });
 
   it("should be defined", () => {
@@ -559,8 +564,9 @@ describe("DataIntegritySigningService", () => {
       expect(result.issuer).toBe("did:web:example.com");
     });
 
-    it("should throw error for non-Ed25519 key types", async () => {
-      const verificationMethod = "did:web:example.com#es256-key";
+    it("should sign a VC V1 verifiable credential with ES256 key pair", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#es256-test-key";
 
       // Generate an ES256 key pair
       await keyService.generateKeyPair(
@@ -570,12 +576,83 @@ describe("DataIntegritySigningService", () => {
         mockSecrets
       );
 
-      // Act & Assert
-      await expect(
-        service.signVC(exampleCredentialV1, verificationMethod, mockSecrets)
-      ).rejects.toThrow(
-        "Currently only Ed25519 is supported for data integrity proof"
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets
       );
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.proof).toBeDefined();
+
+      // Handle both single proof and proof array cases
+      const proof = Array.isArray(result.proof)
+        ? result.proof[0]
+        : result.proof;
+      expect(proof).toBeDefined();
+      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.verificationMethod).toBeDefined();
+      expect(proof?.proofPurpose).toBeDefined();
+      expect(proof?.created).toBeDefined();
+      expect(proof?.proofValue).toBeDefined();
+      expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Verify the credential content is preserved
+      expect(result.type).toEqual(exampleCredentialV1.type);
+      expect(result.credentialSubject).toEqual(
+        exampleCredentialV1.credentialSubject
+      );
+
+      // Verify issuer was updated to match the key pair controller
+      expect(result.issuer).toBe("did:web:example.com");
+    });
+
+    it("should sign a VC V2 verifiable credential with ES256 key pair", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#es256-v2-key";
+
+      // Generate an ES256 key pair
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.proof).toBeDefined();
+
+      // Handle both single proof and proof array cases
+      const proof = Array.isArray(result.proof)
+        ? result.proof[0]
+        : result.proof;
+      expect(proof).toBeDefined();
+      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.verificationMethod).toBeDefined();
+      expect(proof?.proofPurpose).toBeDefined();
+      expect(proof?.created).toBeDefined();
+      expect(proof?.proofValue).toBeDefined();
+      expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Verify the credential content is preserved
+      expect(result.type).toEqual(exampleCredentialV2.type);
+      expect(result.validFrom).toEqual(exampleCredentialV2.validFrom);
+      expect(result.credentialSubject).toEqual(
+        exampleCredentialV2.credentialSubject
+      );
+
+      // Verify issuer was updated to match the key pair controller
+      expect(result.issuer).toBe("did:web:example.com");
     });
 
     it("should throw error when key not found", async () => {
@@ -859,30 +936,70 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.proofValue).toBeDefined();
     });
 
-    it("should throw error for non-Ed25519 key types when signing presentation", async () => {
-      const verificationMethod = "did:web:example.com#es256-key";
+    it("should sign a presentation with ES256 key pair", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
 
-      // Generate an ES256 key pair
+      const credentialVerificationMethod = "did:web:issuer.com#credKey";
+      const presentationVerificationMethod = "did:web:holder.com#es256PresKey";
+
+      // Generate Ed25519 key for credential
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.VERIFICATION_KEY_2020,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      // Generate ES256 key for presentation
       await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.JWK,
-        verificationMethod,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Sign credential
+      const signedCredential = await service.signVC(
+        exampleCredentialV2,
+        credentialVerificationMethod,
         mockSecrets
       );
 
       const presentation: any = {
-        "@context": ["https://www.w3.org/ns/credentials/v2"],
-        id: "urn:uuid:test",
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:es256-test-presentation",
         type: ["VerifiablePresentation"],
-        verifiableCredential: [],
+        verifiableCredential: [signedCredential],
       };
 
-      // Act & Assert
-      await expect(
-        service.signVP(presentation, verificationMethod, mockSecrets)
-      ).rejects.toThrow(
-        "Currently only Ed25519 is supported for data integrity proof"
+      // Sign the presentation with ES256 key
+      const signedPresentation = await service.signVP(
+        presentation,
+        presentationVerificationMethod,
+        mockSecrets
       );
+
+      expect(signedPresentation).toBeDefined();
+      expect(signedPresentation.proof).toBeDefined();
+
+      // Handle both single proof and proof array cases
+      const proof = Array.isArray(signedPresentation.proof)
+        ? signedPresentation.proof[0]
+        : signedPresentation.proof;
+      expect(proof).toBeDefined();
+      expect(proof?.type).toBe("EcdsaSecp256r1Signature2019");
+      expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
+      expect(proof?.proofPurpose).toBe("authentication");
+      expect(proof?.created).toBeDefined();
+      expect(proof?.proofValue).toBeDefined();
+      expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Verify holder was automatically set
+      expect(signedPresentation.holder).toBe("did:web:holder.com");
     });
 
     it("should automatically set holder if not provided", async () => {

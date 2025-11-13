@@ -10,6 +10,8 @@ import {
 // @ts-ignore
 import { Ed25519Signature2020 } from "@digitalbazaar/ed25519-signature-2020";
 // @ts-ignore
+import { ES256Signature2020 } from "@eecc/es256-signature-2020";
+// @ts-ignore
 import { issue, signPresentation } from "@digitalbazaar/vc";
 
 import { logDebug, logError } from "../utils/log/logger";
@@ -32,7 +34,6 @@ export class DataIntegritySigningService {
    * @param credential - The verifiable credential to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
-   * @param keyType - Key type (currently only Ed25519_2020 supported)
    * @returns Signed verifiable credential with proof
    */
   async signVC(
@@ -46,15 +47,29 @@ export class DataIntegritySigningService {
       secrets
     );
 
-    if (keyPair.signatureType !== SignatureType.ED25519_2020) {
+    let suite;
+    if (keyPair.signatureType === SignatureType.ED25519_2020) {
+      suite = new Ed25519Signature2020({
+        key: keyPair,
+      });
+    } else if (keyPair.signatureType === SignatureType.ES256) {
+
+      const key = {
+        id: keyPair.id,
+        type: 'JsonWebKey2020',
+        controller: keyPair.controller,
+        privateKey: keyPair.privateKey,
+      }
+
+      suite = new ES256Signature2020({
+        key
+      });
+      
+    } else {
       throw new UnsupportedException(
-        "Currently only Ed25519 is supported for data integrity proof"
+        `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );
     }
-    
-    const suite = new Ed25519Signature2020({
-      key: keyPair,
-    });
 
     if (!credential.issuer || typeof credential.issuer === "string") {
       credential.issuer = keyPair.id?.split("#")[0] as Issuer;
@@ -81,7 +96,8 @@ export class DataIntegritySigningService {
    * @param presentation - The verifiable presentation to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
-   * @param keyType - Key type (currently only Ed25519_2020 supported)
+   * @param challenge - Challenge string for the proof
+   * @param domain - Optional domain for the proof
    * @returns Signed verifiable presentation with proof
    */
   async signVP(
@@ -96,14 +112,30 @@ export class DataIntegritySigningService {
       verificationMethod,
       secrets
     );
-    if (keyPair.signatureType !== SignatureType.ED25519_2020) {
+    
+    let suite;
+    if (keyPair.signatureType === SignatureType.ED25519_2020) {
+      suite = new Ed25519Signature2020({
+        key: keyPair,
+      });
+    } else if (keyPair.signatureType === SignatureType.ES256) {
+      
+      const key = {
+        id: keyPair.id,
+        type: 'JsonWebKey2020',
+        controller: keyPair.controller,
+        privateKey: keyPair.privateKey,
+      }
+
+      suite = new ES256Signature2020({
+        key
+      });
+      
+    } else {
       throw new UnsupportedException(
-        "Currently only Ed25519 is supported for data integrity proof"
+        `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );
     }
-    const suite = new Ed25519Signature2020({
-      key: keyPair,
-    });
 
     if (!presentation.holder) {
       presentation.holder = keyPair.id?.split("#")[0] as string;
