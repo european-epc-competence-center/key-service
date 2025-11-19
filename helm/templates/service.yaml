@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "key-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "key-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.keyService.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.keyService.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "key-service.selectorLabels" . | nindent 4 }}
+

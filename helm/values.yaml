@@ -1,0 +1,124 @@
+# Default values for key-service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Key Service Configuration
+keyService:
+  # Docker image configuration
+  image: ghcr.io/european-epc-competence-center/key-service
+  tag: latest
+  imagePullPolicy: Always
+  
+  # Application port
+  port: 3000
+  
+  # Node environment (production, development)
+  nodeEnv: production
+  
+  # Request encryption configuration
+  requestEncryption:
+    enabled: false
+    # Set this via --set or via secret if enabled
+    # sharedSecret: "your-secret-here"
+  
+  # PBKDF2 iterations for key derivation (100000-300000)
+  # Will be auto-generated if not provided
+  pbkdf2Iterations: ""
+  
+  # Number of replicas
+  replicas: 1
+  
+  # Resource limits and requests
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: 125m
+    limits:
+      memory: "512Mi"
+      cpu: 250m
+  
+  # Health check configuration
+  healthCheck:
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 5
+    readiness:
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 5
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  # Signing key configuration
+  # ⚠️ WARNING: Auto-generated signing key is ONLY for dev/test!
+  # For PRODUCTION: Use HashiCorp Vault to mount the signing key
+  # The Kubernetes secret approach below is a workaround when Vault is not available
+  # See README.md "Production Secret Management with Vault" section
+  signingKey:
+    # Set to true to use an existing secret (dev/test only - use Vault for production)
+    existingSecret: false
+    # Name of existing secret (if existingSecret is true)
+    secretName: key-service-signing-key
+    # Key name within the secret
+    secretKey: key
+
+# PostgreSQL Configuration
+postgresql:
+  # Enable/disable PostgreSQL deployment
+  enabled: true
+  
+  # Use Bitnami legacy images for compatibility
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+    tag: 15.9.0-debian-12-r0
+  
+  # Global security settings
+  global:
+    security:
+      allowInsecureImages: true
+  
+  # Architecture (standalone or replication)
+  architecture: standalone
+  
+  # Authentication configuration
+  auth:
+    # Database name
+    database: key_service
+    # Username
+    username: postgres
+    # Password will be auto-generated if not set
+    postgresPassword: ""
+    # Use existing secret for password
+    existingSecret: ""
+  
+  # Primary node configuration
+  primary:
+    # Persistence configuration
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: 125m
+      limits:
+        memory: "512Mi"
+        cpu: 250m
+    
+    # Extended PostgreSQL configuration for debugging
+    extendedConfiguration: |
+      log_statement = 'all'
+      log_duration = on
+      log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+
+

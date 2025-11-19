@@ -111,7 +111,7 @@ All signing and generation requests use:
 - [data-integrity-signatures.md](./data-integrity-signatures.md) - Data Integrity proof implementation (Ed25519, ES256)
 - [input-validation-implementation.md](./input-validation-implementation.md) - Input validation security implementation (2025-10-07)
 - [development.md](./development.md) - Development workflows and patterns
-- [deployment.md](./deployment.md) - Docker and deployment configuration
+- [deployment.md](./deployment.md) - Helm, Docker and deployment configuration
 - [testing.md](./testing.md) - Testing strategies and patterns
 
 ## Quick Start Commands

@@ -1,5 +1,120 @@
 # Deployment Configuration
 
+## Helm Deployment (Kubernetes)
+
+### Overview
+
+The Key Service includes a production-ready Helm chart for Kubernetes deployment.
+
+**Location**: `helm/`
+
+### Key Features
+- **PostgreSQL Integration**: Automatic PostgreSQL deployment via Bitnami chart dependency
+- **Auto-generated Secrets**: Signing keys and configuration secrets created on first install
+- **Health Probes**: Liveness and readiness probes configured
+- **ClusterIP Service**: Internal cluster access only
+- **Request Encryption**: Configurable request encryption with shared secrets
+- **Simple & Focused**: No ingress, autoscaling, or monitoring - use as a building block
+
+### Quick Start
+
+```bash
+# Add Bitnami repository
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Update dependencies (pulls PostgreSQL chart)
+cd helm
+helm dependency update
+
+# Install with defaults
+helm install key-service ./ \
+  --create-namespace \
+  --namespace key-service \
+  --set keyService.tag=v1.7.0
+```
+
+### Configuration Options
+
+Key values in `helm/values.yaml`:
+- `keyService.image` - Docker image (default: `ghcr.io/european-epc-competence-center/key-service`)
+- `keyService.tag` - Image tag (default: `latest`)
+- `keyService.replicas` - Number of replicas (default: `1`)
+- `keyService.requestEncryption.enabled` - Enable request encryption (default: `false`)
+- `keyService.resources` - CPU/memory limits
+- `postgresql.enabled` - Deploy PostgreSQL (default: `true`)
+
+### Production Deployment
+
+```bash
+# Create signing key secret BEFORE deployment
+openssl rand -base64 64 > production-signing-key
+kubectl create secret generic key-service-signing-key \
+  --from-file=key=production-signing-key \
+  --namespace production
+kubectl annotate secret key-service-signing-key \
+  helm.sh/resource-policy=keep --namespace production
+
+# Deploy with production settings
+helm install key-service ./ \
+  --namespace production \
+  --create-namespace \
+  --set keyService.tag=v1.7.0 \
+  --set keyService.replicas=2 \
+  --set keyService.signingKey.existingSecret=true \
+  --set keyService.requestEncryption.enabled=true \
+  --set keyService.requestEncryption.sharedSecret="secure-secret"
+```
+
+### Secrets Management
+
+Auto-generated secrets (retained across upgrades):
+1. **key-service-signing-key**: Cryptographic signing key (64-char random)
+2. **key-service-secret**: Contains PBKDF2 iterations and request encryption secret
+3. **postgresql**: Database password (Bitnami chart)
+
+**⚠️ IMPORTANT - Production Secret Management**:
+
+The auto-generated signing key and mounting it via Kubernetes secrets is **ONLY A WORKAROUND** for development/testing environments where HashiCorp Vault is not available.
+
+**In production, the signing key MUST be mounted from Vault**, not stored as a Kubernetes secret. This provides:
+- Centralized secret management with access control
+- Audit logging of secret access
+- Secret rotation capabilities
+- HSM-backed encryption at rest
+- Compliance with security standards
+
+Use Vault Agent Injector or Vault CSI driver to mount the signing key from Vault at `/run/secrets/signing-key`.
+
+### Accessing the Service
+
+Within cluster:
+```
+http://key-service-key-service.{namespace}.svc.cluster.local:3000
+```
+
+Port forwarding:
+```bash
+kubectl port-forward svc/key-service-key-service 3000:3000 -n key-service
+```
+
+### External PostgreSQL
+
+To use external PostgreSQL instead of bundled chart:
+
+```bash
+helm install key-service ./ \
+  --namespace key-service \
+  --create-namespace \
+  --set postgresql.enabled=false \
+  --set postgresql.host=external-postgres.example.com \
+  --set postgresql.auth.existingSecret=external-postgresql
+```
+
+### Documentation
+
+Full Helm deployment documentation: `helm/README.md`
+
 ## Docker Support
 
 ### Production Dockerfile

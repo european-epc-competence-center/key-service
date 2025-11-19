@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "key-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "key-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.keyService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "key-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "key-service.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: key-service
+          image: {{ .Values.keyService.image }}:{{ .Values.keyService.tag }}
+          imagePullPolicy: {{ .Values.keyService.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.keyService.port }}
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.keyService.nodeEnv | quote }}
+            - name: PORT
+              value: {{ .Values.keyService.port | quote }}
+            - name: SIGNING_KEY_PATH
+              value: /run/secrets/signing-key
+            - name: DB_HOST
+              value: {{ include "key-service.postgresql.host" . }}
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: {{ .Values.postgresql.auth.database }}
+            - name: DB_USERNAME
+              value: {{ .Values.postgresql.auth.username }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "key-service.postgresql.secretName" . }}
+                  key: postgres-password
+            - name: DB_SSL
+              value: "false"
+            - name: PBKDF2_ITERATIONS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "key-service.fullname" . }}-secret
+                  key: pbkdf2-iterations
+            {{- if .Values.keyService.requestEncryption.enabled }}
+            - name: REQUEST_ENCRYPTION_ENABLED
+              value: "true"
+            - name: REQUEST_ENCRYPTION_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "key-service.fullname" . }}-secret
+                  key: request-encryption-shared-secret
+            {{- else }}
+            - name: REQUEST_ENCRYPTION_ENABLED
+              value: "false"
+            {{- end }}
+          volumeMounts:
+            - name: signing-key
+              mountPath: /run/secrets/signing-key
+              subPath: key
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.keyService.healthCheck.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.keyService.healthCheck.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.keyService.healthCheck.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.keyService.healthCheck.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            initialDelaySeconds: {{ .Values.keyService.healthCheck.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.keyService.healthCheck.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.keyService.healthCheck.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.keyService.healthCheck.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.keyService.resources | nindent 12 }}
+      volumes:
+        - name: signing-key
+          secret:
+            secretName: {{ .Values.keyService.signingKey.secretName }}
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:17-alpine
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "key-service.postgresql.secretName" . }}
+                  key: postgres-password
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "key-service.postgresql.host" . }} -p 5432 -U {{ .Values.postgresql.auth.username }}; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+      {{- end }}
+
