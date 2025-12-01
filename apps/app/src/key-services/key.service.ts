@@ -198,29 +198,39 @@ export class KeyService {
     identifier: string,
     secrets: string[]
   ): Promise<VerificationMethod> {
-    // Generate RSA key pair using Node.js crypto - generate as key objects directly
-    const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
+    // Use JOSE library for PS256 (RSASSA-PSS) key generation
+    const keyPair = await jose.generateKeyPair("PS256", { 
       modulusLength: 4096,
+      extractable: true 
     });
 
-    // Export public key to get modulus and exponent
-    const publicKeyJwk = publicKey.export({
-      format: "jwk",
-    }) as RSAJsonWebKey;
-
-    // Export private key to get all RSA parameters
-    const privateKeyJwk = privateKey.export({
-      format: "jwk",
-    }) as RSAPrivateJsonWebKey;
+    // Export keys to JWK format
+    const privateKeyJwkRaw = await jose.exportJWK(keyPair.privateKey);
+    const publicKeyJwkRaw = await jose.exportJWK(keyPair.publicKey);
 
     const kid =
-      identifier.split("#")[1] || crypto.randomBytes(16).toString("base64url");
+      identifier.split("#")[1] ||
+      crypto.randomBytes(16).toString("base64url");
 
-    // Add required JWK parameters
-    publicKeyJwk.kid = kid;
-    publicKeyJwk.kty = "RSA";
-    privateKeyJwk.kid = kid;
-    privateKeyJwk.kty = "RSA";
+    const publicKeyJwk: RSAJsonWebKey = {
+      kty: "RSA",
+      n: publicKeyJwkRaw.n!,
+      e: publicKeyJwkRaw.e!,
+      kid,
+    };
+
+    const privateKeyJwk: RSAPrivateJsonWebKey = {
+      kty: "RSA",
+      n: privateKeyJwkRaw.n!,
+      e: privateKeyJwkRaw.e!,
+      d: privateKeyJwkRaw.d!,
+      p: privateKeyJwkRaw.p!,
+      q: privateKeyJwkRaw.q!,
+      dp: privateKeyJwkRaw.dp!,
+      dq: privateKeyJwkRaw.dq!,
+      qi: privateKeyJwkRaw.qi!,
+      kid,
+    };
 
     const keyId =
       identifier.split("#").length > 1 ? identifier : `${identifier}#${kid}`;
