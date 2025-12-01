@@ -145,7 +145,20 @@ export class DataIntegritySigningService {
         key
       });
       
-    } else {
+    } else if (keyPair.signatureType === SignatureType.PS256) {
+      
+      const key = {
+        id: keyPair.id,
+        type: 'JsonWebKey2020',
+        controller: keyPair.controller,
+        privateKey: keyPair.privateKey,
+      }
+
+      suite = new PS256Signature2020({
+        key
+      });
+    } 
+    else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );
