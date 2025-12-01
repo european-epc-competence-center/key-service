@@ -21,6 +21,7 @@ import {
   SigningException,
   UnsupportedException,
 } from "../types/custom-exceptions";
+// @ts-ignore
 import { PS256Signature2020 } from "@eecc/ps256-signature-2020";
 
 @Injectable()
