@@ -42,7 +42,7 @@
     "@digitalbazaar/ed25519-signature-2020": "^5.4.0",
     "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
     "@digitalbazaar/vc": "^7.0.0",
-    "@eecc/es256-signature-2020": "^1.1.2",
+    "@eecc/es256-signature-2020": "^1.2.1",
     "@eecc/ps256-signature-2020": "^1.0.0",
     "@nestjs/common": "^11.1.5",
     "@nestjs/core": "^11.1.5",
