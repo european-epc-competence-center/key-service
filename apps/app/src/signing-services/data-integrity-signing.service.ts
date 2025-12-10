@@ -133,8 +133,8 @@ export class DataIntegritySigningService {
     
     let suite;
     if (keyPair.signatureType === SignatureType.ED25519_2020) {
-      suite = new Ed25519Signature2020({
-        key: keyPair,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: eddsaRdfc2022CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
       

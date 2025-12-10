@@ -292,7 +292,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -348,7 +348,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -405,7 +405,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -463,7 +463,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -526,7 +526,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -584,7 +584,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -957,7 +957,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(verificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1044,7 +1044,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1116,7 +1116,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.challenge).toBe(challenge);
@@ -1422,7 +1422,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("Ed25519Signature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -1693,7 +1693,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(presentationProof).toBeDefined();
-      expect(presentationProof?.type).toBe("Ed25519Signature2020");
+      expect(presentationProof?.type).toBe("DataIntegrityProof");
       expect(presentationProof?.proofPurpose).toBe("authentication");
 
       // Assert - Embedded credential still has renderMethod
