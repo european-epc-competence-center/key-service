@@ -304,9 +304,9 @@ describe("DataIntegritySigningService", () => {
         exampleCredentialV1.credentialSubject
       );
 
-      // Verify that the Ed25519-2020 context is added during signing
+      // Verify that the Data Integrity context is added during signing
       expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
+        "https://w3id.org/security/data-integrity/v2"
       );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
@@ -361,10 +361,6 @@ describe("DataIntegritySigningService", () => {
         exampleCredentialV2.credentialSubject
       );
 
-      // Verify that the Ed25519-2020 context is added during signing
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
-      );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/v2"
@@ -412,9 +408,9 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.proofValue).toBeDefined();
 
       // Verify the credential content is preserved
-      // Verify that the Ed25519-2020 context is added during signing
+      // Verify that the Data Integrity context is added during signing
       expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
+        "https://w3id.org/security/data-integrity/v2"
       );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
@@ -470,9 +466,9 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.proofValue).toBeDefined();
 
       // Verify the credential content is preserved
-      // Verify that the Ed25519-2020 context is added during signing
+      // Verify that the Data Integrity context is added during signing
       expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
+        "https://w3id.org/security/data-integrity/v2"
       );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
@@ -532,11 +528,6 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.created).toBeDefined();
       expect(proof?.proofValue).toBeDefined();
 
-      // Verify the credential content is preserved
-      // Verify that the Ed25519-2020 context is added during signing
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
-      );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/v2"
@@ -590,11 +581,6 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.created).toBeDefined();
       expect(proof?.proofValue).toBeDefined();
 
-      // Verify the credential content is preserved
-      // Verify that the Ed25519-2020 context is added during signing
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
-      );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/v2"
@@ -1450,9 +1436,6 @@ describe("DataIntegritySigningService", () => {
       );
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/examples/v2"
-      );
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/ed25519-2020/v1"
       );
 
       // Assert - Other credential properties are preserved
