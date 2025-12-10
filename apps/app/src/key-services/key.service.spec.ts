@@ -11,7 +11,7 @@ import { KeyType } from "../types/key-format.enum";
 import * as fs from "fs";
 import * as crypto from "crypto";
 // @ts-ignore
-import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 
 // Mock fs module for this test file only
 jest.mock("fs");
@@ -57,7 +57,7 @@ describe("KeyService", () => {
 
   beforeAll(async () => {
     // Generate real Ed25519 keys for use in tests
-    testEd25519KeyPair = await Ed25519VerificationKey2020.generate({
+    testEd25519KeyPair = await Ed25519Multikey.generate({
       controller: "did:web:example.com",
       id: "did:web:example.com#test-key",
     });

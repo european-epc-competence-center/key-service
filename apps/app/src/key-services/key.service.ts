@@ -9,8 +9,6 @@ import {
 } from "../types/keypair.types";
 
 // @ts-ignore
-import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
-// @ts-ignore
 import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 import { VerificationMethod } from "../types/verification-method.types";
 import { KeyStorageService } from "./key-storage.service";
@@ -125,7 +123,7 @@ export class KeyService {
     keyFormat: KeyType,
     secrets: string[]
   ): Promise<VerificationMethod> {
-    const keyPair = await Ed25519VerificationKey2020.generate({
+    const keyPair = await Ed25519Multikey.generate({
       controller: identifier.split("#")[0],
       id: identifier,
     });
@@ -136,13 +134,13 @@ export class KeyService {
       keyPair.id,
       SignatureType.ED25519_2020,
       keyFormat,
-      keyPair.privateKeyMultibase,
+      keyPair.secretKeyMultibase,
       keyPair.publicKeyMultibase,
       secrets
     );
     return {
       id: keyPair.id,
-      type: keyPair.type,
+      type: 'Ed25519VerificationKey2020',
       controller: keyPair.controller,
       publicKeyMultibase: keyPair.publicKeyMultibase,
     };
