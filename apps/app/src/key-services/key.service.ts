@@ -10,6 +10,8 @@ import {
 
 // @ts-ignore
 import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
+// @ts-ignore
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 import { VerificationMethod } from "../types/verification-method.types";
 import { KeyStorageService } from "./key-storage.service";
 import { KeyType } from "../types";
@@ -81,11 +83,12 @@ export class KeyService {
       storedKey.signatureType === SignatureType.ED25519_2020 &&
       storedKey.keyType === KeyType.VERIFICATION_KEY_2020
     ) {
-      const ed25519Key = new Ed25519VerificationKey2020({
+      const ed25519Key = await Ed25519Multikey.from({
+        type: 'Multikey',
         id: storedKey.id,
         controller: storedKey.controller,
         publicKeyMultibase: storedKey.publicKey,
-        privateKeyMultibase: storedKey.privateKey,
+        secretKeyMultibase: storedKey.privateKey,
       });
 
       return {
@@ -94,7 +97,9 @@ export class KeyService {
         keyType: storedKey.keyType,
         signatureType: storedKey.signatureType,
         id: storedKey.id,
+        controller: storedKey.controller,
         signer: () => ed25519Key.signer(),
+        verifier: () => ed25519Key.verifier(),
       };
     }
     if (
