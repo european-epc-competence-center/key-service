@@ -3,7 +3,6 @@ import { KeyService } from "../key-services/key.service";
 import { DocumentLoaderService } from "../utils/document-loader.service";
 import {
   VerifiableCredential,
-  DataIntegrityProof,
   Issuer,
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
@@ -11,6 +10,10 @@ import {
 import { Ed25519Signature2020 } from "@digitalbazaar/ed25519-signature-2020";
 // @ts-ignore
 import { ES256Signature2020 } from "@eecc/es256-signature-2020";
+// @ts-ignore
+import { DataIntegrityProof } from "@digitalbazaar/data-integrity";
+// @ts-ignore
+import {cryptosuite as eddsaRdfc2022CryptoSuite} from "@digitalbazaar/eddsa-rdfc-2022-cryptosuite";
 // @ts-ignore
 import { issue, signPresentation } from "@digitalbazaar/vc";
 
@@ -51,8 +54,8 @@ export class DataIntegritySigningService {
 
     let suite;
     if (keyPair.signatureType === SignatureType.ED25519_2020) {
-      suite = new Ed25519Signature2020({
-        key: keyPair,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: eddsaRdfc2022CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
 
