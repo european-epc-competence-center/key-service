@@ -641,9 +641,9 @@ describe("DataIntegritySigningService", () => {
         exampleCredentialV1.credentialSubject
       );
 
-      // Verify that the jws-2020 context is present for ES256 signatures
+      // Verify that the Data Integrity context is present for ES256 signatures
       expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/jws-2020/v1"
+        "https://w3id.org/security/data-integrity/v2"
       );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
@@ -699,10 +699,6 @@ describe("DataIntegritySigningService", () => {
         exampleCredentialV2.credentialSubject
       );
 
-      // Verify that the jws-2020 context is present for ES256 signatures
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/jws-2020/v1"
-      );
       // Verify original contexts are preserved
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/v2"
@@ -743,7 +739,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -800,7 +796,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1173,10 +1169,6 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.proofValue).toBeDefined();
       expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
 
-      // Verify that the jws-2020 context is present for ES256 signatures
-      expect(signedPresentation["@context"]).toContain(
-        "https://w3id.org/security/suites/jws-2020/v1"
-      );
       // Verify original contexts are preserved
       expect(signedPresentation["@context"]).toContain(
         "https://www.w3.org/ns/credentials/v2"
@@ -1284,7 +1276,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1366,7 +1358,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.challenge).toBe(challenge);
@@ -1517,10 +1509,6 @@ describe("DataIntegritySigningService", () => {
       );
       expect(result["@context"]).toContain(
         "https://www.w3.org/ns/credentials/examples/v2"
-      );
-      // Verify that the jws-2020 context is present for ES256 signatures
-      expect(result["@context"]).toContain(
-        "https://w3id.org/security/suites/jws-2020/v1"
       );
 
       // Assert - Other credential properties are preserved
@@ -1736,7 +1724,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -1853,7 +1841,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.type).toBe("JsonWebSignature2020");
 
       // Assert - All renderMethod entries are preserved
       expect(result.renderMethod).toBeDefined();
