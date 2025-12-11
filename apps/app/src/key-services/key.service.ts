@@ -128,7 +128,7 @@ export class KeyService {
       id: identifier,
     });
     if (!keyPair.id.split("#")[1]) {
-      keyPair.id = `${identifier}#${keyPair.fingerprint()}`;
+      keyPair.id = `${identifier}#${keyPair.publicKeyMultibase}`;
     }
     await this.keyStorageService.storeKey(
       keyPair.id,
