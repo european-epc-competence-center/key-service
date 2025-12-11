@@ -37,37 +37,24 @@ export class KeyService {
       throw new Error("At least one secret must be provided");
     }
     if (keyType === SignatureType.ED25519_2020) {
-      const ed25519KeyPair = await this.generateEd25519Multikey(
+      return await this.generateEd25519Multikey(
         identifier,
         keyFormat,
         secrets
       );
-      return {
-        id: ed25519KeyPair.id,
-        type: ed25519KeyPair.type,
-        controller: ed25519KeyPair.controller,
-        publicKeyMultibase: ed25519KeyPair.publicKeyMultibase,
-      };
     }
     if (keyType === SignatureType.ES256) {
-      const es256KeyPair = await this.generateEcdsaMultikey(
+      return await this.generateEcdsaMultikey(
         identifier,
         keyFormat,
         secrets
       );
-      return {
-        id: es256KeyPair.id,
-        type: es256KeyPair.type,
-        controller: es256KeyPair.controller,
-        publicKeyMultibase: es256KeyPair.publicKeyMultibase,
-      };
     }
     if (keyType === SignatureType.PS256) {
-      const ps256KeyPair = await this.generatePS256JsonWebKey(
+      return await this.generatePS256JsonWebKey(
         identifier,
         secrets
       );
-      return ps256KeyPair;
     }
     throw new UnsupportedException(`Unsupported key type: ${keyType}`);
   }
