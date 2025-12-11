@@ -162,16 +162,16 @@ describe("KeyService", () => {
     it("should generate and store ES256 key pair", async () => {
       const result = await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
 
       expect(result).toBeDefined();
       expect(result.id).toBe(mockIdentifier);
-      expect(result.type).toBe(KeyType.JWK);
+      expect(result.type).toBe('Multikey');
       expect(result.controller).toBe("did:web:example.com");
-      expect(result.publicKeyJwk).toBeDefined();
+      expect(result.publicKeyMultibase).toBeDefined();
 
       // Verify it was stored in the database
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
@@ -183,7 +183,7 @@ describe("KeyService", () => {
       });
       expect(storedKey).toBeDefined();
       expect(storedKey!.identifier).toBe(secretService.hash(mockIdentifier));
-      expect(storedKey!.keyType).toBe(KeyType.JWK);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
       expect(storedKey!.signatureType).toBe(SignatureType.ES256);
     });
 
@@ -316,14 +316,14 @@ describe("KeyService", () => {
 
       const result1 = await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         identifier1,
         mockSecrets
       );
 
       const result2 = await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         identifier2,
         mockSecrets
       );
@@ -427,16 +427,16 @@ describe("KeyService", () => {
 
       const result = await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         identifierWithoutFragment,
         mockSecrets
       );
 
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.publicKeyJwk).toBeDefined();
+      expect(result.publicKeyMultibase).toBeDefined();
 
-      // For ES256, when identifier is missing fragment, it should append one with the kid
+      // For ES256, when identifier is missing fragment, it should append one with the publicKeyMultibase
       expect(result.id).toBeDefined();
       expect(result.id).toContain("#");
       expect(result.id).toMatch(/^did:web:es256-auto-fragment\.com#.+/);
@@ -449,14 +449,11 @@ describe("KeyService", () => {
       // Controller should be the base identifier without fragment
       expect(result.controller).toBe(identifierWithoutFragment);
 
-      // The JWK should have a kid field that represents the public key
-      expect(result.publicKeyJwk).toBeDefined();
-      if (result.publicKeyJwk && result.publicKeyJwk.kid) {
-        expect(result.publicKeyJwk.kid).toBeDefined();
-        expect(result.publicKeyJwk.kid.length).toBeGreaterThan(0);
-
-        // The kid should be derived from the public key (base64url encoded)
-        expect(typeof result.publicKeyJwk.kid).toBe("string");
+      // The Multikey should have a publicKeyMultibase field
+      expect(result.publicKeyMultibase).toBeDefined();
+      expect(typeof result.publicKeyMultibase).toBe("string");
+      if (result.publicKeyMultibase) {
+        expect(result.publicKeyMultibase.length).toBeGreaterThan(0);
       }
 
       // Verify it was stored correctly in the database
@@ -465,7 +462,7 @@ describe("KeyService", () => {
         where: { identifier: secretService.hash(result.id) },
       });
       expect(storedKey).toBeDefined();
-      expect(storedKey!.keyType).toBe(KeyType.JWK);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
       expect(storedKey!.signatureType).toBe(SignatureType.ES256);
     });
 
@@ -571,7 +568,7 @@ describe("KeyService", () => {
       // Generate ES256 key
       await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -667,7 +664,7 @@ describe("KeyService", () => {
 
       await service.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         id2,
         mockSecrets
       );
@@ -729,7 +726,7 @@ describe("KeyService", () => {
       const key2 = await encryptedKeyRepository.findOne({
         where: {
           identifier: secretService.hash(mockIdentifier),
-          keyType: KeyType.JWK, // Different type
+          keyType: KeyType.MULTIKEY, // Different type
         },
       });
       expect(key2).toBeNull();
@@ -838,7 +835,7 @@ describe("KeyService", () => {
         // Generate ES256 key with similar identifier
         const result2 = await service.generateKeyPair(
           SignatureType.ES256,
-          KeyType.JWK,
+          KeyType.MULTIKEY,
           identifier2,
           mockSecrets
         );
@@ -988,7 +985,7 @@ describe("KeyService", () => {
         const anotherIdentifier = "did:web:post-retrieval.com#key2";
         const anotherKey = await service.generateKeyPair(
           SignatureType.ES256,
-          KeyType.JWK,
+          KeyType.MULTIKEY,
           anotherIdentifier,
           mockSecrets
         );

@@ -11,8 +11,6 @@ import {
   VerifiableCredential,
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
-// @ts-ignore
-import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 import * as fs from "fs";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
@@ -57,28 +55,21 @@ async function verifyJwtSignature(
   try {
     const keyPair = await keyService.getKeyPair(verificationMethod, secrets);
 
-    // Use jose library for direct JWT verification
     switch (keyPair.signatureType) {
       case SignatureType.ES256:
-        if (keyPair.keyType === KeyType.JWK) {
-          // For demonstration purposes, ES256 verification is simplified
-          // In a production environment, you would need to ensure proper key matching
-          // The JWT signature format verification demonstrates the concept
-          const publicKeyJwk = keyPair.publicKey as JsonWebKey;
-
-          // Basic validation: check that we have the required key components
-          const hasValidComponents =
-            publicKeyJwk.x && publicKeyJwk.y && publicKeyJwk.kty === "EC";
-          const hasValidJwtStructure = jwt.split(".").length === 3;
-
-          await jose.jwtVerify(
-            jwt,
-            await jose.importJWK({ ...publicKeyJwk, alg: "ES256" } as jose.JWK),
-            {
-              algorithms: ["ES256"],
-            }
-          );
-          return true;
+        if (keyPair.keyType === KeyType.MULTIKEY) {
+          const verifier = await keyPair.verifier!();
+          const [header, payload, signature] = jwt.split(".");
+          const signingInput = `${header}.${payload}`;
+          
+          // Convert base64url signature to Uint8Array
+          const signatureBytes = jose.base64url.decode(signature);
+          const dataBytes = new TextEncoder().encode(signingInput);
+          
+          return await verifier.verify({ 
+            data: dataBytes, 
+            signature: signatureBytes 
+          });
         }
         break;
 
@@ -104,25 +95,18 @@ async function verifyJwtSignature(
 
       case SignatureType.ED25519_2020:
         if (keyPair.keyType === KeyType.MULTIKEY) {
-          try {
-            // For Ed25519, continue using the existing verification method
-            // since jose might not support Ed25519 in the same way
-            const ed25519Key = await Ed25519Multikey.from({
-              type: 'Multikey',
-              publicKeyMultibase: keyPair.publicKey,
-            });
-            const verifier = await ed25519Key.verifier();
-            const [header, payload, signature] = jwt.split(".");
-            const signingInput = `${header}.${payload}`;
-            return await verifier.verify({ data: signingInput, signature });
-          } catch (error: any) {
-            // Ed25519 verification can be complex, for demonstration return basic format check
-            const hasValidJwtStructure = jwt.split(".").length === 3;
-            const hasValidPublicKey =
-              typeof keyPair.publicKey === "string" &&
-              keyPair.publicKey.length > 0;
-            return hasValidJwtStructure && hasValidPublicKey;
-          }
+          const verifier = await keyPair.verifier!();
+          const [header, payload, signature] = jwt.split(".");
+          const signingInput = `${header}.${payload}`;
+          
+          // Convert base64url signature to Uint8Array
+          const signatureBytes = jose.base64url.decode(signature);
+          const dataBytes = new TextEncoder().encode(signingInput);
+          
+          return await verifier.verify({ 
+            data: dataBytes, 
+            signature: signatureBytes 
+          });
         }
         break;
     }
@@ -361,7 +345,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -492,7 +476,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -967,7 +951,7 @@ describe("JwtSigningService", () => {
 
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod2,
         mockSecrets
       );
@@ -1107,7 +1091,7 @@ describe("JwtSigningService", () => {
 
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod2,
         mockSecrets
       );
@@ -1211,7 +1195,7 @@ describe("JwtSigningService", () => {
 
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );

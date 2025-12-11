@@ -607,7 +607,7 @@ describe("DataIntegritySigningService", () => {
       // Generate an ES256 key pair
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -628,7 +628,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -664,7 +664,7 @@ describe("DataIntegritySigningService", () => {
       // Generate an ES256 key pair
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -685,7 +685,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -743,7 +743,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -779,7 +779,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a PS256 key pair
       await keyService.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -800,7 +800,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1129,7 +1129,7 @@ describe("DataIntegritySigningService", () => {
       // Generate ES256 key for presentation
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );
@@ -1166,7 +1166,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1284,7 +1284,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1366,7 +1366,7 @@ describe("DataIntegritySigningService", () => {
         ? signedPresentation.proof[0]
         : signedPresentation.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.challenge).toBe(challenge);
@@ -1465,7 +1465,7 @@ describe("DataIntegritySigningService", () => {
       // Generate an ES256 key pair
       await keyService.generateKeyPair(
         SignatureType.ES256,
-        KeyType.JWK,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -1488,7 +1488,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -1736,7 +1736,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -1853,7 +1853,7 @@ describe("DataIntegritySigningService", () => {
         ? result.proof[0]
         : result.proof;
       expect(proof).toBeDefined();
-      expect(proof?.type).toBe("JsonWebSignature2020");
+      expect(proof?.type).toBe("DataIntegrityProof");
 
       // Assert - All renderMethod entries are preserved
       expect(result.renderMethod).toBeDefined();
