@@ -134,14 +134,14 @@ describe("KeyService", () => {
     it("should generate and store ED25519_2020 key pair", async () => {
       const result = await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
 
       expect(result).toBeDefined();
       expect(result.id).toBe(mockIdentifier);
-      expect(result.type).toBe(KeyType.VERIFICATION_KEY_2020);
+      expect(result.type).toBe(KeyType.MULTIKEY);
       expect(result.controller).toBe("did:web:example.com");
       expect(result.publicKeyMultibase).toBeDefined();
 
@@ -155,7 +155,7 @@ describe("KeyService", () => {
       });
       expect(storedKey).toBeDefined();
       expect(storedKey!.identifier).toBe(secretService.hash(mockIdentifier));
-      expect(storedKey!.keyType).toBe(KeyType.VERIFICATION_KEY_2020);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
       expect(storedKey!.signatureType).toBe(SignatureType.ED25519_2020);
     });
 
@@ -223,7 +223,7 @@ describe("KeyService", () => {
       // Generate first key
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -236,7 +236,7 @@ describe("KeyService", () => {
       await expect(
         service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           mockIdentifier,
           mockSecrets
         )
@@ -251,7 +251,7 @@ describe("KeyService", () => {
       await expect(
         service.generateKeyPair(
           "UnsupportedKeyType" as SignatureType,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           mockIdentifier,
           mockSecrets
         )
@@ -267,7 +267,7 @@ describe("KeyService", () => {
       await expect(
         service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           mockIdentifier,
           []
         )
@@ -286,14 +286,14 @@ describe("KeyService", () => {
 
       const result1 = await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         identifier1,
         mockSecrets
       );
 
       const result2 = await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         identifier2,
         mockSecrets
       );
@@ -384,7 +384,7 @@ describe("KeyService", () => {
 
       const result = await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         identifierWithoutFragment,
         mockSecrets
       );
@@ -412,7 +412,7 @@ describe("KeyService", () => {
       });
 
       expect(storedKey).toBeDefined();
-      expect(storedKey!.keyType).toBe(KeyType.VERIFICATION_KEY_2020);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
       expect(storedKey!.signatureType).toBe(SignatureType.ED25519_2020);
 
       // Should be able to retrieve the key using the original identifier
@@ -538,7 +538,7 @@ describe("KeyService", () => {
       // First generate and store a key
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -611,7 +611,7 @@ describe("KeyService", () => {
       // Generate a key first to have something in the database
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -631,7 +631,7 @@ describe("KeyService", () => {
       // Generate key
       const generated = await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -657,7 +657,7 @@ describe("KeyService", () => {
 
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         id1,
         mockSecrets
       );
@@ -677,7 +677,7 @@ describe("KeyService", () => {
 
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         id3,
         mockSecrets
       );
@@ -708,7 +708,7 @@ describe("KeyService", () => {
     it("should handle findOne with complex where clauses", async () => {
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -719,7 +719,7 @@ describe("KeyService", () => {
       const key1 = await encryptedKeyRepository.findOne({
         where: {
           identifier: secretService.hash(mockIdentifier),
-          keyType: KeyType.VERIFICATION_KEY_2020,
+          keyType: KeyType.MULTIKEY,
         },
       });
       expect(key1).toBeDefined();
@@ -744,7 +744,7 @@ describe("KeyService", () => {
         // Generate and store a key
         await service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           testIdentifier,
           mockSecrets
         );
@@ -776,7 +776,7 @@ describe("KeyService", () => {
         // Store with correct secrets
         await service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           testIdentifier,
           mockSecrets
         );
@@ -800,7 +800,7 @@ describe("KeyService", () => {
         const generatePromises = identifiers.map((id) =>
           service.generateKeyPair(
             SignatureType.ED25519_2020,
-            KeyType.VERIFICATION_KEY_2020,
+            KeyType.MULTIKEY,
             id,
             mockSecrets
           )
@@ -830,7 +830,7 @@ describe("KeyService", () => {
         // Generate ED25519 key
         const result1 = await service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           identifier1,
           mockSecrets
         );
@@ -866,7 +866,7 @@ describe("KeyService", () => {
           identifiers.push(identifier);
           await service.generateKeyPair(
             SignatureType.ED25519_2020,
-            KeyType.VERIFICATION_KEY_2020,
+            KeyType.MULTIKEY,
             identifier,
             mockSecrets
           );
@@ -899,7 +899,7 @@ describe("KeyService", () => {
         const storedKey = await keyStorageService.storeKey(
           testIdentifier,
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           mockPrivateKey,
           mockPublicKey,
           mockSecrets
@@ -907,7 +907,7 @@ describe("KeyService", () => {
 
         expect(storedKey).toBeDefined();
         expect(storedKey.signatureType).toBe(SignatureType.ED25519_2020);
-        expect(storedKey.keyType).toBe(KeyType.VERIFICATION_KEY_2020);
+        expect(storedKey.keyType).toBe(KeyType.MULTIKEY);
 
         // Direct retrieval
         const retrievedKey = await keyStorageService.retrieveKey(
@@ -918,7 +918,7 @@ describe("KeyService", () => {
         expect(retrievedKey).toBeDefined();
         expect(retrievedKey.id).toBe(testIdentifier);
         expect(retrievedKey.signatureType).toBe(SignatureType.ED25519_2020);
-        expect(retrievedKey.keyType).toBe(KeyType.VERIFICATION_KEY_2020);
+        expect(retrievedKey.keyType).toBe(KeyType.MULTIKEY);
         expect(retrievedKey.privateKey).toEqual(mockPrivateKey);
         expect(retrievedKey.publicKey).toEqual(mockPublicKey);
       });
@@ -943,7 +943,7 @@ describe("KeyService", () => {
           operations.push(
             service.generateKeyPair(
               SignatureType.ED25519_2020,
-              KeyType.VERIFICATION_KEY_2020,
+              KeyType.MULTIKEY,
               `did:web:lifecycle-test.com#key${i}`,
               mockSecrets
             )
@@ -967,7 +967,7 @@ describe("KeyService", () => {
         // Generate key
         await service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           testIdentifier,
           mockSecrets
         );
@@ -1012,7 +1012,7 @@ describe("KeyService", () => {
         const testIdentifier = "did:web:consistency.com#key1";
         await service.generateKeyPair(
           SignatureType.ED25519_2020,
-          KeyType.VERIFICATION_KEY_2020,
+          KeyType.MULTIKEY,
           testIdentifier,
           mockSecrets
         );
@@ -1027,7 +1027,7 @@ describe("KeyService", () => {
 
         expect(storedKey).toBeDefined();
         expect(storedKey!.signatureType).toBe(SignatureType.ED25519_2020);
-        expect(storedKey!.keyType).toBe(KeyType.VERIFICATION_KEY_2020);
+        expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
         expect(storedKey!.createdAt).toBeDefined();
         expect(storedKey!.createdAt).toBeInstanceOf(Date);
       });

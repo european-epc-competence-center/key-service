@@ -34,7 +34,7 @@ export interface VerificationMethod {
 
   /**
    * The public key in multibase format
-   * Used for Ed25519VerificationKey2020, EcdsaSecp256k1VerificationKey2019, etc.
+   * Used for Multikey (Ed25519, ECDSA, etc.)
    */
   publicKeyMultibase?: string;
 

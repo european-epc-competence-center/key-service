@@ -35,7 +35,7 @@ export class KeyService {
       throw new Error("At least one secret must be provided");
     }
     if (keyType === SignatureType.ED25519_2020) {
-      const ed25519KeyPair = await this.generateEd25519VerificationKey2020(
+      const ed25519KeyPair = await this.generateEd25519Multikey(
         identifier,
         keyFormat,
         secrets
@@ -79,7 +79,7 @@ export class KeyService {
     );
     if (
       storedKey.signatureType === SignatureType.ED25519_2020 &&
-      storedKey.keyType === KeyType.VERIFICATION_KEY_2020
+      storedKey.keyType === KeyType.MULTIKEY
     ) {
       const ed25519Key = await Ed25519Multikey.from({
         type: 'Multikey',
@@ -118,7 +118,7 @@ export class KeyService {
     );
   }
 
-  async generateEd25519VerificationKey2020(
+  async generateEd25519Multikey(
     identifier: string,
     keyFormat: KeyType,
     secrets: string[]
@@ -140,7 +140,7 @@ export class KeyService {
     );
     return {
       id: keyPair.id,
-      type: 'Ed25519VerificationKey2020',
+      type: 'Multikey',
       controller: keyPair.controller,
       publicKeyMultibase: keyPair.publicKeyMultibase,
     };

@@ -13,7 +13,7 @@ import {
   Proof,
 } from "../types/verifiable-credential.types";
 // @ts-ignore
-import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 import * as fs from "fs";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
@@ -271,7 +271,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -327,7 +327,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -380,7 +380,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -438,7 +438,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -501,7 +501,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -554,7 +554,7 @@ describe("DataIntegritySigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -849,14 +849,14 @@ describe("DataIntegritySigningService", () => {
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod2,
         mockSecrets
       );
@@ -905,7 +905,7 @@ describe("DataIntegritySigningService", () => {
       // Generate key for signing
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -970,14 +970,14 @@ describe("DataIntegritySigningService", () => {
       // Generate keys for signing credentials
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod2,
         mockSecrets
       );
@@ -985,7 +985,7 @@ describe("DataIntegritySigningService", () => {
       // Generate key for signing presentation
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );
@@ -1053,14 +1053,14 @@ describe("DataIntegritySigningService", () => {
       // Generate keys
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );
@@ -1121,7 +1121,7 @@ describe("DataIntegritySigningService", () => {
       // Generate Ed25519 key for credential
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
@@ -1198,7 +1198,7 @@ describe("DataIntegritySigningService", () => {
       // Generate key
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -1239,7 +1239,7 @@ describe("DataIntegritySigningService", () => {
       // Generate Ed25519 key for credential
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
@@ -1385,7 +1385,7 @@ describe("DataIntegritySigningService", () => {
       // Generate an Ed25519 key pair
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -1580,7 +1580,7 @@ describe("DataIntegritySigningService", () => {
       // Generate an Ed25519 key pair
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -1629,14 +1629,14 @@ describe("DataIntegritySigningService", () => {
       // Generate keys
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );

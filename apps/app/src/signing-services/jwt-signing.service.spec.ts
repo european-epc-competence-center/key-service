@@ -12,7 +12,7 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 // @ts-ignore
-import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 import * as fs from "fs";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
@@ -103,11 +103,12 @@ async function verifyJwtSignature(
         break;
 
       case SignatureType.ED25519_2020:
-        if (keyPair.keyType === KeyType.VERIFICATION_KEY_2020) {
+        if (keyPair.keyType === KeyType.MULTIKEY) {
           try {
             // For Ed25519, continue using the existing verification method
             // since jose might not support Ed25519 in the same way
-            const ed25519Key = new Ed25519VerificationKey2020({
+            const ed25519Key = await Ed25519Multikey.from({
+              type: 'Multikey',
               publicKeyMultibase: keyPair.publicKey,
             });
             const verifier = await ed25519Key.verifier();
@@ -291,7 +292,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -429,7 +430,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -685,7 +686,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -750,7 +751,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -818,7 +819,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -882,7 +883,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -959,7 +960,7 @@ describe("JwtSigningService", () => {
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
@@ -1020,7 +1021,7 @@ describe("JwtSigningService", () => {
       // Generate key for signing
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod,
         mockSecrets
       );
@@ -1099,7 +1100,7 @@ describe("JwtSigningService", () => {
       // Generate keys for signing credentials
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
@@ -1114,7 +1115,7 @@ describe("JwtSigningService", () => {
       // Generate key for signing presentation
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         presentationVerificationMethod,
         mockSecrets
       );
@@ -1203,7 +1204,7 @@ describe("JwtSigningService", () => {
       // Generate keys
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
@@ -1266,7 +1267,7 @@ describe("JwtSigningService", () => {
       // Generate keys
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
-        KeyType.VERIFICATION_KEY_2020,
+        KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );

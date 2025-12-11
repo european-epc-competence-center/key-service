@@ -7,8 +7,6 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 // @ts-ignore
-import { Ed25519Signature2020 } from "@digitalbazaar/ed25519-signature-2020";
-// @ts-ignore
 import { ES256Signature2020 } from "@eecc/es256-signature-2020";
 // @ts-ignore
 import { DataIntegrityProof } from "@digitalbazaar/data-integrity";
