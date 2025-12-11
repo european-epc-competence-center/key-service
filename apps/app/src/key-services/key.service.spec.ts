@@ -328,14 +328,14 @@ describe("KeyService", () => {
         mockSecrets
       );
 
-      // The public JWK keys should be different due to random generation
-      expect(result1.publicKeyJwk).toBeDefined();
-      expect(result2.publicKeyJwk).toBeDefined();
-      expect(result1.publicKeyJwk).not.toEqual(result2.publicKeyJwk);
+      // ES256 with Multikey should have publicKeyMultibase
+      expect(result1.publicKeyMultibase).toBeDefined();
+      expect(result2.publicKeyMultibase).toBeDefined();
+      expect(result1.publicKeyMultibase).not.toEqual(result2.publicKeyMultibase);
 
-      // Specifically check that the x and y coordinates are different
-      expect(result1.publicKeyJwk!.x).not.toBe(result2.publicKeyJwk!.x);
-      expect(result1.publicKeyJwk!.y).not.toBe(result2.publicKeyJwk!.y);
+      // Verify they are both Multikey type
+      expect(result1.type).toBe('Multikey');
+      expect(result2.type).toBe('Multikey');
 
       // Should have two keys stored
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
@@ -726,7 +726,7 @@ describe("KeyService", () => {
       const key2 = await encryptedKeyRepository.findOne({
         where: {
           identifier: secretService.hash(mockIdentifier),
-          keyType: KeyType.MULTIKEY, // Different type
+          keyType: KeyType.JWK_2020, // Different type
         },
       });
       expect(key2).toBeNull();
