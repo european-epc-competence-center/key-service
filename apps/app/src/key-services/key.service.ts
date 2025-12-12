@@ -3,7 +3,7 @@ import { SignatureType } from "../types/key-types.enum";
 import {
   KeyPair,
   RawKeypair,
-  JsonWebKey,
+  ECJsonWebKey,
   RSAJsonWebKey,
   RSAPrivateJsonWebKey,
 } from "../types/keypair.types";
@@ -23,10 +23,6 @@ import * as jose from "jose";
 export class KeyService {
   constructor(private readonly keyStorageService: KeyStorageService) {}
 
-  async getPublicKey(identifier: string, secrets: string[]): Promise<any> {
-    return (await this.getKeyPair(identifier, secrets)).publicKey;
-  }
-
   async generateKeyPair(
     keyType: SignatureType,
     keyFormat: KeyType,
@@ -44,7 +40,7 @@ export class KeyService {
       );
     }
     if (keyType === SignatureType.ES256) {
-      return await this.generateEcdsaMultikey(
+      return await this.generateES256Multikey(
         identifier,
         keyFormat,
         secrets
@@ -68,8 +64,7 @@ export class KeyService {
       secrets
     );
     if (
-      storedKey.signatureType === SignatureType.ED25519_2020 &&
-      storedKey.keyType === KeyType.MULTIKEY
+      storedKey.signatureType === SignatureType.ED25519_2020
     ) {
       const ed25519Key = await Ed25519Multikey.from({
         type: 'Multikey',
@@ -79,20 +74,10 @@ export class KeyService {
         secretKeyMultibase: storedKey.privateKey,
       });
 
-      return {
-        privateKey: storedKey.privateKey,
-        publicKey: storedKey.publicKey,
-        keyType: storedKey.keyType,
-        signatureType: storedKey.signatureType,
-        id: storedKey.id,
-        controller: storedKey.controller,
-        signer: () => ed25519Key.signer(),
-        verifier: () => ed25519Key.verifier(),
-      };
+      return {...storedKey, signer: ed25519Key.signer, verifier: ed25519Key.verifier};
     }
     if (
-      storedKey.signatureType === SignatureType.ES256 &&
-      storedKey.keyType === KeyType.MULTIKEY
+      storedKey.signatureType === SignatureType.ES256
     ) {
       const ecdsaKey = await EcdsaMultikey.from({
         type: 'Multikey',
@@ -102,16 +87,7 @@ export class KeyService {
         secretKeyMultibase: storedKey.privateKey,
       });
 
-      return {
-        privateKey: storedKey.privateKey,
-        publicKey: storedKey.publicKey,
-        keyType: storedKey.keyType,
-        signatureType: storedKey.signatureType,
-        id: storedKey.id,
-        controller: storedKey.controller,
-        signer: () => ecdsaKey.signer(),
-        verifier: () => ecdsaKey.verifier(),
-      };
+      return {...storedKey, signer: ecdsaKey.signer, verifier: ecdsaKey.verifier};
     }
     if (
       storedKey.signatureType === SignatureType.PS256 &&
@@ -145,15 +121,23 @@ export class KeyService {
       keyPair.publicKeyMultibase,
       secrets
     );
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id: keyPair.id,
+        type: keyFormat.toString(),
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKeyMultibase,
+      };
+    }
     return {
       id: keyPair.id,
-      type: 'Multikey',
+      type: keyFormat.toString(),
       controller: keyPair.controller,
-      publicKeyMultibase: keyPair.publicKeyMultibase,
+      publicKeyJwk: Ed25519Multikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
     };
   }
 
-  async generateEcdsaMultikey(
+  async generateES256Multikey(
     identifier: string,
     keyFormat: KeyType,
     secrets: string[]
@@ -174,11 +158,19 @@ export class KeyService {
       keyPair.publicKeyMultibase,
       secrets
     );
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id: keyPair.id,
+        type: keyFormat.toString(),
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKeyMultibase,
+      };
+    }
     return {
       id: keyPair.id,
-      type: 'Multikey',
+      type: keyFormat.toString(),
       controller: keyPair.controller,
-      publicKeyMultibase: keyPair.publicKeyMultibase,
+      publicKeyJwk: EcdsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
     };
   }
 

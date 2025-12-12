@@ -14,8 +14,13 @@ import {
 import * as fs from "fs";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
-import { JsonWebKey, RSAJsonWebKey } from "../types/keypair.types";
+import { ECJsonWebKey, JsonWebKey, RSAJsonWebKey } from "../types/keypair.types";
+import { VerificationMethod } from "../types/verification-method.types";
 import * as jose from "jose";
+// @ts-ignore
+import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
+// @ts-ignore
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 
 // Mock fs module for this test file only
 jest.mock("fs");
@@ -48,67 +53,95 @@ async function createTestDatabase(): Promise<{
 // Helper functions for signature verification in tests
 async function verifyJwtSignature(
   jwt: string,
-  verificationMethod: string,
+  verificationMethod: VerificationMethod,
   secrets: string[],
   keyService: KeyService
 ): Promise<boolean> {
   try {
-    const keyPair = await keyService.getKeyPair(verificationMethod, secrets);
+    // Parse JWT header to get the algorithm
+    const parts = jwt.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid JWT structure");
+    }
 
-    switch (keyPair.signatureType) {
-      case SignatureType.ES256:
-        if (keyPair.keyType === KeyType.MULTIKEY) {
-          const verifier = await keyPair.verifier!();
-          const [header, payload, signature] = jwt.split(".");
-          const signingInput = `${header}.${payload}`;
-          
-          // Convert base64url signature to Uint8Array
-          const signatureBytes = jose.base64url.decode(signature);
-          const dataBytes = new TextEncoder().encode(signingInput);
-          
-          return await verifier.verify({ 
-            data: dataBytes, 
-            signature: signatureBytes 
-          });
+    const header = JSON.parse(
+      Buffer.from(parts[0], "base64url").toString()
+    );
+    const alg = header.alg;
+
+    // Distinguish by algorithm
+    if (alg === "ES256") {
+
+      // can handle both notations multikey and json web key
+      const keyPair = await EcdsaMultikey.from(verificationMethod);
+      // Convert multikey to JWK format for verification
+      const publicKeyJwk = await EcdsaMultikey.toJwk({
+        keyPair: keyPair,
+        secretKey: false,
+      }) as ECJsonWebKey;
+
+      // Basic validation: check that we have the required key components
+      const hasValidComponents =
+        publicKeyJwk.x && publicKeyJwk.y && publicKeyJwk.kty === "EC";
+      if (!hasValidComponents) {
+        throw new Error("Invalid ES256 public key components");
+      }
+
+      await jose.jwtVerify(
+        jwt,
+        await jose.importJWK({ ...publicKeyJwk, alg: "ES256" } as jose.JWK),
+        {
+          algorithms: ["ES256"],
         }
-        break;
+      );
+      return true;
+    } else if (alg === "Ed25519") {
+      // can handle both notations multikey and json web key
+      const keyPair = await Ed25519Multikey.from(verificationMethod);
+      // Convert multikey to JWK format for verification
+      const ed25519PublicKeyJwk = await Ed25519Multikey.toJwk({
+        keyPair: keyPair,
+        secretKey: false,
+      }) as JsonWebKey;
 
-      case SignatureType.PS256:
-        if (
-          keyPair.keyType === KeyType.JWK ||
-          keyPair.keyType === KeyType.JWK_2020
-        ) {
-          const publicKeyJwk = keyPair.publicKey as RSAJsonWebKey;
-          const josePublicKey = await jose.importJWK({
-            kty: "RSA",
-            n: publicKeyJwk.n,
-            e: publicKeyJwk.e,
-            alg: "PS256",
-          });
+      // Basic validation: check that we have the required key components
+      const hasValidEd25519Components =
+        ed25519PublicKeyJwk.x &&
+        ed25519PublicKeyJwk.kty === "OKP" &&
+        ed25519PublicKeyJwk.crv === "Ed25519";
+      if (!hasValidEd25519Components) {
+        throw new Error("Invalid Ed25519 public key components");
+      }
 
-          await jose.jwtVerify(jwt, josePublicKey, {
-            algorithms: ["PS256"],
-          });
-          return true;
+      await jose.jwtVerify(
+        jwt,
+        await jose.importJWK({
+          ...ed25519PublicKeyJwk,
+          alg: "Ed25519",
+        } as jose.JWK),
+        {
+          algorithms: ["Ed25519"],
         }
-        break;
+      );
+      return true;
+    } else if (alg === "PS256") {
+      // PS256 uses JWK format
+      if (!verificationMethod.publicKeyJwk) {
+        throw new Error("PS256 requires JWK format");
+      }
 
-      case SignatureType.ED25519_2020:
-        if (keyPair.keyType === KeyType.MULTIKEY) {
-          const verifier = await keyPair.verifier!();
-          const [header, payload, signature] = jwt.split(".");
-          const signingInput = `${header}.${payload}`;
-          
-          // Convert base64url signature to Uint8Array
-          const signatureBytes = jose.base64url.decode(signature);
-          const dataBytes = new TextEncoder().encode(signingInput);
-          
-          return await verifier.verify({ 
-            data: dataBytes, 
-            signature: signatureBytes 
-          });
-        }
-        break;
+      const publicKeyJwk = verificationMethod.publicKeyJwk as RSAJsonWebKey;
+      const josePublicKey = await jose.importJWK({
+        kty: "RSA",
+        n: publicKeyJwk.n,
+        e: publicKeyJwk.e,
+        alg: "PS256",
+      });
+
+      await jose.jwtVerify(jwt, josePublicKey, {
+        algorithms: ["PS256"],
+      });
+      return true;
     }
 
     return false;
@@ -274,7 +307,7 @@ describe("JwtSigningService", () => {
       const verificationMethod = "did:web:example.com#test-key";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -331,7 +364,7 @@ describe("JwtSigningService", () => {
       // Verify the signature with the generated public key
       const isSignatureValid = await verifyJwtSignature(
         result,
-        verificationMethod,
+        verificationMethodObj,
         mockSecrets,
         keyService
       );
@@ -343,7 +376,7 @@ describe("JwtSigningService", () => {
       const verificationMethod = "did:web:example.com#es256-key";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -400,7 +433,7 @@ describe("JwtSigningService", () => {
       // Verify the signature with the generated public key
       const isSignatureValid = await verifyJwtSignature(
         result,
-        verificationMethod,
+        verificationMethodObj,
         mockSecrets,
         keyService
       );
@@ -536,7 +569,7 @@ describe("JwtSigningService", () => {
       const verificationMethod = "did:web:example.com#ps256-key";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK_2020,
         verificationMethod,
@@ -594,7 +627,7 @@ describe("JwtSigningService", () => {
       // Verify the signature with the generated public key
       const isSignatureValid = await verifyJwtSignature(
         result,
-        verificationMethod,
+        verificationMethodObj,
         mockSecrets,
         keyService
       );

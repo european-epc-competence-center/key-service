@@ -623,24 +623,6 @@ describe("KeyService", () => {
     });
   });
 
-  describe("getPublicKey", () => {
-    it("should return public key after generation", async () => {
-      // Generate key
-      const generated = await service.generateKeyPair(
-        SignatureType.ED25519_2020,
-        KeyType.MULTIKEY,
-        mockIdentifier,
-        mockSecrets
-      );
-
-      // Get public key
-      const publicKey = await service.getPublicKey(mockIdentifier, mockSecrets);
-
-      expect(publicKey).toBeDefined();
-      expect(publicKey).toBe(generated.publicKeyMultibase);
-    });
-  });
-
   describe("Real database behavior", () => {
     it("should behave like a real database with multiple operations", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);

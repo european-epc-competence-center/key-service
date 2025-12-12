@@ -6,6 +6,7 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 import * as jose from "jose";
+import { SignatureType } from "../types/key-types.enum";
 
 @Injectable()
 export class JwtSigningService {
@@ -78,7 +79,7 @@ export class JwtSigningService {
     ].join(".");
     
     // Multikey signers (Ed25519, ES256) expect Uint8Array, but PS256 expects string
-    const signingData = keyPair.keyType === 'Multikey' 
+    const signingData = keyPair.signatureType !== SignatureType.PS256 
       ? new TextEncoder().encode(signingInput)
       : signingInput;
     
