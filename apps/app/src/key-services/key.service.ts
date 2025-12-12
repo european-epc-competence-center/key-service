@@ -133,7 +133,7 @@ export class KeyService {
       id: keyPair.id,
       type: keyFormat.toString(),
       controller: keyPair.controller,
-      publicKeyJwk: Ed25519Multikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
+      publicKeyJwk: await Ed25519Multikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
     };
   }
 
@@ -170,7 +170,7 @@ export class KeyService {
       id: keyPair.id,
       type: keyFormat.toString(),
       controller: keyPair.controller,
-      publicKeyJwk: EcdsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
+      publicKeyJwk: await EcdsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
     };
   }
 

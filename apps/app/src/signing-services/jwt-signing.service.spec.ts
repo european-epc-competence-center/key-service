@@ -371,6 +371,75 @@ describe("JwtSigningService", () => {
       expect(isSignatureValid).toBe(true);
     });
 
+    it("should sign a VC V1 verifiable credential with Ed25519 key pair (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#test-key-jwk";
+
+      // Generate a key pair first
+      const verificationMethodObj = await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV1["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV1.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV1.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyJwtSignature(
+        result,
+        verificationMethodObj,
+        mockSecrets,
+        keyService
+      );
+      expect(isSignatureValid).toBe(true);
+    });
+
     it("should sign a VC V1 verifiable credential with ES256 key pair", async () => {
       // Arrange
       const verificationMethod = "did:web:example.com#es256-key";
@@ -379,6 +448,75 @@ describe("JwtSigningService", () => {
       const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "ES256");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV1["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV1.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV1.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyJwtSignature(
+        result,
+        verificationMethodObj,
+        mockSecrets,
+        keyService
+      );
+      expect(isSignatureValid).toBe(true);
+    });
+
+    it("should sign a VC V1 verifiable credential with ES256 key pair (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#es256-key-jwk";
+
+      // Generate a key pair first
+      const verificationMethodObj = await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
         verificationMethod,
         mockSecrets
       );
@@ -502,6 +640,68 @@ describe("JwtSigningService", () => {
       expect(payload.issuer).toBe("did:web:example.com");
     });
 
+    it("should sign a VC V2 verifiable credential with Ed25519 key pair (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#v2-key-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("validFrom");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV2["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV2.type);
+      expect(payload.validFrom).toEqual(exampleCredentialV2.validFrom);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV2.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
     it("should sign a VC V2 verifiable credential with ES256 key pair", async () => {
       // Arrange
       const verificationMethod = "did:web:example.com#v2-es256-key";
@@ -510,6 +710,68 @@ describe("JwtSigningService", () => {
       await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "ES256");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("validFrom");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV2["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV2.type);
+      expect(payload.validFrom).toEqual(exampleCredentialV2.validFrom);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV2.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
+    it("should sign a VC V2 verifiable credential with ES256 key pair (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#v2-es256-key-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
         verificationMethod,
         mockSecrets
       );
@@ -696,6 +958,71 @@ describe("JwtSigningService", () => {
       expect(payload.issuer).toBe("did:web:example.com");
     });
 
+    it("should sign a VC V1 verifiable credential with Ed25519 key pair and preserve existing issuanceDate (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#test-key-with-date-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV1WithIssuanceDate,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Verify issuanceDate was preserved
+      expect(payload.issuanceDate).toBe("2023-06-15T10:30:00Z");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(
+        exampleCredentialV1WithIssuanceDate["@context"]
+      );
+      expect(payload.type).toEqual(exampleCredentialV1WithIssuanceDate.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV1WithIssuanceDate.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
     it("should sign a VC V1 verifiable credential with Ed25519 key pair and preserve existing issuanceDate", async () => {
       // Arrange
       const verificationMethod = "did:web:example.com#test-key-with-date";
@@ -753,6 +1080,74 @@ describe("JwtSigningService", () => {
       expect(payload.type).toEqual(exampleCredentialV1WithIssuanceDate.type);
       expect(payload.credentialSubject).toEqual(
         exampleCredentialV1WithIssuanceDate.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
+    it("should sign a VC V1 verifiable credential with Ed25519 key pair and set issuanceDate if absent (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#test-key-no-date-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Verify issuanceDate was set since it was absent
+      expect(payload.issuanceDate).toBeDefined();
+      expect(typeof payload.issuanceDate).toBe("string");
+      // Should be a valid ISO date string
+      expect(
+        new Date(payload.issuanceDate).toISOString().replace(/\.\d{3}Z$/, "Z")
+      ).toBe(payload.issuanceDate);
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV1["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV1.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV1.credentialSubject
       );
 
       // Verify that issuer was updated to match the key pair
@@ -829,6 +1224,70 @@ describe("JwtSigningService", () => {
       expect(payload.issuer).toBe("did:web:example.com");
     });
 
+    it("should sign a VC V2 verifiable credential with Ed25519 key pair and preserve existing validFrom (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#v2-key-with-date-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("validFrom");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Verify validFrom was preserved
+      expect(payload.validFrom).toBe("2024-01-01T00:00:00Z");
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(exampleCredentialV2["@context"]);
+      expect(payload.type).toEqual(exampleCredentialV2.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV2.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
     it("should sign a VC V2 verifiable credential with Ed25519 key pair and preserve existing validFrom", async () => {
       // Arrange
       const verificationMethod = "did:web:example.com#v2-key-with-date";
@@ -885,6 +1344,71 @@ describe("JwtSigningService", () => {
       expect(payload.type).toEqual(exampleCredentialV2.type);
       expect(payload.credentialSubject).toEqual(
         exampleCredentialV2.credentialSubject
+      );
+
+      // Verify that issuer was updated to match the key pair
+      expect(payload.issuer).toBeDefined();
+      expect(typeof payload.issuer).toBe("string");
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
+    it("should sign a VC V2 verifiable credential with Ed25519 key pair and leave validFrom empty if absent (JWK)", async () => {
+      // Arrange
+      const verificationMethod = "did:web:example.com#v2-key-no-date-jwk";
+
+      // Generate a key pair first
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Act
+      const result = await service.signVC(
+        exampleCredentialV2WithoutValidFrom,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Assert
+      // Check that result is a valid JWT string
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+
+      // Check JWT structure (header.payload.signature)
+      const parts = result.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header).toHaveProperty("alg", "Ed25519");
+      expect(header).toHaveProperty("kid");
+      expect(typeof header.kid).toBe("string");
+
+      // Decode and validate payload
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      expect(payload).toHaveProperty("@context");
+      expect(payload).toHaveProperty("type");
+      expect(payload).toHaveProperty("issuer");
+      expect(payload).toHaveProperty("credentialSubject");
+      expect(payload).toHaveProperty("iat");
+      expect(typeof payload.iat).toBe("number");
+
+      // Verify validFrom was NOT set (should remain undefined for V2 credentials)
+      expect(payload.validFrom).toBeUndefined();
+
+      // Validate signature format (should be base64url encoded)
+      expect(parts[2]).toMatch(/^[A-Za-z0-9_-]+$/);
+
+      // Verify that the original credential data is preserved
+      expect(payload["@context"]).toEqual(
+        exampleCredentialV2WithoutValidFrom["@context"]
+      );
+      expect(payload.type).toEqual(exampleCredentialV2WithoutValidFrom.type);
+      expect(payload.credentialSubject).toEqual(
+        exampleCredentialV2WithoutValidFrom.credentialSubject
       );
 
       // Verify that issuer was updated to match the key pair
@@ -1026,6 +1550,67 @@ describe("JwtSigningService", () => {
       expect(header1.alg).toBe("Ed25519");
       expect(header2.alg).toBe("ES256");
     });
+
+    it("should handle database operations and maintain consistency (JWK)", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      const initialCount = await encryptedKeyRepository.count();
+      expect(initialCount).toBe(0);
+
+      // Generate multiple keys for different credentials
+      const verificationMethod1 = "did:web:test1.com#key1-jwk";
+      const verificationMethod2 = "did:web:test2.com#key2-jwk";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod1,
+        mockSecrets
+      );
+
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
+        verificationMethod2,
+        mockSecrets
+      );
+
+      const count = await encryptedKeyRepository.count();
+      expect(count).toBe(2);
+
+      // Sign with both keys
+      const result1 = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod1,
+        mockSecrets
+      );
+
+      const result2 = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod2,
+        mockSecrets
+      );
+
+      expect(result1).toBeDefined();
+      expect(result2).toBeDefined();
+      expect(result1).not.toBe(result2);
+
+      // Validate both JWT structures
+      const parts1 = result1.split(".");
+      const parts2 = result2.split(".");
+
+      expect(parts1).toHaveLength(3);
+      expect(parts2).toHaveLength(3);
+
+      const header1 = JSON.parse(
+        Buffer.from(parts1[0], "base64url").toString()
+      );
+      const header2 = JSON.parse(
+        Buffer.from(parts2[0], "base64url").toString()
+      );
+
+      expect(header1.alg).toBe("Ed25519");
+      expect(header2.alg).toBe("ES256");
+    });
   });
 
   describe("Verifiable Presentation Signing", () => {
@@ -1039,6 +1624,83 @@ describe("JwtSigningService", () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Sign a credential first
+      const signedCredentialJWT = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets
+      );
+
+      // Create presentation with enveloped credential
+      const presentation: VerifiablePresentation = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5",
+        type: ["VerifiablePresentation", "ExamplePresentation"],
+        verifiableCredential: [
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+        ],
+      };
+
+      // Sign the presentation
+      const signedPresentation = await service.signVP(
+        presentation,
+        verificationMethod,
+        mockSecrets
+      );
+
+      expect(signedPresentation).toBeDefined();
+      expect(typeof signedPresentation).toBe("string");
+
+      // Validate JWT structure
+      const parts = signedPresentation.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(
+        Buffer.from(parts[0], "base64url").toString()
+      );
+      expect(header.alg).toBe("Ed25519");
+      expect(header.kid).toBe(verificationMethod);
+
+      // Decode and validate payload
+      const payload = JSON.parse(
+        Buffer.from(parts[1], "base64url").toString()
+      );
+      expect(payload.type).toContain("VerifiablePresentation");
+      expect(payload.type).toContain("ExamplePresentation");
+      expect(payload.id).toBe("urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5");
+      expect(Array.isArray(payload.verifiableCredential)).toBe(true);
+      expect(payload.verifiableCredential).toHaveLength(1);
+      expect(payload.verifiableCredential[0].type).toBe(
+        "EnvelopedVerifiableCredential"
+      );
+      expect(payload.verifiableCredential[0].id).toBe(
+        `data:application/vc+jwt,${signedCredentialJWT}`
+      );
+      expect(payload.iat).toBeDefined();
+    });
+
+    it("should sign a presentation with a single enveloped credential (V2) (JWK)", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const verificationMethod = "did:web:example.com#key1-jwk";
+
+      // Generate key for signing
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
         verificationMethod,
         mockSecrets
       );
@@ -1211,6 +1873,111 @@ describe("JwtSigningService", () => {
       expect(payload.iat).toBeDefined();
     });
 
+    it("should sign a presentation with multiple enveloped credentials (JWK)", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const verificationMethod1 = "did:web:example.com#key1-jwk";
+      const verificationMethod2 = "did:web:example.com#key2-jwk";
+      const presentationVerificationMethod = "did:web:holder.com#holderKey-jwk";
+
+      // Generate keys for signing credentials
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        verificationMethod1,
+        mockSecrets
+      );
+
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
+        verificationMethod2,
+        mockSecrets
+      );
+
+      // Generate key for signing presentation
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Sign multiple credentials
+      const signedCredentialJWT1 = await service.signVC(
+        exampleCredentialV2,
+        verificationMethod1,
+        mockSecrets
+      );
+
+      const signedCredentialJWT2 = await service.signVC(
+        exampleCredentialV1WithIssuanceDate,
+        verificationMethod2,
+        mockSecrets
+      );
+
+      // Create presentation with multiple enveloped credentials
+      const presentation: VerifiablePresentation = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:4a8c1234-5678-4abc-b123-456789abcdef",
+        type: ["VerifiablePresentation"],
+        holder: "did:web:holder.com",
+        verifiableCredential: [
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT1}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT2}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+        ],
+      };
+
+      // Sign the presentation
+      const signedPresentation = await service.signVP(
+        presentation,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      expect(signedPresentation).toBeDefined();
+      expect(typeof signedPresentation).toBe("string");
+
+      // Validate JWT structure
+      const parts = signedPresentation.split(".");
+      expect(parts).toHaveLength(3);
+
+      // Decode and validate header
+      const header = JSON.parse(
+        Buffer.from(parts[0], "base64url").toString()
+      );
+      expect(header.alg).toBe("Ed25519");
+      expect(header.kid).toBe(presentationVerificationMethod);
+
+      // Decode and validate payload
+      const payload = JSON.parse(
+        Buffer.from(parts[1], "base64url").toString()
+      );
+      expect(payload.type).toContain("VerifiablePresentation");
+      expect(payload.holder).toBe("did:web:holder.com");
+      expect(Array.isArray(payload.verifiableCredential)).toBe(true);
+      expect(payload.verifiableCredential).toHaveLength(2);
+      expect(payload.verifiableCredential[0].type).toBe(
+        "EnvelopedVerifiableCredential"
+      );
+      expect(payload.verifiableCredential[1].type).toBe(
+        "EnvelopedVerifiableCredential"
+      );
+      expect(payload.iat).toBeDefined();
+    });
+
     it("should sign a presentation with ES256 algorithm", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
@@ -1274,6 +2041,69 @@ describe("JwtSigningService", () => {
       expect(header.kid).toBe(presentationVerificationMethod);
     });
 
+    it("should sign a presentation with ES256 algorithm (JWK)", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const credentialVerificationMethod = "did:web:issuer.com#credKey-jwk";
+      const presentationVerificationMethod = "did:web:holder.com#presKey-jwk";
+
+      // Generate keys
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      await keyService.generateKeyPair(
+        SignatureType.ES256,
+        KeyType.JWK,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Sign credential
+      const signedCredentialJWT = await service.signVC(
+        exampleCredentialV2,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      // Create and sign presentation with ES256
+      const presentation: VerifiablePresentation = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:12345678-1234-5678-1234-567812345678",
+        type: ["VerifiablePresentation"],
+        verifiableCredential: [
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+        ],
+      };
+
+      const signedPresentation = await service.signVP(
+        presentation,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      expect(signedPresentation).toBeDefined();
+
+      // Validate header shows ES256
+      const parts = signedPresentation.split(".");
+      const header = JSON.parse(
+        Buffer.from(parts[0], "base64url").toString()
+      );
+      expect(header.alg).toBe("ES256");
+      expect(header.kid).toBe(presentationVerificationMethod);
+    });
+
     it("should sign a presentation with PS256 algorithm", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
@@ -1285,6 +2115,70 @@ describe("JwtSigningService", () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      await keyService.generateKeyPair(
+        SignatureType.PS256,
+        KeyType.JWK,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      // Sign credential
+      const signedCredentialJWT = await service.signVC(
+        exampleCredentialV1WithIssuanceDate,
+        credentialVerificationMethod,
+        mockSecrets
+      );
+
+      // Create and sign presentation with PS256
+      const presentation: VerifiablePresentation = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:abcdef12-3456-7890-abcd-ef1234567890",
+        type: ["VerifiablePresentation"],
+        holder: "did:web:holder.com",
+        verifiableCredential: [
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+        ],
+      };
+
+      const signedPresentation = await service.signVP(
+        presentation,
+        presentationVerificationMethod,
+        mockSecrets
+      );
+
+      expect(signedPresentation).toBeDefined();
+
+      // Validate header shows PS256
+      const parts = signedPresentation.split(".");
+      const header = JSON.parse(
+        Buffer.from(parts[0], "base64url").toString()
+      );
+      expect(header.alg).toBe("PS256");
+      expect(header.kid).toBe(presentationVerificationMethod);
+    });
+
+    it("should sign a presentation with PS256 algorithm (JWK)", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const credentialVerificationMethod = "did:web:issuer.com#credKey-jwk";
+      const presentationVerificationMethod = "did:web:holder.com#presKey-jwk";
+
+      // Generate keys
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
         credentialVerificationMethod,
         mockSecrets
       );
