@@ -21,6 +21,8 @@ import * as jose from "jose";
 import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
 // @ts-ignore
 import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
+// @ts-ignore
+import * as RsaMultikey from "@eecc/rsa-multikey";
 
 // Mock fs module for this test file only
 jest.mock("fs");
@@ -125,22 +127,28 @@ async function verifyJwtSignature(
       );
       return true;
     } else if (alg === "PS256") {
-      // PS256 uses JWK format
-      if (!verificationMethod.publicKeyJwk) {
-        throw new Error("PS256 requires JWK format");
+      // can handle both notations multikey and json web key
+      const keyPair = await RsaMultikey.from(verificationMethod);
+      // Convert multikey to JWK format for verification
+      const publicKeyJwk = await RsaMultikey.toJwk({
+        keyPair: keyPair,
+        secretKey: false,
+      }) as RSAJsonWebKey;
+
+      // Basic validation: check that we have the required key components
+      const hasValidComponents =
+        publicKeyJwk.n && publicKeyJwk.e && publicKeyJwk.kty === "RSA";
+      if (!hasValidComponents) {
+        throw new Error("Invalid PS256 public key components");
       }
 
-      const publicKeyJwk = verificationMethod.publicKeyJwk as RSAJsonWebKey;
-      const josePublicKey = await jose.importJWK({
-        kty: "RSA",
-        n: publicKeyJwk.n,
-        e: publicKeyJwk.e,
-        alg: "PS256",
-      });
-
-      await jose.jwtVerify(jwt, josePublicKey, {
-        algorithms: ["PS256"],
-      });
+      await jose.jwtVerify(
+        jwt,
+        await jose.importJWK({ ...publicKeyJwk, alg: "PS256" } as jose.JWK),
+        {
+          algorithms: ["PS256"],
+        }
+      );
       return true;
     }
 
@@ -833,7 +841,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.JWK,
         verificationMethod,
         mockSecrets
       );
@@ -903,7 +911,7 @@ describe("JwtSigningService", () => {
       // Generate a key pair first
       await keyService.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.JWK,
         verificationMethod,
         mockSecrets
       );

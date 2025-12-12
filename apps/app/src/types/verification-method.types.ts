@@ -40,7 +40,7 @@ export interface VerificationMethod {
 
   /**
    * The public key in JWK format
-   * Used for JsonWebKey2020
+   * Used for JsonWebKey (and JsonWebKey2020 for RSA keys)
    */
   publicKeyJwk?: JsonWebKey;
 

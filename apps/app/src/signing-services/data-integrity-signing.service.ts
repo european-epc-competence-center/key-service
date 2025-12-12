@@ -24,6 +24,8 @@ import {
 } from "../types/custom-exceptions";
 // @ts-ignore
 import { PS256Signature2020 } from "@eecc/ps256-signature-2020";
+// @ts-ignore
+import * as RsaMultikey from "@eecc/rsa-multikey";
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -60,12 +62,25 @@ export class DataIntegritySigningService {
         signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.PS256) {
+      // Convert multikey to JWK format for PS256Signature2020
+      const rsaKeyPair = await RsaMultikey.from({
+        type: 'Multikey',
+        id: keyPair.id,
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKey as string,
+        secretKeyMultibase: keyPair.privateKey as string,
+      });
+      
+      const privateKeyJwk = await RsaMultikey.toJwk({
+        keyPair: rsaKeyPair,
+        secretKey: true,
+      });
       
       const key = {
         id: keyPair.id,
         type: 'JsonWebKey2020',
         controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
+        privateKey: privateKeyJwk,
       }
 
       suite = new PS256Signature2020({
@@ -130,12 +145,25 @@ export class DataIntegritySigningService {
         signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.PS256) {
+      // Convert multikey to JWK format for PS256Signature2020
+      const rsaKeyPair = await RsaMultikey.from({
+        type: 'Multikey',
+        id: keyPair.id,
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKey as string,
+        secretKeyMultibase: keyPair.privateKey as string,
+      });
+      
+      const privateKeyJwk = await RsaMultikey.toJwk({
+        keyPair: rsaKeyPair,
+        secretKey: true,
+      });
       
       const key = {
         id: keyPair.id,
         type: 'JsonWebKey2020',
         controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
+        privateKey: privateKeyJwk,
       }
 
       suite = new PS256Signature2020({

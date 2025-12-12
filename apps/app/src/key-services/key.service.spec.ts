@@ -187,23 +187,21 @@ describe("KeyService", () => {
       expect(storedKey!.signatureType).toBe(SignatureType.ES256);
     });
 
-    it("should generate and store PS256 key pair", async () => {
+    it("should generate and store PS256 key pair (MULTIKEY)", async () => {
       const result = await service.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
 
       expect(result).toBeDefined();
       expect(result.id).toBe(mockIdentifier);
-      expect(result.type).toBe(KeyType.JWK_2020);
+      expect(result.type).toBe(KeyType.MULTIKEY);
       expect(result.controller).toBe("did:web:example.com");
-      expect(result.publicKeyJwk).toBeDefined();
-      expect(result.publicKeyJwk!.kty).toBe("RSA");
-      expect(result.publicKeyJwk!.n).toBeDefined();
-      expect(result.publicKeyJwk!.e).toBeDefined();
-      expect(result.publicKeyJwk!.kid).toBeDefined();
+      expect(result.publicKeyMultibase).toBeDefined();
+      expect(typeof result.publicKeyMultibase).toBe("string");
+      expect(result.publicKeyMultibase!.length).toBeGreaterThan(0);
 
       // Verify it was stored in the database
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
@@ -215,7 +213,38 @@ describe("KeyService", () => {
       });
       expect(storedKey).toBeDefined();
       expect(storedKey!.identifier).toBe(secretService.hash(mockIdentifier));
-      expect(storedKey!.keyType).toBe(KeyType.JWK_2020);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
+      expect(storedKey!.signatureType).toBe(SignatureType.PS256);
+    });
+
+    it("should generate and store PS256 key pair (JWK)", async () => {
+      const result = await service.generateKeyPair(
+        SignatureType.PS256,
+        KeyType.JWK,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe(mockIdentifier);
+      expect(result.type).toBe(KeyType.JWK);
+      expect(result.controller).toBe("did:web:example.com");
+      expect(result.publicKeyJwk).toBeDefined();
+      expect(result.publicKeyJwk!.kty).toBe("RSA");
+      expect(result.publicKeyJwk!.n).toBeDefined();
+      expect(result.publicKeyJwk!.e).toBeDefined();
+
+      // Verify it was stored in the database
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      const count = await encryptedKeyRepository.count();
+      expect(count).toBe(1);
+
+      const storedKey = await encryptedKeyRepository.findOne({
+        where: { identifier: secretService.hash(mockIdentifier) },
+      });
+      expect(storedKey).toBeDefined();
+      expect(storedKey!.identifier).toBe(secretService.hash(mockIdentifier));
+      expect(storedKey!.keyType).toBe(KeyType.JWK);
       expect(storedKey!.signatureType).toBe(SignatureType.PS256);
     });
 
@@ -350,27 +379,26 @@ describe("KeyService", () => {
 
       const result1 = await service.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.MULTIKEY,
         identifier1,
         mockSecrets
       );
 
       const result2 = await service.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.MULTIKEY,
         identifier2,
         mockSecrets
       );
 
-      // The public JWK keys should be different due to random generation
-      expect(result1.publicKeyJwk).toBeDefined();
-      expect(result2.publicKeyJwk).toBeDefined();
-      expect(result1.publicKeyJwk).not.toEqual(result2.publicKeyJwk);
+      // PS256 with Multikey should have publicKeyMultibase
+      expect(result1.publicKeyMultibase).toBeDefined();
+      expect(result2.publicKeyMultibase).toBeDefined();
+      expect(result1.publicKeyMultibase).not.toEqual(result2.publicKeyMultibase);
 
-      // Specifically check that the n (modulus) values are different for RSA keys
-      expect(result1.publicKeyJwk!.n).not.toBe(result2.publicKeyJwk!.n);
-      expect(result1.publicKeyJwk!.kty).toBe("RSA");
-      expect(result2.publicKeyJwk!.kty).toBe("RSA");
+      // Verify they are both Multikey type
+      expect(result1.type).toBe(KeyType.MULTIKEY);
+      expect(result2.type).toBe(KeyType.MULTIKEY);
 
       // Should have two keys stored
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
@@ -472,16 +500,16 @@ describe("KeyService", () => {
 
       const result = await service.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.MULTIKEY,
         identifierWithoutFragment,
         mockSecrets
       );
 
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.publicKeyJwk).toBeDefined();
+      expect(result.publicKeyMultibase).toBeDefined();
 
-      // For PS256, when identifier is missing fragment, it should append one with the kid
+      // For PS256, when identifier is missing fragment, it should append one with the publicKeyMultibase
       expect(result.id).toBeDefined();
       expect(result.id).toContain("#");
       expect(result.id).toMatch(/^did:web:ps256-auto-fragment\.com#.+/);
@@ -494,14 +522,11 @@ describe("KeyService", () => {
       // Controller should be the base identifier without fragment
       expect(result.controller).toBe(identifierWithoutFragment);
 
-      // The JWK should have a kid field that represents the public key
-      expect(result.publicKeyJwk).toBeDefined();
-      if (result.publicKeyJwk && result.publicKeyJwk.kid) {
-        expect(result.publicKeyJwk.kid).toBeDefined();
-        expect(result.publicKeyJwk.kid.length).toBeGreaterThan(0);
-
-        // The kid should be derived from the public key (base64url encoded)
-        expect(typeof result.publicKeyJwk.kid).toBe("string");
+      // The Multikey should have a publicKeyMultibase field
+      expect(result.publicKeyMultibase).toBeDefined();
+      expect(typeof result.publicKeyMultibase).toBe("string");
+      if (result.publicKeyMultibase) {
+        expect(result.publicKeyMultibase.length).toBeGreaterThan(0);
       }
 
       // Verify it was stored correctly in the database
@@ -510,7 +535,7 @@ describe("KeyService", () => {
         where: { identifier: secretService.hash(result.id) },
       });
       expect(storedKey).toBeDefined();
-      expect(storedKey!.keyType).toBe(KeyType.JWK_2020);
+      expect(storedKey!.keyType).toBe(KeyType.MULTIKEY);
       expect(storedKey!.signatureType).toBe(SignatureType.PS256);
 
       // Should be able to retrieve the key using the generated identifier
@@ -587,7 +612,7 @@ describe("KeyService", () => {
       // Generate PS256 key
       await service.generateKeyPair(
         SignatureType.PS256,
-        KeyType.JWK_2020,
+        KeyType.MULTIKEY,
         mockIdentifier,
         mockSecrets
       );
@@ -601,7 +626,7 @@ describe("KeyService", () => {
       expect(result.privateKey).toBeDefined();
       expect(typeof result.signer).toBe("function");
       expect(result.signatureType).toBe(SignatureType.PS256);
-      expect(result.keyType).toBe(KeyType.JWK_2020);
+      expect(result.keyType).toBe(KeyType.MULTIKEY);
     });
 
     it("should return key pair with real Ed25519 key data", async () => {
@@ -708,7 +733,7 @@ describe("KeyService", () => {
       const key2 = await encryptedKeyRepository.findOne({
         where: {
           identifier: secretService.hash(mockIdentifier),
-          keyType: KeyType.JWK_2020, // Different type
+          keyType: KeyType.JWK, // Different type
         },
       });
       expect(key2).toBeNull();
