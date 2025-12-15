@@ -105,11 +105,9 @@ async function verifyDataIntegrityCredential(
     // Create a documentLoader that can resolve the verification method
     const baseDocumentLoader = await DocumentLoaderService.getDocumentLoader();
     const documentLoader = async (url: string) => {
-      console.log("DocumentLoader requested URL:", url);
       
       // If the URL matches our verification method ID, return the verificationMethodObj
       if (url === verificationMethodObj.id) {
-        console.log("Returning verificationMethodObj for:", url);
         return {
           contextUrl: null,
           documentUrl: url,
@@ -119,7 +117,6 @@ async function verifyDataIntegrityCredential(
       
       // If the URL is the controller (DID), return a minimal DID document with the verification method
       if (url === verificationMethodObj.controller) {
-        console.log("Returning DID document for controller:", url);
         return {
           contextUrl: null,
           documentUrl: url,
