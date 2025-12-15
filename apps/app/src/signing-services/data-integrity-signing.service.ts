@@ -23,9 +23,7 @@ import {
   UnsupportedException,
 } from "../types/custom-exceptions";
 // @ts-ignore
-import { PS256Signature2020 } from "@eecc/ps256-signature-2020";
-// @ts-ignore
-import * as RsaMultikey from "@eecc/rsa-multikey";
+import {cryptosuite as rsaRdfc2025CryptoSuite} from "@eecc/rsa-rdfc-2025-cryptosuite";
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -62,31 +60,9 @@ export class DataIntegritySigningService {
         signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.PS256) {
-      // Convert multikey to JWK format for PS256Signature2020
-      const rsaKeyPair = await RsaMultikey.from({
-        type: 'Multikey',
-        id: keyPair.id,
-        controller: keyPair.controller,
-        publicKeyMultibase: keyPair.publicKey as string,
-        secretKeyMultibase: keyPair.privateKey as string,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: rsaRdfc2025CryptoSuite
       });
-      
-      const privateKeyJwk = await RsaMultikey.toJwk({
-        keyPair: rsaKeyPair,
-        secretKey: true,
-      });
-      
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: privateKeyJwk,
-      }
-
-      suite = new PS256Signature2020({
-        key
-      });
-
     } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
@@ -145,32 +121,10 @@ export class DataIntegritySigningService {
         signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.PS256) {
-      // Convert multikey to JWK format for PS256Signature2020
-      const rsaKeyPair = await RsaMultikey.from({
-        type: 'Multikey',
-        id: keyPair.id,
-        controller: keyPair.controller,
-        publicKeyMultibase: keyPair.publicKey as string,
-        secretKeyMultibase: keyPair.privateKey as string,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: rsaRdfc2025CryptoSuite
       });
-      
-      const privateKeyJwk = await RsaMultikey.toJwk({
-        keyPair: rsaKeyPair,
-        secretKey: true,
-      });
-      
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: privateKeyJwk,
-      }
-
-      suite = new PS256Signature2020({
-        key
-      });
-    } 
-    else {
+    } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );

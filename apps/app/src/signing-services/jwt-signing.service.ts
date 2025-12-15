@@ -78,13 +78,8 @@ export class JwtSigningService {
       ),
     ].join(".");
     
-    // Multikey signers (Ed25519, ES256) expect Uint8Array, but PS256 expects string
-    const signingData = keyPair.signatureType !== SignatureType.PS256 
-      ? new TextEncoder().encode(signingInput)
-      : signingInput;
-    
     const signature = jose.base64url.encode(
-      await signer.sign({ data: signingData })
+      await signer.sign({ data: new TextEncoder().encode(signingInput) })
     );
     return [signingInput, signature].join(".");
   }
