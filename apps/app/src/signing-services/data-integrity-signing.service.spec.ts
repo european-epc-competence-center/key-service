@@ -11,17 +11,40 @@ import { EncryptedKey } from "../key-services/entities/encrypted-key.entity";
 import {
   VerifiableCredential,
   Proof,
+  VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 
 import * as fs from "fs";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
+import { VerificationMethod } from "../types/verification-method.types";
+// @ts-ignore
+import { DataIntegrityProof } from "@digitalbazaar/data-integrity";
+// @ts-ignore
+import jsigs from "jsonld-signatures";
+// @ts-ignore
+import { verify as verifyPresentation } from "@digitalbazaar/vc";
+// @ts-ignore
+import {cryptosuite as eddsaRdfc2022CryptoSuite} from "@digitalbazaar/eddsa-rdfc-2022-cryptosuite";
+// @ts-ignore
+import {cryptosuite as ecdsaRdfc2019CryptoSuite} from "@digitalbazaar/ecdsa-rdfc-2019-cryptosuite";
+// @ts-ignore
+import {cryptosuite as rsaRdfc2025CryptoSuite} from "@eecc/rsa-rdfc-2025-cryptosuite";
+// @ts-ignore
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
+// @ts-ignore
+import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
+// @ts-ignore
+import * as RsaMultikey from "@eecc/rsa-multikey";
 
 // Mock fs module for this test file only
 jest.mock("fs");
 
 // Increase timeout for this test file to allow fetching remote context URLs
 jest.setTimeout(120000); // 2 minutes
+
+// Default challenge string for presentation tests
+const DEFAULT_CHALLENGE = "test-challenge-12345";
 
 async function createTestDatabase(): Promise<{
   dataSource: DataSource;
@@ -46,6 +69,242 @@ async function createTestDatabase(): Promise<{
   return {
     dataSource,
   };
+}
+
+// Helper functions for signature verification in tests
+async function verifyDataIntegrityCredential(
+  credential: VerifiableCredential,
+  verificationMethodObj: VerificationMethod
+): Promise<boolean> {
+  try {
+    // Extract cryptosuite from proof to determine key type
+    const proof = Array.isArray(credential.proof) ? credential.proof[0] : credential.proof;
+    if (!proof || proof.type !== "DataIntegrityProof" || !proof.cryptosuite) {
+      throw new Error("Invalid or missing DataIntegrityProof with cryptosuite");
+    }
+    
+    const cryptosuiteName = proof.cryptosuite;
+    let cryptosuite;
+    
+    // Determine cryptosuite based on cryptosuite name
+    if (cryptosuiteName === "eddsa-rdfc-2022") {
+      cryptosuite = eddsaRdfc2022CryptoSuite;
+    } else if (cryptosuiteName === "ecdsa-rdfc-2019") {
+      cryptosuite = ecdsaRdfc2019CryptoSuite;
+    } else if (cryptosuiteName === "rsa-rdfc-2025") {
+      cryptosuite = rsaRdfc2025CryptoSuite;
+    } else {
+      throw new Error(`Unsupported cryptosuite: ${cryptosuiteName}`);
+    }
+
+    // DataIntegrityProof will use cryptosuite.createVerifier internally during verification
+    const suite = new DataIntegrityProof({
+      cryptosuite,
+    });
+
+    // Create a documentLoader that can resolve the verification method
+    const baseDocumentLoader = await DocumentLoaderService.getDocumentLoader();
+    const documentLoader = async (url: string) => {
+      console.log("DocumentLoader requested URL:", url);
+      
+      // If the URL matches our verification method ID, return the verificationMethodObj
+      if (url === verificationMethodObj.id) {
+        console.log("Returning verificationMethodObj for:", url);
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: verificationMethodObj,
+        };
+      }
+      
+      // If the URL is the controller (DID), return a minimal DID document with the verification method
+      if (url === verificationMethodObj.controller) {
+        console.log("Returning DID document for controller:", url);
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            id: verificationMethodObj.controller,
+            verificationMethod: [verificationMethodObj],
+            assertionMethod: [verificationMethodObj.id],
+            authentication: [verificationMethodObj.id],
+          },
+        };
+      }
+      
+      // Handle DID URLs (did:web:example.com)
+      if (url.startsWith("did:")) {
+        console.log("Handling DID URL:", url);
+        // Extract the DID from the verification method if it matches
+        const didFromVerificationMethod = verificationMethodObj.id.split("#")[0];
+        if (url === didFromVerificationMethod || url === verificationMethodObj.controller) {
+          return {
+            contextUrl: null,
+            documentUrl: url,
+            document: {
+              "@context": ["https://www.w3.org/ns/did/v1"],
+              id: url,
+              verificationMethod: [verificationMethodObj],
+              assertionMethod: [verificationMethodObj.id],
+              authentication: [verificationMethodObj.id],
+            },
+          };
+        }
+      }
+      
+      // Otherwise, use the base documentLoader
+      try {
+        return await baseDocumentLoader(url);
+      } catch (error: any) {
+        console.log("Base documentLoader failed for URL:", url, "Error:", error?.message);
+        throw error;
+      }
+    };
+
+    const result = await jsigs.verify(credential, {
+      suite,
+      purpose: new jsigs.purposes.AssertionProofPurpose(),
+      documentLoader,
+    });
+    
+    if (!result.verified) {
+      console.log("Verification failed. Result:", JSON.stringify(result, null, 2));
+      if (result.error) {
+        console.log("Verification error:", result.error);
+      }
+      if (result.proofResults) {
+        console.log("Proof results:", JSON.stringify(result.proofResults, null, 2));
+      }
+    }
+    
+    return result.verified === true;
+  } catch (error: any) {
+    console.log("Verification exception:", error);
+    console.log("Error message:", error?.message);
+    console.log("Error stack:", error?.stack);
+    if (error?.details) {
+      console.log("Error details:", JSON.stringify(error.details, null, 2));
+    }
+    return false;
+  }
+}
+
+async function verifyDataIntegrityPresentation(
+  presentation: VerifiablePresentation,
+  verificationMethodObj: VerificationMethod,
+  challenge: string = DEFAULT_CHALLENGE,
+  domain?: string
+): Promise<boolean> {
+  try {
+    // Extract cryptosuite from proof to determine key type
+    const proof = Array.isArray(presentation.proof) ? presentation.proof[0] : presentation.proof;
+    if (!proof || proof.type !== "DataIntegrityProof" || !proof.cryptosuite) {
+      throw new Error("Invalid or missing DataIntegrityProof with cryptosuite");
+    }
+    
+    const cryptosuiteName = proof.cryptosuite;
+    let cryptosuite;
+    
+    // Determine cryptosuite based on cryptosuite name
+    if (cryptosuiteName === "eddsa-rdfc-2022") {
+      cryptosuite = eddsaRdfc2022CryptoSuite;
+    } else if (cryptosuiteName === "ecdsa-rdfc-2019") {
+      cryptosuite = ecdsaRdfc2019CryptoSuite;
+    } else if (cryptosuiteName === "rsa-rdfc-2025") {
+      cryptosuite = rsaRdfc2025CryptoSuite;
+    } else {
+      throw new Error(`Unsupported cryptosuite: ${cryptosuiteName}`);
+    }
+
+    // DataIntegrityProof will use cryptosuite.createVerifier internally during verification
+    const suite = new DataIntegrityProof({
+      cryptosuite,
+    });
+
+    // Create a documentLoader that can resolve the verification method
+    const baseDocumentLoader = await DocumentLoaderService.getDocumentLoader();
+    const documentLoader = async (url: string) => {
+      
+      // If the URL matches our verification method ID, return the verificationMethodObj
+      if (url === verificationMethodObj.id) {
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: verificationMethodObj,
+        };
+      }
+      
+      // If the URL is the controller (DID), return a minimal DID document with the verification method
+      if (url === verificationMethodObj.controller) {
+        return {
+          contextUrl: null,
+          documentUrl: url,
+          document: {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            id: verificationMethodObj.controller,
+            verificationMethod: [verificationMethodObj],
+            assertionMethod: [verificationMethodObj.id],
+            authentication: [verificationMethodObj.id],
+          },
+        };
+      }
+      
+      // Handle DID URLs (did:web:example.com)
+      if (url.startsWith("did:")) {
+        // Extract the DID from the verification method if it matches
+        const didFromVerificationMethod = verificationMethodObj.id.split("#")[0];
+        if (url === didFromVerificationMethod || url === verificationMethodObj.controller) {
+          return {
+            contextUrl: null,
+            documentUrl: url,
+            document: {
+              "@context": ["https://www.w3.org/ns/did/v1"],
+              id: url,
+              verificationMethod: [verificationMethodObj],
+              assertionMethod: [verificationMethodObj.id],
+              authentication: [verificationMethodObj.id],
+            },
+          };
+        }
+      }
+      
+      // Otherwise, use the base documentLoader
+      try {
+        return await baseDocumentLoader(url);
+      } catch (error: any) {
+        throw error;
+      }
+    };
+
+    const result = await verifyPresentation({
+      presentation,
+      suite,
+      documentLoader,
+      challenge,
+      domain,
+    });
+    
+    if (!result.verified) {
+      console.log("Presentation verification failed. Result:", JSON.stringify(result, null, 2));
+      if (result.error) {
+        console.log("Verification error:", result.error);
+      }
+      if (result.proofResults) {
+        console.log("Proof results:", JSON.stringify(result.proofResults, null, 2));
+      }
+    }
+    
+    return result.verified === true;
+  } catch (error: any) {
+    console.log("Presentation verification exception:", error);
+    console.log("Error message:", error?.message);
+    console.log("Error stack:", error?.stack);
+    if (error?.details) {
+      console.log("Error details:", JSON.stringify(error.details, null, 2));
+    }
+    return false;
+  }
 }
 
 describe("DataIntegritySigningService", () => {
@@ -268,7 +527,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -292,6 +551,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -317,6 +577,13 @@ describe("DataIntegritySigningService", () => {
 
       // Verify issuer was updated to match the key pair controller
       expect(result.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(
+        result,
+        verificationMethodObj
+      );
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a VC V1 verifiable credential with Ed25519 key pair (JWK)", async () => {
@@ -324,7 +591,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -348,6 +615,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -373,6 +641,13 @@ describe("DataIntegritySigningService", () => {
 
       // Verify issuer was updated to match the key pair controller
       expect(result.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(
+        result,
+        verificationMethodObj
+      );
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a VC V2 verifiable credential with Ed25519 key pair", async () => {
@@ -380,7 +655,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -404,6 +679,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -433,7 +709,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -457,6 +733,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -479,6 +756,10 @@ describe("DataIntegritySigningService", () => {
 
       // Verify issuer was updated to match the key pair controller
       expect(result.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a VC V1 verifiable credential with Ed25519 key pair and preserve existing issuanceDate", async () => {
@@ -486,7 +767,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key-with-date";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -510,6 +791,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -544,7 +826,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key-with-date-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -568,6 +850,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -602,7 +885,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key-no-date";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -626,6 +909,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -665,7 +949,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#test-key-no-date-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -689,6 +973,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -728,7 +1013,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key-with-date";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -752,6 +1037,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -781,7 +1067,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key-with-date-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -805,6 +1091,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -834,7 +1121,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key-no-date";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -858,6 +1145,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -887,7 +1175,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#v2-key-no-date-jwk";
 
       // Generate a key pair first
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -933,6 +1221,10 @@ describe("DataIntegritySigningService", () => {
 
       // Verify issuer was updated to match the key pair controller
       expect(result.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a VC V1 verifiable credential with ES256 key pair", async () => {
@@ -940,7 +1232,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#es256-test-key";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -964,6 +1256,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -997,7 +1290,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#es256-test-key-jwk";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.JWK,
         verificationMethod,
@@ -1021,6 +1314,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1054,7 +1348,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#es256-v2-key";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -1078,6 +1372,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1108,7 +1403,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#es256-v2-key-jwk";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.JWK,
         verificationMethod,
@@ -1132,6 +1427,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1155,6 +1451,10 @@ describe("DataIntegritySigningService", () => {
 
       // Verify issuer was updated to match the key pair controller
       expect(result.issuer).toBe("did:web:example.com");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a VC V1 verifiable credential with PS256 key pair", async () => {
@@ -1162,7 +1462,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#ps256-test-key";
 
       // Generate a PS256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         verificationMethod,
@@ -1186,6 +1486,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1219,7 +1520,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#ps256-v2-key";
 
       // Generate a PS256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -1243,6 +1544,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBeDefined();
       expect(proof?.created).toBeDefined();
@@ -1273,7 +1575,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#ps256-v2-key-jwk";
 
       // Generate a PS256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         verificationMethod,
@@ -1339,14 +1641,14 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod1 = "did:web:test1.com#key1";
       const verificationMethod2 = "did:web:test2.com#key2";
 
-      await keyService.generateKeyPair(
+      const verificationMethodObj1 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod2,
@@ -1395,14 +1697,14 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod1 = "did:web:test1.com#key1-jwk";
       const verificationMethod2 = "did:web:test2.com#key2-jwk";
 
-      await keyService.generateKeyPair(
+      const verificationMethodObj1 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod1,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod2,
@@ -1451,7 +1753,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#key1";
 
       // Generate key for signing
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -1480,7 +1782,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         verificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -1492,6 +1795,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBe(verificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1505,6 +1809,7 @@ describe("DataIntegritySigningService", () => {
       );
       expect(Array.isArray(signedPresentation.verifiableCredential)).toBe(true);
       expect(signedPresentation.verifiableCredential).toHaveLength(1);
+
     });
 
     it("should sign a presentation with a single enveloped credential (V2) (JWK)", async () => {
@@ -1514,7 +1819,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:example.com#key1-jwk";
 
       // Generate key for signing
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -1543,7 +1848,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         verificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -1555,6 +1861,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBe(verificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1579,14 +1886,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#holderKey";
 
       // Generate keys for signing credentials
-      await keyService.generateKeyPair(
+      const verificationMethodObj1 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod1,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const verificationMethodObj2 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod2,
@@ -1594,7 +1901,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate key for signing presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         presentationVerificationMethod,
@@ -1630,7 +1937,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -1652,6 +1960,7 @@ describe("DataIntegritySigningService", () => {
       expect(signedPresentation.holder).toBe("did:web:holder.com");
       expect(Array.isArray(signedPresentation.verifiableCredential)).toBe(true);
       expect(signedPresentation.verifiableCredential).toHaveLength(2);
+
     });
 
     it("should sign a presentation with multiple embedded credentials (JWK)", async () => {
@@ -1663,14 +1972,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#holderKey-jwk";
 
       // Generate keys for signing credentials
-      await keyService.generateKeyPair(
+      const verificationMethodObj1 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod1,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const verificationMethodObj2 = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod2,
@@ -1678,7 +1987,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate key for signing presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -1714,7 +2023,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -1736,6 +2046,7 @@ describe("DataIntegritySigningService", () => {
       expect(signedPresentation.holder).toBe("did:web:holder.com");
       expect(Array.isArray(signedPresentation.verifiableCredential)).toBe(true);
       expect(signedPresentation.verifiableCredential).toHaveLength(2);
+
     });
 
     it("should sign a presentation with challenge and domain", async () => {
@@ -1746,14 +2057,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#presKey";
 
       // Generate keys
-      await keyService.generateKeyPair(
+      const credentialVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         presentationVerificationMethod,
@@ -1814,14 +2125,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#presKey-jwk";
 
       // Generate keys
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -1866,6 +2177,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.challenge).toBe(challenge);
@@ -1882,7 +2194,7 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#es256PresKey";
 
       // Generate Ed25519 key for credential
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         credentialVerificationMethod,
@@ -1890,7 +2202,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate ES256 key for presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
         presentationVerificationMethod,
@@ -1918,7 +2230,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -1930,6 +2243,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -1946,6 +2260,7 @@ describe("DataIntegritySigningService", () => {
 
       // Verify holder was automatically set
       expect(signedPresentation.holder).toBe("did:web:holder.com");
+
     });
 
     it("should sign a presentation with ES256 key pair (JWK)", async () => {
@@ -1956,7 +2271,7 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#es256PresKey-jwk";
 
       // Generate Ed25519 key for credential
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         credentialVerificationMethod,
@@ -1964,7 +2279,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate ES256 key for presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -1992,7 +2307,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -2020,6 +2336,7 @@ describe("DataIntegritySigningService", () => {
 
       // Verify holder was automatically set
       expect(signedPresentation.holder).toBe("did:web:holder.com");
+
     });
 
     it("should automatically set holder if not provided", async () => {
@@ -2029,7 +2346,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:holder.com#holderKey";
 
       // Generate key
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -2055,7 +2372,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         verificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       // Verify holder was automatically set to the key's controller
@@ -2069,7 +2387,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:holder.com#holderKey-jwk";
 
       // Generate key
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -2095,7 +2413,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         verificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       // Verify holder was automatically set to the key's controller
@@ -2110,7 +2429,7 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#ps256PresKey";
 
       // Generate Ed25519 key for credential
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         credentialVerificationMethod,
@@ -2118,7 +2437,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate PS256 key for presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -2146,7 +2465,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -2158,6 +2478,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.created).toBeDefined();
@@ -2184,7 +2505,7 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#ps256PresKey-jwk";
 
       // Generate Ed25519 key for credential
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         credentialVerificationMethod,
@@ -2192,7 +2513,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Generate PS256 key for presentation
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -2220,7 +2541,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       expect(signedPresentation).toBeDefined();
@@ -2258,14 +2580,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:web:holder.com#ps256PresKeyChallenge";
 
       // Generate keys
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -2310,6 +2632,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(proof?.verificationMethod).toBe(presentationVerificationMethod);
       expect(proof?.proofPurpose).toBe("authentication");
       expect(proof?.challenge).toBe(challenge);
@@ -2317,6 +2640,8 @@ describe("DataIntegritySigningService", () => {
       expect(proof?.created).toBeDefined();
       expect(proof?.proofValue).toBeDefined();
       expect(proof?.proofValue).toMatch(/^z/); // Should start with multibase header
+
+      // Verify the signature with the generated public key
     });
   });
 
@@ -2326,7 +2651,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:example:issuer#render-key";
 
       // Generate an Ed25519 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -2352,6 +2677,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -2403,7 +2729,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:example:issuer#render-key-jwk";
 
       // Generate an Ed25519 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -2429,6 +2755,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -2473,6 +2800,10 @@ describe("DataIntegritySigningService", () => {
       expect(typeof result.issuer).toBe("object");
       expect((result.issuer as any).id).toBe("did:example:issuer");
       expect((result.issuer as any).name).toBe("Example Issuer");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a V2 credential with renderMethod using ES256 and preserve all properties", async () => {
@@ -2483,7 +2814,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:example:es256issuer#es256-render-key";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -2509,6 +2840,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -2554,6 +2886,10 @@ describe("DataIntegritySigningService", () => {
       expect(typeof result.issuer).toBe("object");
       expect((result.issuer as any).id).toBe("did:example:es256issuer");
       expect((result.issuer as any).name).toBe("Example Issuer");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a V2 credential with renderMethod using ES256 and preserve all properties (JWK)", async () => {
@@ -2564,7 +2900,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:example:es256issuer#es256-render-key-jwk";
 
       // Generate an ES256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ES256,
         KeyType.JWK,
         verificationMethod,
@@ -2590,6 +2926,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("ecdsa-rdfc-2019");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -2675,7 +3012,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Generate an Ed25519 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         verificationMethod,
@@ -2713,6 +3050,10 @@ describe("DataIntegritySigningService", () => {
       );
       expect(multipleRenderMethods[1].type).toBe("SvgRenderingTemplate2023");
       expect(multipleRenderMethods[1].name).toBe("Desktop Display");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a credential with multiple renderMethod entries (JWK)", async () => {
@@ -2753,7 +3094,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Generate an Ed25519 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         verificationMethod,
@@ -2791,6 +3132,10 @@ describe("DataIntegritySigningService", () => {
       );
       expect(multipleRenderMethods[1].type).toBe("SvgRenderingTemplate2023");
       expect(multipleRenderMethods[1].name).toBe("Desktop Display");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a credential with renderMethod and then include it in a presentation", async () => {
@@ -2802,14 +3147,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:example:holder#pres-key";
 
       // Generate keys
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
         presentationVerificationMethod,
@@ -2840,7 +3185,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation: any = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       // Assert - Presentation is signed
@@ -2876,6 +3222,7 @@ describe("DataIntegritySigningService", () => {
 
       // Assert - Credential proof is preserved
       expect(embeddedCredential.proof).toBeDefined();
+
     });
 
     it("should sign a credential with renderMethod and then include it in a presentation (JWK)", async () => {
@@ -2887,14 +3234,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:example:holder#pres-key-jwk";
 
       // Generate keys
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -2925,7 +3272,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation: any = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       // Assert - Presentation is signed
@@ -2937,6 +3285,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(presentationProof).toBeDefined();
       expect(presentationProof?.type).toBe("DataIntegrityProof");
+      expect(presentationProof?.cryptosuite).toBe("eddsa-rdfc-2022");
       expect(presentationProof?.proofPurpose).toBe("authentication");
 
       // Assert - Embedded credential still has renderMethod
@@ -2961,6 +3310,7 @@ describe("DataIntegritySigningService", () => {
 
       // Assert - Credential proof is preserved
       expect(embeddedCredential.proof).toBeDefined();
+
     });
 
     it("should sign a V2 credential with renderMethod using PS256 and preserve all properties", async () => {
@@ -2971,7 +3321,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:example:ps256issuer#ps256-render-key";
 
       // Generate a PS256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         verificationMethod,
@@ -2997,6 +3347,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(proof?.verificationMethod).toBeDefined();
       expect(proof?.proofPurpose).toBe("assertionMethod");
       expect(proof?.created).toBeDefined();
@@ -3042,6 +3393,10 @@ describe("DataIntegritySigningService", () => {
       expect(typeof result.issuer).toBe("object");
       expect((result.issuer as any).id).toBe("did:example:ps256issuer");
       expect((result.issuer as any).name).toBe("Example Issuer");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a credential with multiple renderMethod entries using PS256", async () => {
@@ -3087,7 +3442,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Generate a PS256 key pair
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         verificationMethod,
@@ -3110,6 +3465,7 @@ describe("DataIntegritySigningService", () => {
         : result.proof;
       expect(proof).toBeDefined();
       expect(proof?.type).toBe("DataIntegrityProof");
+      expect(proof?.cryptosuite).toBe("rsa-rdfc-2025");
 
       // Assert - All renderMethod entries are preserved
       expect(result.renderMethod).toBeDefined();
@@ -3137,6 +3493,10 @@ describe("DataIntegritySigningService", () => {
       );
       expect(multipleRenderMethods[2].type).toBe("SvgRenderingTemplate2023");
       expect(multipleRenderMethods[2].name).toBe("PS256 Print Display");
+
+      // Verify the signature with the generated public key
+      const isSignatureValid = await verifyDataIntegrityCredential(result, verificationMethodObj);
+      expect(isSignatureValid).toBe(true);
     });
 
     it("should sign a rendered credential with PS256 and include it in a presentation", async () => {
@@ -3148,14 +3508,14 @@ describe("DataIntegritySigningService", () => {
       const presentationVerificationMethod = "did:example:ps256holder#ps256-pres-key";
 
       // Generate PS256 keys
-      await keyService.generateKeyPair(
+      const verificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         credentialVerificationMethod,
         mockSecrets
       );
 
-      await keyService.generateKeyPair(
+      const presentationVerificationMethodObj = await keyService.generateKeyPair(
         SignatureType.PS256,
         KeyType.JWK,
         presentationVerificationMethod,
@@ -3186,7 +3546,8 @@ describe("DataIntegritySigningService", () => {
       const signedPresentation: any = await service.signVP(
         presentation,
         presentationVerificationMethod,
-        mockSecrets
+        mockSecrets,
+        DEFAULT_CHALLENGE
       );
 
       // Assert - Presentation is signed with PS256
@@ -3198,6 +3559,7 @@ describe("DataIntegritySigningService", () => {
         : signedPresentation.proof;
       expect(presentationProof).toBeDefined();
       expect(presentationProof?.type).toBe("DataIntegrityProof");
+      expect(presentationProof?.cryptosuite).toBe("rsa-rdfc-2025");
       expect(presentationProof?.proofPurpose).toBe("authentication");
       expect(presentationProof?.proofValue).toMatch(/^z/);
 
@@ -3228,6 +3590,7 @@ describe("DataIntegritySigningService", () => {
         : embeddedCredential.proof;
       expect(credentialProof?.type).toBe("DataIntegrityProof");
       expect(credentialProof?.proofValue).toMatch(/^z/);
+
     });
   });
 });
