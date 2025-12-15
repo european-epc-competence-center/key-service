@@ -10,7 +10,6 @@ import { DocumentLoaderService } from "../utils/document-loader.service";
 import { EncryptedKey } from "../key-services/entities/encrypted-key.entity";
 import {
   VerifiableCredential,
-  Proof,
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 
@@ -30,12 +29,7 @@ import {cryptosuite as eddsaRdfc2022CryptoSuite} from "@digitalbazaar/eddsa-rdfc
 import {cryptosuite as ecdsaRdfc2019CryptoSuite} from "@digitalbazaar/ecdsa-rdfc-2019-cryptosuite";
 // @ts-ignore
 import {cryptosuite as rsaRdfc2025CryptoSuite} from "@eecc/rsa-rdfc-2025-cryptosuite";
-// @ts-ignore
-import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
-// @ts-ignore
-import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
-// @ts-ignore
-import * as RsaMultikey from "@eecc/rsa-multikey";
+
 
 // Mock fs module for this test file only
 jest.mock("fs");
