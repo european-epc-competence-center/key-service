@@ -3,14 +3,15 @@ import { KeyService } from "../key-services/key.service";
 import { DocumentLoaderService } from "../utils/document-loader.service";
 import {
   VerifiableCredential,
-  DataIntegrityProof,
   Issuer,
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 // @ts-ignore
-import { Ed25519Signature2020 } from "@digitalbazaar/ed25519-signature-2020";
+import { DataIntegrityProof } from "@digitalbazaar/data-integrity";
 // @ts-ignore
-import { ES256Signature2020 } from "@eecc/es256-signature-2020";
+import {cryptosuite as eddsaRdfc2022CryptoSuite} from "@digitalbazaar/eddsa-rdfc-2022-cryptosuite";
+// @ts-ignore
+import {cryptosuite as ecdsaRdfc2019CryptoSuite} from "@digitalbazaar/ecdsa-rdfc-2019-cryptosuite";
 // @ts-ignore
 import { issue, signPresentation } from "@digitalbazaar/vc";
 
@@ -22,7 +23,7 @@ import {
   UnsupportedException,
 } from "../types/custom-exceptions";
 // @ts-ignore
-import { PS256Signature2020 } from "@eecc/ps256-signature-2020";
+import {cryptosuite as rsaRdfc2025CryptoSuite} from "@eecc/rsa-rdfc-2025-cryptosuite";
 
 @Injectable()
 export class DataIntegritySigningService {
@@ -51,35 +52,17 @@ export class DataIntegritySigningService {
 
     let suite;
     if (keyPair.signatureType === SignatureType.ED25519_2020) {
-      suite = new Ed25519Signature2020({
-        key: keyPair,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: eddsaRdfc2022CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
-
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
-      }
-
-      suite = new ES256Signature2020({
-        key
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
-      
     } else if (keyPair.signatureType === SignatureType.PS256) {
-      
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
-      }
-
-      suite = new PS256Signature2020({
-        key
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: rsaRdfc2025CryptoSuite
       });
-
     } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
@@ -130,36 +113,18 @@ export class DataIntegritySigningService {
     
     let suite;
     if (keyPair.signatureType === SignatureType.ED25519_2020) {
-      suite = new Ed25519Signature2020({
-        key: keyPair,
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: eddsaRdfc2022CryptoSuite
       });
     } else if (keyPair.signatureType === SignatureType.ES256) {
-      
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
-      }
-
-      suite = new ES256Signature2020({
-        key
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: ecdsaRdfc2019CryptoSuite
       });
-      
     } else if (keyPair.signatureType === SignatureType.PS256) {
-      
-      const key = {
-        id: keyPair.id,
-        type: 'JsonWebKey2020',
-        controller: keyPair.controller,
-        privateKey: keyPair.privateKey,
-      }
-
-      suite = new PS256Signature2020({
-        key
+      suite = new DataIntegrityProof({
+        signer: keyPair.signer(), cryptosuite: rsaRdfc2025CryptoSuite
       });
-    } 
-    else {
+    } else {
       throw new UnsupportedException(
         `Signature type ${keyPair.signatureType} is not supported for data integrity proof`
       );

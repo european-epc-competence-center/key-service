@@ -49,7 +49,7 @@ describe("Input Validation (e2e)", () => {
         .send({
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -60,7 +60,7 @@ describe("Input Validation (e2e)", () => {
         .send({
           secrets: ["secret1"],
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -71,7 +71,7 @@ describe("Input Validation (e2e)", () => {
         .send({
           secrets: ["secret1"],
           identifier: "test-key",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -94,7 +94,7 @@ describe("Input Validation (e2e)", () => {
           secrets: ["secret1"],
           identifier: "test-key",
           signatureType: "INVALID_TYPE",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -118,7 +118,7 @@ describe("Input Validation (e2e)", () => {
           secrets: [],
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -130,7 +130,7 @@ describe("Input Validation (e2e)", () => {
           secrets: Array(11).fill("secret"),
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -142,7 +142,7 @@ describe("Input Validation (e2e)", () => {
           secrets: ["secret1"],
           identifier: "test@key#invalid!",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -154,7 +154,7 @@ describe("Input Validation (e2e)", () => {
           secrets: ["secret1"],
           identifier: "a".repeat(501), // Max is 500
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -166,7 +166,7 @@ describe("Input Validation (e2e)", () => {
           secrets: ["a".repeat(1001)], // Max is 1000
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -178,7 +178,7 @@ describe("Input Validation (e2e)", () => {
           secrets: "not-an-array",
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
         })
         .expect(400);
     });
@@ -190,7 +190,7 @@ describe("Input Validation (e2e)", () => {
           secrets: ["secret1"],
           identifier: "test-key",
           signatureType: "Ed25519",
-          keyType: "JsonWebKey2020",
+          keyType: "JsonWebKey",
           maliciousField: "hacker-payload",
         })
         .expect(400);

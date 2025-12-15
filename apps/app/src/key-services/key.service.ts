@@ -3,27 +3,24 @@ import { SignatureType } from "../types/key-types.enum";
 import {
   KeyPair,
   RawKeypair,
-  JsonWebKey,
+  ECJsonWebKey,
   RSAJsonWebKey,
-  RSAPrivateJsonWebKey,
 } from "../types/keypair.types";
 
 // @ts-ignore
-import { Ed25519VerificationKey2020 } from "@digitalbazaar/ed25519-verification-key-2020";
+import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
+// @ts-ignore
+import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
+// @ts-ignore
+import * as RsaMultikey from "@eecc/rsa-multikey";
 import { VerificationMethod } from "../types/verification-method.types";
 import { KeyStorageService } from "./key-storage.service";
 import { KeyType } from "../types";
-import * as crypto from "crypto";
 import { UnsupportedException } from "../types/custom-exceptions";
-import * as jose from "jose";
 
 @Injectable()
 export class KeyService {
   constructor(private readonly keyStorageService: KeyStorageService) {}
-
-  async getPublicKey(identifier: string, secrets: string[]): Promise<any> {
-    return (await this.getKeyPair(identifier, secrets)).publicKey;
-  }
 
   async generateKeyPair(
     keyType: SignatureType,
@@ -35,36 +32,25 @@ export class KeyService {
       throw new Error("At least one secret must be provided");
     }
     if (keyType === SignatureType.ED25519_2020) {
-      const ed25519KeyPair = await this.generateEd25519VerificationKey2020(
+      return await this.generateEd25519Multikey(
         identifier,
         keyFormat,
         secrets
       );
-      return {
-        id: ed25519KeyPair.id,
-        type: ed25519KeyPair.type,
-        controller: ed25519KeyPair.controller,
-        publicKeyMultibase: ed25519KeyPair.publicKeyMultibase,
-      };
     }
     if (keyType === SignatureType.ES256) {
-      const es256KeyPair = await this.generateES256JsonWebKey(
+      return await this.generateEcdsaMultikey(
         identifier,
+        keyFormat,
         secrets
       );
-      return {
-        id: es256KeyPair.id,
-        type: KeyType.JWK,
-        controller: identifier.split("#")[0],
-        publicKeyJwk: es256KeyPair.publicKeyJwk,
-      };
     }
     if (keyType === SignatureType.PS256) {
-      const ps256KeyPair = await this.generatePS256JsonWebKey(
+      return await this.generateRsaMultikey(
         identifier,
+        keyFormat,
         secrets
       );
-      return ps256KeyPair;
     }
     throw new UnsupportedException(`Unsupported key type: ${keyType}`);
   }
@@ -78,318 +64,155 @@ export class KeyService {
       secrets
     );
     if (
-      storedKey.signatureType === SignatureType.ED25519_2020 &&
-      storedKey.keyType === KeyType.VERIFICATION_KEY_2020
+      storedKey.signatureType === SignatureType.ED25519_2020
     ) {
-      const ed25519Key = new Ed25519VerificationKey2020({
+      const ed25519Key = await Ed25519Multikey.from({
+        type: 'Multikey',
         id: storedKey.id,
         controller: storedKey.controller,
         publicKeyMultibase: storedKey.publicKey,
-        privateKeyMultibase: storedKey.privateKey,
+        secretKeyMultibase: storedKey.privateKey,
       });
 
-      return {
-        privateKey: storedKey.privateKey,
-        publicKey: storedKey.publicKey,
-        keyType: storedKey.keyType,
-        signatureType: storedKey.signatureType,
+      return {...storedKey, signer: ed25519Key.signer, verifier: ed25519Key.verifier};
+    }
+    if (
+      storedKey.signatureType === SignatureType.ES256
+    ) {
+      const ecdsaKey = await EcdsaMultikey.from({
+        type: 'Multikey',
         id: storedKey.id,
-        signer: () => ed25519Key.signer(),
-      };
+        controller: storedKey.controller,
+        publicKeyMultibase: storedKey.publicKey,
+        secretKeyMultibase: storedKey.privateKey,
+      });
+
+      return {...storedKey, signer: ecdsaKey.signer, verifier: ecdsaKey.verifier};
     }
     if (
-      storedKey.signatureType === SignatureType.ES256 &&
-      storedKey.keyType === KeyType.JWK
+      storedKey.signatureType === SignatureType.PS256
     ) {
-      return await this.getES256JsonWebKey(storedKey);
-    }
-    if (
-      storedKey.signatureType === SignatureType.PS256 &&
-      (storedKey.keyType === KeyType.JWK ||
-        storedKey.keyType === KeyType.JWK_2020)
-    ) {
-      return await this.getPS256JsonWebKey(storedKey);
+      const rsaKey = await RsaMultikey.from({
+        type: 'Multikey',
+        id: storedKey.id,
+        controller: storedKey.controller,
+        publicKeyMultibase: storedKey.publicKey,
+        secretKeyMultibase: storedKey.privateKey,
+      }) as any;
+
+      return {...storedKey, signer: rsaKey.signer, verifier: rsaKey.verifier};
     }
     throw new UnsupportedException(
       `Unsupported signature type ${storedKey.signatureType} for key type ${storedKey.keyType}`
     );
   }
 
-  async generateEd25519VerificationKey2020(
+  async generateEd25519Multikey(
     identifier: string,
     keyFormat: KeyType,
     secrets: string[]
   ): Promise<VerificationMethod> {
-    const keyPair = await Ed25519VerificationKey2020.generate({
+    const keyPair = await Ed25519Multikey.generate({
       controller: identifier.split("#")[0],
       id: identifier,
     });
     if (!keyPair.id.split("#")[1]) {
-      keyPair.id = `${identifier}#${keyPair.fingerprint()}`;
+      keyPair.id = `${identifier}#${keyPair.publicKeyMultibase}`;
     }
     await this.keyStorageService.storeKey(
       keyPair.id,
       SignatureType.ED25519_2020,
       keyFormat,
-      keyPair.privateKeyMultibase,
+      keyPair.secretKeyMultibase,
       keyPair.publicKeyMultibase,
       secrets
     );
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id: keyPair.id,
+        type: keyFormat,
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKeyMultibase,
+      };
+    }
     return {
       id: keyPair.id,
-      type: keyPair.type,
+      type: keyFormat,
       controller: keyPair.controller,
-      publicKeyMultibase: keyPair.publicKeyMultibase,
+      publicKeyJwk: await Ed25519Multikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
     };
   }
 
-  async generateES256JsonWebKey(
+  async generateEcdsaMultikey(
     identifier: string,
+    keyFormat: KeyType,
     secrets: string[]
   ): Promise<VerificationMethod> {
-    // Use JOSE library for FIPS 186-4 compliant ES256 key generation
-    // This ensures proper curve validation and key generation within valid range
-    const keyPair = await jose.generateKeyPair("ES256", { extractable: true });
-
-    // Export keys to JWK format
-    const privateKeyJwkRaw = await jose.exportJWK(keyPair.privateKey);
-    const publicKeyJwkRaw = await jose.exportJWK(keyPair.publicKey);
-
-    // Generate kid from identifier or use a hash of the public key
-    const kid =
-      identifier.split("#")[1] ||
-      crypto.randomBytes(16).toString("base64url");
-
-    // Construct properly typed JWKs with required fields
-    const publicKeyJwk: JsonWebKey = {
-      kty: publicKeyJwkRaw.kty!,
-      crv: publicKeyJwkRaw.crv!,
-      x: publicKeyJwkRaw.x!,
-      y: publicKeyJwkRaw.y!,
-      kid,
-    };
-
-    const privateKeyJwk: JsonWebKey = {
-      ...publicKeyJwk,
-      d: privateKeyJwkRaw.d!,
-    };
-
-    const keyId =
-      identifier.split("#").length > 1 ? identifier : `${identifier}#${kid}`;
-
-    await this.keyStorageService.storeKey(
-      keyId,
-      SignatureType.ES256,
-      KeyType.JWK,
-      privateKeyJwk,
-      publicKeyJwk,
-      secrets
-    );
-
-    return {
-      id: keyId,
-      type: KeyType.JWK,
+    const keyPair = await EcdsaMultikey.generate({
+      curve: 'P-256',
       controller: identifier.split("#")[0],
-      publicKeyJwk,
-    };
-  }
-
-  async generatePS256JsonWebKey(
-    identifier: string,
-    secrets: string[]
-  ): Promise<VerificationMethod> {
-    // Use JOSE library for PS256 (RSASSA-PSS) key generation
-    const keyPair = await jose.generateKeyPair("PS256", { 
-      modulusLength: 4096,
-      extractable: true 
+      id: identifier,
     });
-
-    // Export keys to JWK format
-    const privateKeyJwkRaw = await jose.exportJWK(keyPair.privateKey);
-    const publicKeyJwkRaw = await jose.exportJWK(keyPair.publicKey);
-
-    const kid =
-      identifier.split("#")[1] ||
-      crypto.randomBytes(16).toString("base64url");
-
-    const publicKeyJwk: RSAJsonWebKey = {
-      kty: "RSA",
-      n: publicKeyJwkRaw.n!,
-      e: publicKeyJwkRaw.e!,
-      kid,
-    };
-
-    const privateKeyJwk: RSAPrivateJsonWebKey = {
-      kty: "RSA",
-      n: privateKeyJwkRaw.n!,
-      e: privateKeyJwkRaw.e!,
-      d: privateKeyJwkRaw.d!,
-      p: privateKeyJwkRaw.p!,
-      q: privateKeyJwkRaw.q!,
-      dp: privateKeyJwkRaw.dp!,
-      dq: privateKeyJwkRaw.dq!,
-      qi: privateKeyJwkRaw.qi!,
-      kid,
-    };
-
-    const keyId =
-      identifier.split("#").length > 1 ? identifier : `${identifier}#${kid}`;
-
+    if (!keyPair.id.split("#")[1]) {
+      keyPair.id = `${identifier}#${keyPair.publicKeyMultibase}`;
+    }
     await this.keyStorageService.storeKey(
-      keyId,
-      SignatureType.PS256,
-      KeyType.JWK_2020,
-      privateKeyJwk,
-      publicKeyJwk,
+      keyPair.id,
+      SignatureType.ES256,
+      keyFormat,
+      keyPair.secretKeyMultibase,
+      keyPair.publicKeyMultibase,
       secrets
     );
-
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id: keyPair.id,
+        type: keyFormat,
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKeyMultibase,
+      };
+    }
     return {
-      id: keyId,
-      type: KeyType.JWK_2020,
+      id: keyPair.id,
+      type: keyFormat.toString(),
+      controller: keyPair.controller,
+      publicKeyJwk: await EcdsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
+    };
+  }
+
+  async generateRsaMultikey(
+    identifier: string,
+    keyFormat: KeyType,
+    secrets: string[]
+  ): Promise<VerificationMethod> {
+    const keyPair = await RsaMultikey.generate({
       controller: identifier.split("#")[0],
-      publicKeyJwk,
-    };
-  }
-
-  async getES256JsonWebKey(storedKey: RawKeypair): Promise<KeyPair> {
+      id: identifier,
+    }) as any;
+    if (!keyPair.id.split("#")[1]) {
+      keyPair.id = `${identifier}#${keyPair.publicKeyMultibase}`;
+    }
+    await this.keyStorageService.storeKey(
+      keyPair.id,
+      SignatureType.PS256,
+      keyFormat,
+      keyPair.secretKeyMultibase,
+      keyPair.publicKeyMultibase,
+      secrets
+    );
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id: keyPair.id,
+        type: keyFormat,
+        controller: keyPair.controller,
+        publicKeyMultibase: keyPair.publicKeyMultibase,
+      };
+    }
     return {
-      privateKey: storedKey.privateKey,
-      publicKey: storedKey.publicKey,
-      keyType: storedKey.keyType,
-      signatureType: storedKey.signatureType,
-      id: storedKey.id,
-      controller: storedKey.controller,
-      signer: () =>
-        Promise.resolve({
-          sign: async (options: { data: string | Uint8Array }): Promise<Uint8Array> => {
-            // Use jose library for ES256 signing to get raw signature bytes
-            const privateKeyJwk = storedKey.privateKey as JsonWebKey;
-
-            // Import the private key using jose
-            const privateKey = await jose.importJWK({
-              ...privateKeyJwk,
-              alg: "ES256",
-            } as jose.JWK);
-
-            // Handle both JWT (string) and Data Integrity (Uint8Array) signing
-            if (typeof options.data === 'string') {
-              // JWT signing path - The data is already the JWT signing input (header.payload)
-              // For proper JWT signing, we need to split and use the payload only
-              const [headerPart, payloadPart] = options.data.split(".");
-
-              // Decode the header to get the algorithm and other claims
-              const headerBytes = jose.base64url.decode(headerPart);
-              const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
-
-              // Decode the payload
-              const payloadBytes = jose.base64url.decode(payloadPart);
-
-              // Create a JWS with the decoded payload and header
-              const jws = await new jose.FlattenedSign(payloadBytes)
-                .setProtectedHeader(headerObj)
-                .sign(privateKey);
-
-              // Return the raw signature bytes
-              return jose.base64url.decode(jws.signature);
-            } else {
-              // Data Integrity signing path - sign the raw bytes directly
-              const jws = await new jose.FlattenedSign(options.data)
-                .setProtectedHeader({ alg: 'ES256' })
-                .sign(privateKey);
-
-              // Return the raw signature bytes
-              return jose.base64url.decode(jws.signature);
-            }
-          },
-        }),
-      verifier: () =>
-        Promise.resolve({
-          verify: async (options: { data: Uint8Array; signature: Uint8Array }): Promise<boolean> => {
-            try {
-              // Use jose library for ES256 verification
-              const publicKeyJwk = storedKey.publicKey as JsonWebKey;
-
-              // Import the public key using jose
-              const publicKey = await jose.importJWK({
-                ...publicKeyJwk,
-                alg: "ES256",
-              } as jose.JWK);
-
-              // Encode signature as base64url for JWS
-              const signatureB64 = jose.base64url.encode(options.signature);
-
-              // Create a compact JWS format for verification
-              // Format: <header>.<payload>.<signature>
-              const header = jose.base64url.encode(
-                new TextEncoder().encode(JSON.stringify({ alg: 'ES256' }))
-              );
-              const payload = jose.base64url.encode(options.data);
-              const compactJws = `${header}.${payload}.${signatureB64}`;
-
-              // Verify the signature
-              const { payload: verifiedPayload } = await jose.compactVerify(compactJws, publicKey);
-
-              // If we get here without an error, the signature is valid
-              return true;
-            } catch (error) {
-              return false;
-            }
-          },
-        }),
-    };
-  }
-
-  async getPS256JsonWebKey(storedKey: RawKeypair): Promise<KeyPair> {
-    return {
-      privateKey: storedKey.privateKey,
-      publicKey: storedKey.publicKey,
-      keyType: storedKey.keyType,
-      signatureType: storedKey.signatureType,
-      id: storedKey.id,
-      signer: () =>
-        Promise.resolve({
-          sign: async (options: { data: string | Uint8Array }): Promise<Uint8Array> => {
-            // Use jose library for PS256 signing to get raw signature bytes
-            const privateKeyJwk = storedKey.privateKey as RSAPrivateJsonWebKey;
-
-            // Import the private key using jose
-            const privateKey = await jose.importJWK({
-              ...privateKeyJwk,
-              alg: "PS256",
-            } as jose.JWK);
-
-            // Handle both JWT (string) and Data Integrity (Uint8Array) signing
-            if (typeof options.data === 'string') {
-              // JWT signing path - The data is already the JWT signing input (header.payload)
-              // For proper JWT signing, we need to split and use the payload only
-              const [headerPart, payloadPart] = options.data.split(".");
-
-              // Decode the header to get the algorithm and other claims
-              const headerBytes = jose.base64url.decode(headerPart);
-              const headerObj = JSON.parse(new TextDecoder().decode(headerBytes));
-
-              // Decode the payload
-              const payloadBytes = jose.base64url.decode(payloadPart);
-
-              // Create a JWS with the decoded payload and header
-              const jws = await new jose.FlattenedSign(payloadBytes)
-                .setProtectedHeader(headerObj)
-                .sign(privateKey);
-
-              // Return the raw signature bytes
-              return jose.base64url.decode(jws.signature);
-            } else {
-              // Data Integrity signing path - sign the raw bytes directly
-              const jws = await new jose.FlattenedSign(options.data)
-                .setProtectedHeader({ alg: 'PS256' })
-                .sign(privateKey);
-
-              // Return the raw signature bytes
-              return jose.base64url.decode(jws.signature);
-            }
-          },
-        }),
+      id: keyPair.id,
+      type: keyFormat,
+      controller: keyPair.controller,
+      publicKeyJwk: await RsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as RSAJsonWebKey,
     };
   }
 }
