@@ -217,11 +217,17 @@ docker-compose logs -f postgres
 
 ## CI/CD Pipeline
 
-### GitLab CI Configuration
-- Location: `.gitlab-ci.yml`
-- Stages: test, build, push, sync
+### GitHub Actions Workflow
+- Location: `.github/workflows/ci-cd.yml`
+- Jobs: unit-tests, build-and-push, create-release
 - Automated testing and Docker image builds
-- Docker registry: `registry.eecc.info/ssi/key-service`
+
+#### Container Registries
+- **GitHub Container Registry**: `ghcr.io/european-epc-competence-center/key-service`
+  - Pushed on all main branch commits and version tags
+- **Azure Container Registry**: `gs1euwstvcacr.azurecr.io/key-service`
+  - Pushed only for version tags (e.g., `v1.7.0`)
+  - Requires `GO_CONTAINER_PUSH_PASSWD` secret in GitHub Actions
 
 ### GitHub Synchronization
 

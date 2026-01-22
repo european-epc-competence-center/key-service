@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Azure Container Registry support for tagged releases
+  - Docker images for version tags are now pushed to both GitHub Container Registry and Azure Container Registry (`gs1euwstvcacr.azurecr.io`)
+  - Automated push for version tags (e.g., `v1.7.0`) with semantic versioning tags
+  - GitHub Actions workflow configured with Azure CR authentication
+
 ## [2.0.0] - 2025-12-15
 
 - move to multikey for all keytypes
