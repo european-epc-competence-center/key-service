@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.1] - 2026-01-22
 
 ### Added
 - Azure Container Registry support for tagged releases
@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added test coverage for test, staging, and undefined NODE_ENV scenarios
   - Fallback secret only used when explicitly in development mode
   - Ensures production deployments fail fast when misconfigured rather than using insecure defaults
+
 
 ## [2.0.0] - 2025-12-15
 
