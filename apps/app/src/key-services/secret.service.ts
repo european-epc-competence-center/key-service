@@ -28,7 +28,7 @@ export class SecretService {
       }
     } catch (err) {
       logError(`Failed to read signing key from ${keyPath}: ${err}`);
-      if (process.env.NODE_ENV === "production") {
+      if (process.env.NODE_ENV != "development") {
         throw new ConfigurationException(
           "Cannot start service without proper signing key in production"
         );
