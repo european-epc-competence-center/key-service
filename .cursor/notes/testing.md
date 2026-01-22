@@ -109,6 +109,10 @@ npm run test:coverage         # Combined coverage
 - Secret validation requirements
 - Encryption/decryption workflows
 - Database security (no plaintext secrets)
+- Secure-by-default configuration validation
+  - SecretService enforces strict security: only allows fallback secrets in explicit development mode
+  - Tests verify service throws errors in production, test, staging, and undefined NODE_ENV when signing key is unavailable
+  - Ensures fail-fast behavior for misconfigured production deployments
 
 ### Database Integration
 - Entity persistence

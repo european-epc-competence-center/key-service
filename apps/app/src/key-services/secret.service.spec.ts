@@ -142,22 +142,46 @@ describe("SecretService", () => {
       expect(decrypted).toBe("test-data");
     });
 
-    it("should use fallback secret when NODE_ENV is not set and file read fails", () => {
+    it("should throw error when NODE_ENV is not set and file read fails (secure by default)", () => {
       delete process.env.NODE_ENV;
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
-      const newService = new SecretService();
-
+      expect(() => new SecretService()).toThrow(
+        "Cannot start service without proper signing key in production"
+      );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")
       );
+    });
 
-      // Test that the service still works with fallback secret
-      const encrypted = newService.encrypt("test-data", mockSecrets);
-      const decrypted = newService.decrypt(encrypted, mockSecrets);
-      expect(decrypted).toBe("test-data");
+    it("should throw error in test environment when file read fails", () => {
+      process.env.NODE_ENV = "test";
+      (fs.readFileSync as jest.Mock).mockImplementation(() => {
+        throw new Error("File not found");
+      });
+
+      expect(() => new SecretService()).toThrow(
+        "Cannot start service without proper signing key in production"
+      );
+      expect(logError).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to read signing key")
+      );
+    });
+
+    it("should throw error in staging environment when file read fails", () => {
+      process.env.NODE_ENV = "staging";
+      (fs.readFileSync as jest.Mock).mockImplementation(() => {
+        throw new Error("File not found");
+      });
+
+      expect(() => new SecretService()).toThrow(
+        "Cannot start service without proper signing key in production"
+      );
+      expect(logError).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to read signing key")
+      );
     });
   });
 

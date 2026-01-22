@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated push for version tags (e.g., `v1.7.0`) with semantic versioning tags
   - GitHub Actions workflow configured with Azure CR authentication
 
+### Fixed
+- SecretService test suite now correctly validates secure-by-default behavior
+  - Service throws error when NODE_ENV is undefined or any non-development value and signing key file cannot be read
+  - Added test coverage for test, staging, and undefined NODE_ENV scenarios
+  - Fallback secret only used when explicitly in development mode
+  - Ensures production deployments fail fast when misconfigured rather than using insecure defaults
+
 ## [2.0.0] - 2025-12-15
 
 - move to multikey for all keytypes
