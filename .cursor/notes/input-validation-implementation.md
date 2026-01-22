@@ -23,7 +23,7 @@ Comprehensive DTOs with class-validator decorators:
 - **GenerateRequestDto**: Validates key generation requests
   - All fields from SignRequestDto plus:
   - `signatureType`: Enum validation (Ed25519, ES256, PS256)
-  - `keyType`: Enum validation (JsonWebKey, JsonWebKey2020, Ed25519VerificationKey2020)
+  - `keyType`: Enum validation (JsonWebKey, Ed25519VerificationKey2020)
 
 #### `apps/app/test/validation.e2e-spec.ts`
 Comprehensive E2E test suite with 20+ validation test cases:
@@ -115,7 +115,7 @@ Fixed path for test setup file
 | secrets | Yes | Array[string] | 1-10 elements, each 1-1000 chars |
 | identifier | Yes | String | 1-500 chars, alphanumeric + `-_:.` |
 | signatureType | Yes (generate) | Enum | Ed25519, ES256, or PS256 |
-| keyType | Yes (generate) | Enum | JsonWebKey, JsonWebKey2020, Ed25519VerificationKey2020 |
+| keyType | Yes (generate) | Enum | JsonWebKey, Ed25519VerificationKey2020 |
 
 ## Testing
 

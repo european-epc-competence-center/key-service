@@ -34,13 +34,13 @@ export interface VerificationMethod {
 
   /**
    * The public key in multibase format
-   * Used for Ed25519VerificationKey2020, EcdsaSecp256k1VerificationKey2019, etc.
+   * Used for Multikey (Ed25519, ECDSA, etc.)
    */
   publicKeyMultibase?: string;
 
   /**
    * The public key in JWK format
-   * Used for JsonWebKey2020
+   * Used for JsonWebKey (and JsonWebKey2020 for RSA keys)
    */
   publicKeyJwk?: JsonWebKey;
 

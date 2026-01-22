@@ -6,6 +6,7 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 import * as jose from "jose";
+import { SignatureType } from "../types/key-types.enum";
 
 @Injectable()
 export class JwtSigningService {
@@ -76,8 +77,9 @@ export class JwtSigningService {
         })
       ),
     ].join(".");
+    
     const signature = jose.base64url.encode(
-      await signer.sign({ data: signingInput })
+      await signer.sign({ data: new TextEncoder().encode(signingInput) })
     );
     return [signingInput, signature].join(".");
   }
