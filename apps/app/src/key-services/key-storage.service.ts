@@ -124,4 +124,13 @@ export class KeyStorageService {
       );
     }
   }
+
+  async deleteKey(identifier: string, secrets: string[]): Promise<void> {
+    const keyPair = await this.retrieveKey(identifier, secrets);
+    if (keyPair.id !== identifier) {
+      throw new Error("Key identifier does not match the stored identifier");
+    }
+    const hashedIdentifier = this.secretService.hash(identifier);
+    await this.encryptedKeyRepository.delete({ identifier: hashedIdentifier });
+  }
 }

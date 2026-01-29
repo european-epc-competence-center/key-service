@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { AppService } from "./app.service";
 import { SignType } from "./types/sign-types.enum";
-import { GenerateRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
+import { GenerateRequestDto, KeyRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
 import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
 
 @Controller()
@@ -33,5 +33,10 @@ export class AppController {
   @Post("generate")
   generateKey(@Body() body: GenerateRequestDto | EncryptedPayloadDto) {
     return this.appService.generateKey(body);
+  }
+
+  @Post("delete")
+  deleteKey(@Body() body: KeyRequestDto | EncryptedPayloadDto) {
+    return this.appService.deleteKey(body);
   }
 }

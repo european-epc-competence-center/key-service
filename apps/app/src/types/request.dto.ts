@@ -28,21 +28,7 @@ const MAX_IDENTIFIER_LENGTH = 500; // Max length for identifiers
 const MAX_SECRETS_ARRAY_SIZE = 10; // Max number of secrets allowed
 const MIN_SECRETS_ARRAY_SIZE = 1; // Min number of secrets required
 
-/**
- * DTO for signing operations
- * Implements comprehensive input validation to prevent injection attacks and buffer overflows
- */
-export class SignRequestDto {
-  /**
-   * The verifiable credential or presentation to be signed
-   * Must be a valid object structure
-   */
-  @IsNotEmpty({ message: "Verifiable credential/presentation is required" })
-  @IsObject({ message: "Verifiable credential/presentation must be an object" })
-  @ValidateNested()
-  @Type(() => Object)
-  verifiable!: VerifiableCredential | VerifiablePresentation;
-
+export class KeyRequestDto {
   /**
    * Secrets of the users for key pair authentication
    * Must be an array of strings with length constraints
@@ -84,6 +70,24 @@ export class SignRequestDto {
 }
 
 /**
+ * DTO for signing operations
+ * Implements comprehensive input validation to prevent injection attacks and buffer overflows
+ */
+export class SignRequestDto extends KeyRequestDto {
+  /**
+   * The verifiable credential or presentation to be signed
+   * Must be a valid object structure
+   */
+  @IsNotEmpty({ message: "Verifiable credential/presentation is required" })
+  @IsObject({ message: "Verifiable credential/presentation must be an object" })
+  @ValidateNested()
+  @Type(() => Object)
+  verifiable!: VerifiableCredential | VerifiablePresentation;
+
+  
+}
+
+/**
  * DTO for presentation signing operations
  * Extends SignRequestDto with additional challenge and domain properties
  * for verifiable presentation proof requirements
@@ -118,45 +122,7 @@ export class PresentRequestDto extends SignRequestDto {
  * DTO for key generation operations
  * Implements comprehensive input validation for key generation requests
  */
-export class GenerateRequestDto {
-  /**
-   * Secrets of the users for key pair generation
-   * Must be an array of strings with length constraints
-   */
-  @IsArray({ message: "Secrets must be an array" })
-  @ArrayMinSize(MIN_SECRETS_ARRAY_SIZE, {
-    message: `At least ${MIN_SECRETS_ARRAY_SIZE} secret is required`,
-  })
-  @ArrayMaxSize(MAX_SECRETS_ARRAY_SIZE, {
-    message: `Maximum ${MAX_SECRETS_ARRAY_SIZE} secrets allowed`,
-  })
-  @IsString({ each: true, message: "Each secret must be a string" })
-  @IsNotEmpty({ each: true, message: "Secrets cannot be empty" })
-  @MinLength(1, {
-    each: true,
-    message: "Each secret must be at least 1 character",
-  })
-  @MaxLength(MAX_SECRET_LENGTH, {
-    each: true,
-    message: `Each secret must not exceed ${MAX_SECRET_LENGTH} characters`,
-  })
-  secrets!: string[];
-
-  /**
-   * Identifier for the key pair
-   * Must be a non-empty string with length constraints
-   */
-  @IsNotEmpty({ message: "Identifier is required" })
-  @IsString({ message: "Identifier must be a string" })
-  @MinLength(1, { message: "Identifier must be at least 1 character" })
-  @MaxLength(MAX_IDENTIFIER_LENGTH, {
-    message: `Identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
-  })
-  @Matches(/^[a-zA-Z0-9_\-:.]+$/, {
-    message:
-      "Identifier must contain only alphanumeric characters, hyphens, underscores, colons, and periods",
-  })
-  identifier!: string;
+export class GenerateRequestDto extends KeyRequestDto {
 
   /**
    * Type of signing key to generate
