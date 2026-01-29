@@ -215,4 +215,14 @@ export class KeyService {
       publicKeyJwk: await RsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as RSAJsonWebKey,
     };
   }
+
+  /**
+   * Delete a key pair from the key storage service when owernship can be proven
+   * @param identifier 
+   * @param secrets 
+   * @returns 
+   */
+  async deleteKey(identifier: string, secrets: string[]): Promise<void> {
+    return await this.keyStorageService.deleteKey(identifier, secrets);
+  }
 }

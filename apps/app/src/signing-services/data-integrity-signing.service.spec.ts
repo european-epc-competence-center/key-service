@@ -96,6 +96,8 @@ async function verifyDataIntegrityCredential(
       cryptosuite,
     });
 
+    console.log("Suite:", JSON.stringify(suite, null, 2));
+
     // Create a documentLoader that can resolve the verification method
     const baseDocumentLoader = await DocumentLoaderService.getDocumentLoader();
     const documentLoader = async (url: string) => {
@@ -1400,6 +1402,8 @@ describe("DataIntegritySigningService", () => {
         verificationMethod,
         mockSecrets
       );
+
+      console.log("Verification Method Object:", JSON.stringify(verificationMethodObj, null, 2));
 
       // Act
       const result = await service.signVC(
