@@ -740,6 +740,98 @@ describe("KeyService", () => {
     });
   });
 
+  describe("deleteKey", () => {
+    it("should delete an existing key pair", async () => {
+      // First generate a key
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      const countBefore = await encryptedKeyRepository.count();
+      expect(countBefore).toBe(1);
+
+      // Delete the key
+      await service.deleteKey(mockIdentifier, mockSecrets);
+
+      // Verify it was deleted
+      const countAfter = await encryptedKeyRepository.count();
+      expect(countAfter).toBe(0);
+    });
+
+    it("should throw error when trying to delete non-existent key", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      const count = await encryptedKeyRepository.count();
+      expect(count).toBe(0);
+
+      await expect(
+        service.deleteKey("non-existent-identifier", mockSecrets)
+      ).rejects.toThrow("Key with identifier");
+    });
+
+    it("should throw error when deleting with wrong secrets", async () => {
+      const wrongSecrets = ["wrong-secret"];
+
+      // Generate a key
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      const countBefore = await encryptedKeyRepository.count();
+      expect(countBefore).toBe(1);
+
+      // Try to delete with wrong secrets
+      await expect(
+        service.deleteKey(mockIdentifier, wrongSecrets)
+      ).rejects.toThrow("Failed to decrypt key");
+
+      // Key should still exist
+      const countAfter = await encryptedKeyRepository.count();
+      expect(countAfter).toBe(1);
+    });
+
+    it("should allow re-generation after deletion", async () => {
+      // Generate a key
+      const result1 = await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      expect(result1.publicKeyMultibase).toBeDefined();
+      const originalPublicKey = result1.publicKeyMultibase;
+
+      // Delete the key
+      await service.deleteKey(mockIdentifier, mockSecrets);
+
+      // Generate a new key with the same identifier
+      const result2 = await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      expect(result2.publicKeyMultibase).toBeDefined();
+      // New key should have different public key (randomly generated)
+      expect(result2.publicKeyMultibase).not.toBe(originalPublicKey);
+
+      // Should be able to retrieve the new key
+      const retrievedKey = await service.getKeyPair(mockIdentifier, mockSecrets);
+      expect(retrievedKey.id).toBe(mockIdentifier);
+    });
+
+
+  });
+
   describe("Database Integration Tests", () => {
     describe("Encryption and Storage Integration", () => {
       it("should properly encrypt and store keys in database", async () => {

@@ -109,7 +109,7 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedRequest = this.decryptPayloadIfNeeded<KeyRequestDto>(request);
     
-    const { identifier } = decryptedRequest;
-    return await this.keyService.deleteKey(identifier);
+    const { identifier, secrets } = decryptedRequest;
+    return await this.keyService.deleteKey(identifier, secrets);
   }
 }
