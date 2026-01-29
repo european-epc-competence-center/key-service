@@ -225,4 +225,15 @@ export class KeyService {
   async deleteKey(identifier: string, secrets: string[]): Promise<void> {
     return await this.keyStorageService.deleteKey(identifier, secrets);
   }
+
+  /**
+   * Export a key pair from the key storage service and returns it with given password
+   * @param identifier 
+   * @param secrets 
+   * @param password 
+   * @returns 
+   */
+  async exportKey(identifier: string, secrets: string[], password: string): Promise<string> {
+    return await this.keyStorageService.exportKey(identifier, secrets, password);
+  }
 }

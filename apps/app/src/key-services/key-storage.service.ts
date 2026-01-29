@@ -12,6 +12,7 @@ import {
   TooManyFailedAttemptsException,
 } from "../types/custom-exceptions";
 import { failedAttemptsCacheConfig } from "../config/failed-attempts.config";
+import { PayloadEncryptionService } from "./payload-encryption.service";
 
 @Injectable()
 export class KeyStorageService {
@@ -19,7 +20,8 @@ export class KeyStorageService {
     @InjectRepository(EncryptedKey)
     private readonly encryptedKeyRepository: Repository<EncryptedKey>,
     private readonly secretService: SecretService,
-    private readonly failedAttemptsCache: FailedAttemptsCacheService
+    private readonly failedAttemptsCache: FailedAttemptsCacheService,
+    private readonly payloadEncryptionService: PayloadEncryptionService
   ) {}
 
   async storeKey(
@@ -132,5 +134,10 @@ export class KeyStorageService {
     }
     const hashedIdentifier = this.secretService.hash(identifier);
     await this.encryptedKeyRepository.delete({ identifier: hashedIdentifier });
+  }
+
+  async exportKey(identifier: string, secrets: string[], password: string): Promise<string> {
+    const keyPair = await this.retrieveKey(identifier, secrets);
+    return await this.payloadEncryptionService.encrypt(JSON.stringify(keyPair), password);
   }
 }

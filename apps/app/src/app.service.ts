@@ -4,7 +4,7 @@ import { DataIntegritySigningService } from "./signing-services/data-integrity-s
 import { KeyService } from "./key-services/key.service";
 import { PayloadEncryptionService } from "./key-services/payload-encryption.service";
 import { SignType } from "./types/sign-types.enum";
-import { GenerateRequestDto, KeyRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
+import { ExportRequestDto, GenerateRequestDto, KeyRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
 import { logInfo } from "./utils/log/logger";
@@ -111,5 +111,13 @@ export class AppService {
     
     const { identifier, secrets } = decryptedRequest;
     return await this.keyService.deleteKey(identifier, secrets);
+  }
+
+  async exportKey(request: ExportRequestDto | EncryptedPayloadDto): Promise<string> {
+    // Decrypt payload if encrypted
+    const decryptedRequest = this.decryptPayloadIfNeeded<ExportRequestDto>(request);
+    
+    const { identifier, secrets, password } = decryptedRequest;
+    return await this.keyService.exportKey(identifier, secrets, password);
   }
 }

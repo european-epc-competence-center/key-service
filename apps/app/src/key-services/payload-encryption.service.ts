@@ -66,7 +66,7 @@ export class PayloadEncryptionService {
    * const encrypted = service.encrypt(JSON.stringify({ foo: 'bar' }));
    * ```
    */
-  encrypt(data: string): string {
+  encrypt(data: string, secret?: string): string {
     if (!this.enabled || !this.secret) {
       throw new Error("Request encryption is not enabled or configured");
     }
@@ -75,7 +75,7 @@ export class PayloadEncryptionService {
     const iv = crypto.randomBytes(12);
 
     // Create cipher with the 256-bit key
-    const cipher = crypto.createCipheriv("aes-256-gcm", this.secret, iv);
+    const cipher = crypto.createCipheriv("aes-256-gcm", secret ? Buffer.from(secret, "utf8") : this.secret, iv);
 
     // Encrypt data
     let ciphertext = cipher.update(data, "utf8", "hex");
@@ -110,7 +110,7 @@ export class PayloadEncryptionService {
    * const payload = JSON.parse(decrypted);
    * ```
    */
-  decrypt(encryptedData: string): string {
+  decrypt(encryptedData: string, secret?: string): string {
     if (!this.enabled || !this.secret) {
       throw new Error("Request encryption is not enabled or configured");
     }
@@ -139,7 +139,7 @@ export class PayloadEncryptionService {
     }
 
     // Create decipher
-    const decipher = crypto.createDecipheriv("aes-256-gcm", this.secret, iv);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", secret ? Buffer.from(secret, "utf8") : this.secret, iv);
     decipher.setAuthTag(authTag);
 
     // Decrypt data

@@ -69,6 +69,16 @@ export class KeyRequestDto {
   identifier!: string;
 }
 
+export class ExportRequestDto extends KeyRequestDto {
+  /**
+   * Password for the key export
+   * Must be a non-empty string with length constraints
+   */
+  @IsNotEmpty({ message: "Password is required" })
+  @IsString({ message: "Password must be a string" })
+  password!: string;
+}
+
 /**
  * DTO for signing operations
  * Implements comprehensive input validation to prevent injection attacks and buffer overflows
