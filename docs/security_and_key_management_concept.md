@@ -222,19 +222,33 @@ graph TB
     %% External entities
     Users[Users]
     User_Secret[User Secret]
-    Users -.->|provides| User_Secret
+    User_Secret2[User Secret]
+    Users -.->|provide| User_Secret
+    Users -.->|provide| User_Secret2
+    
 
     subgraph Wallet["SSI Company Wallet"]
+
+  
 
         %% SSI Service with its encryption layer
         subgraph SSI_Layer["SSI Service Layer"]
             SSI_API[Public API<br/>OAuth Authentication]
             SSI_Service["SSI Service"]
             SSI_DB[(SSI Database)]
-            KAS[Key Access Secrets]
+            KAS[Key Access Secret]
             EKAS[Encrypted Key Access Secrets]
+            EUKS[Encrypted User Key Secrets]
 
             SSI_Secret[SSI Service<br/>Secret]
+
+            UKS[User Key Secret]
+            UKS2[User Key Secret]
+
+            User_Secret -.->|encrypts| UKS
+            SSI_API -.->|bound to user id| UKS
+            User_Secret2 -.->|encrypts| UKS2
+            SSI_API -.->|bound to user id| UKS2
 
         end
 
@@ -260,6 +274,12 @@ graph TB
         SM_API --> Security_Module
 
         EKAS -.->|stored in| SSI_DB
+
+UKS -.->|encrypted to| EUKS
+UKS2 -.->|encrypted to| EUKS
+        EUKS -.->|stored in| SSI_DB
+        
+
         EPK -.->|stored in| SM_DB
 
         %% Key generation
@@ -268,7 +288,10 @@ graph TB
 
         %% Encryption relationships - SSI Service
         SSI_Secret -.->|encrypts| KAS
-        User_Secret -.->|encrypts| KAS
+        SSI_Secret -.->|encrypts| UKS
+        SSI_Secret -.->|encrypts| UKS2
+        UKS -.->|encrypts| KAS
+        UKS2 -.->|encrypts| KAS
         KAS -.->|encrypted to| EKAS
 
         %% Encryption relationships - Security Module
@@ -277,7 +300,8 @@ graph TB
         PK -.->|encrypted to| EPK
 
         %% Key flow between layers
-        SSI_Service -->|provides| FKAS
+        KAS -->|provides| FKAS
+        SSI_Secret -->|provides| FKAS
         FKAS --> SM_API
 
     end
