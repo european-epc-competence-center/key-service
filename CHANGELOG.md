@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `docs/SECURITY_REPORT.md`: removed emojis for professional PDF rendering, fixed pandoc formatting (blank lines before lists, heading hierarchy, YAML header with `lang: en` and fancyhdr)
+- `docs/SECURITY_REPORT.md`: fixed table column width proportions for all dependency/license tables; removed inline-code backtick formatting from package name cells so LaTeX can wrap long names at hyphens; added `\small` for longtable environments via etoolbox
+- `docs/SECURITY_REPORT.md`: fixed mermaid xychart bar chart colors — used correct nested `xyChart.plotColorPalette` variable instead of `primaryColor` (which only affects flowchart nodes); bars now render as professional blue on white background
+- `docs/SECURITY_REPORT.md`: fixed code block overflow with `fvextra` package (`breaklines` on `Highlighting` verbatim environment); reduced `\tabcolsep` to 3pt for tighter tables
+- `docs/SECURITY_REPORT.md`: removed redundant "Risk Level" column from License Distribution Analysis (derivable from Category) and redundant "Compliance" column from crypto package license table (all rows identical); reduces both from 5 to 4 data columns, preventing horizontal page overflow
+- `docs/md_to_pdf.sh`: added `--columns=1000` flag so pandoc uses separator-dash proportions for column widths instead of clamping to terminal width
+
 ## [2.1.0] - 2026-01-29
 
 - allow key deletion

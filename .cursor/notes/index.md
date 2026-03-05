@@ -144,7 +144,7 @@ npm run build
 - `package.json` - Dependencies and scripts
 - `docs/security_and_key_management_concept.md` - Security architecture concept
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
-- `SECURITY_REPORT.md` - External security analysis report (read-only reference)
+- `SECURITY_REPORT.md` - External security analysis report; reformatted for pandoc PDF compilation (no emojis, correct heading hierarchy, list spacing, `lang: en`, fancyhdr)
 - `CHANGELOG.md` - Version history and changes (current: v1.7.0)
 - `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
 - `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide

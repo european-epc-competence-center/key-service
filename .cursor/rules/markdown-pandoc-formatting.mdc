@@ -1,0 +1,264 @@
+---
+globs: *.md
+alwaysApply: false
+---
+# Markdown Formatting for Pandoc PDF Compilation
+
+When editing any markdown (`*.md`) files, follow these formatting rules to ensure proper PDF compilation with pandoc.
+
+## YAML Front Matter Header
+
+Every document intended for pandoc PDF compilation **must** include a complete YAML front matter block at the top of the file. Use the following template as the standard header:
+
+```markdown
+---
+title: "Document Title"
+subtitle: "Document Subtitle"
+author:
+  - "Author Name^[Affiliation]"
+  - "Second Author^[Other Affiliation]"
+date: "Month YYYY"
+numbersections: true
+lang: en
+documentclass: article
+geometry: "left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm"
+toc: true
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyhead[L]{\nouppercase{\leftmark}}
+  - \fancyhead[R]{\thepage}
+  - \renewcommand{\headrulewidth}{0.4pt}
+---
+```
+
+### Field Reference
+
+| Field | Required | Notes |
+|---|---|---|
+| `title` | Yes | Main document title |
+| `subtitle` | Recommended | Secondary title line |
+| `author` | Recommended | List of authors; use `^[Affiliation]` footnote syntax for affiliations |
+| `date` | Recommended | Written-out month and year, e.g. `"March 2026"` |
+| `numbersections` | Yes | Set `true` to enable automatic section numbering |
+| `lang` | Yes | BCP 47 language tag, e.g. `en` or `de` |
+| `documentclass` | Yes | Use `article` for standard documents |
+| `geometry` | Recommended | Page margins; `2.5cm` all sides is a sensible default |
+| `toc` | Recommended | Set `true` to generate a table of contents |
+| `header-includes` | Recommended | LaTeX preamble snippets; the fancyhdr block shown above produces section name on left and page number on right |
+
+### Notes
+
+- Use `lang: de` for German-language documents.
+- The `^[Affiliation]` syntax in author names produces a footnote on the title page.
+- Do **not** put a `# Title` heading in the document body; the title comes from the YAML `title` field.
+
+## List Formatting
+
+**Lists must be separated from surrounding text with blank lines:**
+
+- Add a blank line **before** the first list item
+- Add a blank line **after** the last list item
+- Do **not** add blank lines **between** list items (unless starting a new list)
+
+### Example - Correct
+
+```markdown
+This is a paragraph before the list.
+
+- First item
+- Second item
+- Third item
+
+This is a paragraph after the list.
+```
+
+### Example - Incorrect
+
+```markdown
+This is a paragraph before the list.
+- First item
+
+- Second item
+
+- Third item
+This is a paragraph after the list.
+```
+
+## Section Numbering
+
+**Never manually number sections when using automatic numbering:**
+
+- When the YAML header contains `numbersections: true`, pandoc will automatically number all sections
+- Do **not** include manual numbering in section headings (e.g., "1.", "2.1", etc.)
+- Manual numbering will result in double numbering in the PDF output
+
+### Example - Correct
+
+```markdown
+---
+numbersections: true
+---
+
+# Introduction
+
+## Background
+
+## Methodology
+
+# Results
+```
+
+### Example - Incorrect
+
+```markdown
+---
+numbersections: true
+---
+
+# 1. Introduction
+
+## 1.1 Background
+
+## 1.2 Methodology
+
+# 2. Results
+```
+
+## Section Nesting
+
+**Always use proper heading hierarchy:**
+
+- Use YAML header for document `title` and `subtitle` (not markdown headings)
+- Start document sections at level 1 (`#`)
+- Nest subsections in proper order: level 1 → level 2 → level 3
+- **Never skip heading levels** (e.g., level 1 → level 3)
+- **Never start with level 2** when level 1 hasn't been used yet
+
+### Example - Correct
+
+```markdown
+---
+title: "My Document"
+subtitle: "A Great Subtitle"
+---
+
+# First Major Section
+
+This is content.
+
+## First Subsection
+
+More content.
+
+### Detail Level
+
+Even more detail.
+
+## Second Subsection
+
+Content here.
+
+# Second Major Section
+
+New major topic.
+```
+
+### Example - Incorrect
+
+```markdown
+---
+title: "My Document"
+subtitle: "A Great Subtitle"
+---
+
+## First Section (WRONG - should be #)
+
+### Subsection (WRONG - skipped level 2)
+
+# Another Section
+
+#### Too deep (WRONG - skipped levels 2 and 3)
+```
+
+## Code Blocks and Lists
+
+**Code blocks within or after lists need proper spacing:**
+
+- Add blank line before code block
+- Code blocks break list continuation unless properly indented
+
+### Example - Correct
+
+```markdown
+Here is an introduction:
+
+- Item with code example:
+
+```json
+{
+  "key": "value"
+}
+```
+
+- Next item
+```
+
+## Symbols and Unicode Characters
+
+**Avoid Unicode characters that are not supported by the default LaTeX fonts.**
+
+When compiling with `--pdf-engine=xelatex` and the default Latin Modern fonts, many Unicode symbols (subscripts, superscripts, special mathematical characters) are missing from the font and produce `[WARNING] Missing character` errors in the PDF output.
+
+### Subscripts and Superscripts
+
+Never use Unicode subscript/superscript characters. Use LaTeX inline math mode instead:
+
+| Avoid (Unicode) | Use instead (LaTeX math) | Renders as |
+|-----------------|--------------------------|------------|
+| `CO₂` (U+2082) | `CO$_2$` | CO₂ |
+| `H₂O` | `H$_2$O` | H₂O |
+| `m²` (U+00B2) | `m$^2$` | m² |
+| `kgCO₂e` | `kgCO$_2$e` | kgCO₂e |
+
+Inline math syntax: `$...$` — single `$` on each side, no spaces between `$` and the content.
+
+### Safe Unicode Characters
+
+These Unicode characters are generally safe with xelatex + Latin Modern fonts:
+
+- Standard German umlauts: ä, ö, ü, Ä, Ö, Ü, ß
+- Common punctuation: „ " ' ' – — (German quotation marks, en/em dash)
+- Section symbol: § (U+00A7)
+- Degree symbol: ° (U+00B0)
+- Euro sign: € (U+20AC) — requires `\usepackage{eurosym}` in a custom template, or use `EUR` as text fallback
+
+### Symbols Requiring LaTeX Packages
+
+For other special symbols, prefer LaTeX commands over Unicode:
+
+- Omega/Ohm: `$\Omega$` instead of Ω
+- Arrows in text: `$\rightarrow$` instead of →, or use pandoc's `→` which renders fine in most engines
+
+## Quick Reference
+
+| Element | Rule | Example |
+|---------|------|---------|
+| Lists | Blank lines before and after, not between items | `text\n\n- item1\n- item2\n\ntext` |
+| Sections | No manual numbering with `numbersections: true` | `# Introduction` (not `# 1. Introduction`) |
+| Nesting | Start at level 1, never skip levels | `#` → `##` → `###` |
+| Title | Use YAML header, not markdown heading | `title: "Doc Title"` |
+| Subscripts | LaTeX inline math, not Unicode | `CO$_2$` (not `CO₂`) |
+| Superscripts | LaTeX inline math, not Unicode | `m$^2$` (not `m²`) |
+
+## Validation
+
+Before committing markdown files intended for pandoc PDF compilation:
+
+1. Confirm a complete YAML front matter block is present with at least `title`, `numbersections`, `lang`, `documentclass`, and `geometry`
+2. Check all lists have blank lines before/after
+3. Verify no manual section numbering exists
+4. Confirm proper heading hierarchy (no skipped levels)
+5. Ensure title/subtitle are in YAML header, not as markdown headings
+6. Replace Unicode subscripts/superscripts with LaTeX math (`$_x$` / `$^x$`)
