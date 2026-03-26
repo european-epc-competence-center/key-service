@@ -73,9 +73,14 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
-    const { verifiable, identifier, secrets } = decryptedBody;
+    const { verifiable, identifier, secrets, additionalHeaders } = decryptedBody;
     const service = this.getSigningService(type);
-    return service.signVC(verifiable as VerifiableCredential, identifier, secrets);
+    return service.signVC(
+      verifiable as VerifiableCredential,
+      identifier,
+      secrets,
+      additionalHeaders,
+    );
   }
 
   async signVP(
@@ -85,9 +90,17 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<PresentRequestDto>(body);
     
-    const { verifiable, identifier, secrets, challenge, domain } = decryptedBody;
+    const { verifiable, identifier, secrets, challenge, domain, additionalHeaders } =
+      decryptedBody;
     const service = this.getSigningService(type);
-    return service.signVP(verifiable as VerifiablePresentation, identifier, secrets, challenge, domain);
+    return service.signVP(
+      verifiable as VerifiablePresentation,
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      additionalHeaders,
+    );
   }
 
   async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<VerificationMethod> {

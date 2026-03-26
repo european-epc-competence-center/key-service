@@ -7,6 +7,7 @@ import {
   IsEnum,
   ValidateNested,
   IsObject,
+  IsOptional,
   MaxLength,
   MinLength,
   Matches,
@@ -84,7 +85,12 @@ export class SignRequestDto extends KeyRequestDto {
   @Type(() => Object)
   verifiable!: VerifiableCredential | VerifiablePresentation;
 
-  
+  /**
+   * Extra JWS protected-header properties for JWT signing (VC and VP; ignored for data-integrity).
+   */
+  @IsOptional()
+  @IsObject({ message: "Additional headers must be an object" })
+  additionalHeaders?: Record<string, unknown>;
 }
 
 /**

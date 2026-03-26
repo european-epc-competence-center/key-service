@@ -67,6 +67,7 @@ AppModule
 - Uses `jose` library for JWT operations
 - Supports Ed25519 and ES256 signatures
 - Auto-sets issuer and issuance date
+- JWS protected header includes `iat` and `iss` (controller DID from `kid`); `nonce`/`aud` when passed for VP
 - Implements private `sign()` method for code reuse between VC and VP signing
 
 ### Data Integrity Signing (`data-integrity-signing.service.ts`)

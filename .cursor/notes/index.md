@@ -102,7 +102,7 @@ All signing and generation requests use:
 - `verifiable`: The VC or VP object (not "credential")
 - `secrets`: Array of 1-10 secrets (not single "secret")
 - `identifier`: Key identifier (alphanumeric + `-_:.`)
-- Additional fields for VP: `challenge`, `domain`
+- Additional fields: `additionalHeaders` (optional JWS header props, `SignRequestDto`); for VP also `challenge`, `domain`
 
 ## Notes Files Reference
 

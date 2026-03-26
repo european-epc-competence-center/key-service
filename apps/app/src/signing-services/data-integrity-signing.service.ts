@@ -37,12 +37,14 @@ export class DataIntegritySigningService {
    * @param credential - The verifiable credential to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
+   * @param _additionalHeaders - Ignored; accepted for API parity with JWT signing
    * @returns Signed verifiable credential with proof
    */
   async signVC(
     credential: VerifiableCredential,
     verificationMethod: string,
-    secrets: string[]
+    secrets: string[],
+    _additionalHeaders?: Record<string, unknown>,
   ): Promise<VerifiableCredential> {
 
     const keyPair = await this.keyService.getKeyPair(
@@ -96,6 +98,7 @@ export class DataIntegritySigningService {
    * @param secrets - Array of secrets for key derivation
    * @param challenge - Challenge string for the proof
    * @param domain - Optional domain for the proof
+   * @param _additionalHeaders - Ignored; accepted for API parity with JWT VP signing
    * @returns Signed verifiable presentation with proof
    */
   async signVP(
@@ -103,7 +106,8 @@ export class DataIntegritySigningService {
     verificationMethod: string,
     secrets: string[],
     challenge: string = "",
-    domain?: string
+    domain?: string,
+    _additionalHeaders?: Record<string, unknown>,
   ): Promise<VerifiablePresentation> {
 
     const keyPair = await this.keyService.getKeyPair(

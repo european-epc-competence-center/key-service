@@ -15,7 +15,8 @@ export class JwtSigningService {
   async signVC(
     credential: VerifiableCredential,
     verificationMethod: string,
-    secrets: string[]
+    secrets: string[],
+    additionalHeaders?: Record<string, unknown>,
   ): Promise<string> {
     // set issuer from key pair controller
     const setIssuer = (keyPairId: string) => {
@@ -38,7 +39,15 @@ export class JwtSigningService {
         .replace(/\.\d{3}Z$/, "Z");
     }
 
-    return this.sign(credential, verificationMethod, secrets, setIssuer);
+    return this.sign(
+      credential,
+      verificationMethod,
+      secrets,
+      setIssuer,
+      undefined,
+      undefined,
+      additionalHeaders,
+    );
   }
 
   async signVP(
@@ -47,19 +56,45 @@ export class JwtSigningService {
     secrets: string[],
     challenge?: string,
     domain?: string,
+    additionalHeaders?: Record<string, unknown>,
   ): Promise<string> {
-    return this.sign(presentation, verificationMethod, secrets, () => {}, challenge, domain);
+    return this.sign(
+      presentation,
+      verificationMethod,
+      secrets,
+      () => {},
+      challenge,
+      domain,
+      additionalHeaders,
+    );
   }
 
-  private async sign(payload: VerifiableCredential | VerifiablePresentation, verificationMethod: string, secrets: string[], preSignHook?: (keyPairId: string) => void, nonce?: string, aud?: string): Promise<string> {
+  private async sign(
+    payload: VerifiableCredential | VerifiablePresentation,
+    verificationMethod: string,
+    secrets: string[],
+    preSignHook?: (keyPairId: string) => void,
+    nonce?: string,
+    aud?: string,
+    additionalHeaders?: Record<string, unknown>,
+  ): Promise<string> {
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
       secrets
     );
     const signer = await keyPair.signer();
+    const iat = Math.floor(Date.now() / 1000);
+    const iss = keyPair.id
+      ? keyPair.id.includes("#")
+        ? keyPair.id.split("#")[0]
+        : keyPair.id
+      : undefined;
     const header = {
+      ...(additionalHeaders ?? {}),
       kid: keyPair.id,
       alg: keyPair.signatureType,
+      iat,
+      ...(iss && { iss }),
       ...(nonce && { nonce }),
       ...(aud && { aud }),
     };
@@ -70,12 +105,7 @@ export class JwtSigningService {
 
     const signingInput: string = [
       jose.base64url.encode(JSON.stringify(header)),
-      jose.base64url.encode(
-        JSON.stringify({
-          ...payload,
-          iat: Math.floor(Date.now() / 1000),
-        })
-      ),
+      jose.base64url.encode(JSON.stringify(payload)),
     ].join(".");
     
     const signature = jose.base64url.encode(

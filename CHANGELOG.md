@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- JWT signing: `signVC` / `signVP` accept optional `additionalHeaders`; `SignRequestDto` / `POST /sign/vc|vp/jwt` accept optional `additionalHeaders` for extra JWS header properties
+
 ### Changed
+- JWT signing: issuance time `iat` is set only in the JWS protected header (no longer duplicated in the payload JSON)
+- JWT signing: signing key controller identifier is included as `iss` in the JWS protected header (DID string before `#` in `kid`, same as VC `issuer`)
 - `docs/SECURITY_REPORT.md`: removed emojis for professional PDF rendering, fixed pandoc formatting (blank lines before lists, heading hierarchy, YAML header with `lang: en` and fancyhdr)
 - `docs/SECURITY_REPORT.md`: fixed table column width proportions for all dependency/license tables; removed inline-code backtick formatting from package name cells so LaTeX can wrap long names at hyphens; added `\small` for longtable environments via etoolbox
 - `docs/SECURITY_REPORT.md`: fixed mermaid xychart bar chart colors — used correct nested `xyChart.plotColorPalette` variable instead of `primaryColor` (which only affects flowchart nodes); bars now render as professional blue on white background
