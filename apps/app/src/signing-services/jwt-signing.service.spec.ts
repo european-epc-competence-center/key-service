@@ -1516,6 +1516,31 @@ describe("JwtSigningService", () => {
       ).rejects.toThrow();
     });
 
+    it("should include typ openid4vci-proof+jwt in signed JWT when passed in additionalHeaders", async () => {
+      const verificationMethod = "did:web:example.com#key-typ";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets
+      );
+
+      const signedJwt = await service.signVC(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets,
+        { typ: "openid4vci-proof+jwt" },
+      );
+
+      const parts = signedJwt.split(".");
+      expect(parts).toHaveLength(3);
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      expect(header.typ).toBe("openid4vci-proof+jwt");
+      expect(header.alg).toBe("Ed25519");
+      expect(header.kid).toBe(verificationMethod);
+    });
+
     it("should handle database operations and maintain consistency", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       const initialCount = await encryptedKeyRepository.count();
@@ -2270,7 +2295,7 @@ describe("JwtSigningService", () => {
       expect(header.iss).toBe(presentationVerificationMethod.split("#")[0]);
     });
 
-    it("should include matching iat in header and payload and merge additional VP headers", async () => {
+    it("should merge additional VP headers including typ openid4vci-proof+jwt", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
 

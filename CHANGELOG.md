@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - JWT signing: `signVC` / `signVP` accept optional `additionalHeaders`; `SignRequestDto` / `POST /sign/vc|vp/jwt` accept optional `additionalHeaders` for extra JWS header properties
+- Unit test: `typ: openid4vci-proof+jwt` via `additionalHeaders` is present in the signed JWS protected header (`jwt-signing.service.spec.ts`)
 
 ### Changed
 - JWT signing: issuance time `iat` is set only in the JWS protected header (no longer duplicated in the payload JSON)
