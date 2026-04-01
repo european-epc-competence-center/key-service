@@ -51,6 +51,12 @@ export class AppService {
     return body as T;
   }
 
+  private decryptPresent(
+    body: PresentRequestDto | EncryptedPayloadDto,
+  ): PresentRequestDto {
+    return this.decryptPayloadIfNeeded<PresentRequestDto>(body);
+  }
+
   private getSigningService(type: SignType) {
     switch (type) {
       case SignType.JWT:
@@ -66,7 +72,7 @@ export class AppService {
     }
   }
 
-  async signVC(
+  async signCredential(
     type: SignType,
     body: SignRequestDto | EncryptedPayloadDto
   ): Promise<VerifiableCredential | string> {
@@ -75,7 +81,7 @@ export class AppService {
     
     const { verifiable, identifier, secrets, additionalHeaders } = decryptedBody;
     const service = this.getSigningService(type);
-    return service.signVC(
+    return service.signCredential(
       verifiable as VerifiableCredential,
       identifier,
       secrets,
@@ -83,18 +89,53 @@ export class AppService {
     );
   }
 
-  async signVP(
+  async signPresentation(
     type: SignType,
     body: PresentRequestDto | EncryptedPayloadDto
   ): Promise<VerifiablePresentation | string> {
-    // Decrypt payload if encrypted
-    const decryptedBody = this.decryptPayloadIfNeeded<PresentRequestDto>(body);
-    
     const { verifiable, identifier, secrets, challenge, domain, additionalHeaders } =
-      decryptedBody;
+      this.decryptPresent(body);
     const service = this.getSigningService(type);
-    return service.signVP(
+    return service.signPresentation(
       verifiable as VerifiablePresentation,
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      additionalHeaders,
+    );
+  }
+
+  /**
+   * Proof-of-possession: same `type` values as `POST /sign/vp/:type`, but `jwt` uses OID4VCI proof JWT instead of W3C JWT VP.
+   */
+  async signProofOfPossession(
+    type: SignType,
+    body: PresentRequestDto | EncryptedPayloadDto,
+  ): Promise<VerifiablePresentation | string> {
+    if (type === SignType.SD_JWT) {
+      throw new BadRequestException(
+        "Proof-of-possession supports jwt and data-integrity only (not sd-jwt)",
+      );
+    }
+
+    const { verifiable, identifier, secrets, challenge, domain, additionalHeaders } =
+      this.decryptPresent(body);
+    const presentation = verifiable as VerifiablePresentation;
+
+    if (type === SignType.JWT) {
+      return this.jwtSigningService.signProofOfPossession(
+        presentation,
+        identifier,
+        secrets,
+        challenge,
+        domain,
+        additionalHeaders,
+      );
+    }
+
+    return this.dataIntegritySigningService.signPresentation(
+      presentation,
       identifier,
       secrets,
       challenge,

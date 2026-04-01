@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `POST /sign/pop/:type` — proof-of-possession signing with `type` `jwt` (OpenID4VCI Appendix F.1 key proof JWT) or `data-integrity` (linked-data VP, same as `POST /sign/vp/data-integrity`); body uses `PresentRequestDto` (`verifiable`, `secrets`, `identifier`, optional `challenge`, `domain`, `additionalHeaders`)
+- Signing entry points: `signCredential`, `signPresentation`, `signProofOfPossession` on `JwtSigningService` / `DataIntegritySigningService` / `AppService` (controller handlers match); JWT uses private `signJwt` for W3C VC/VP; OID4VCI VC and VP proofs both use `signProofOfPossession` overloads
+- Unit tests for OID4VCI (`jwt-signing.service.spec.ts`)
+
+### Changed
+- `POST /sign/pop/:type` uses `SignType` (same URL param as `POST /sign/vp/:type`) instead of a separate `SignPopType` enum; `sd-jwt` is rejected with 400
+- **Breaking**: OpenID4VCI proof JWTs are no longer selected via `additionalHeaders.typ` on `POST /sign/vp/jwt` or `POST /sign/vc/jwt` — use `POST /sign/pop/jwt` or `JwtSigningService.signProofOfPossession`
+- JWT `signPresentation` / `signCredential` use only W3C JWT-VC placement (`iat`/`iss`/`nonce`/`aud` in the protected header for VP; not OID4VCI body layout)
+
+### Fixed
+- JWT signing: VC `preSignHook` (issuer derived from `kid`) runs before the payload snapshot so the JWT body includes the correct issuer DID
+
 ## [2.2.0] - 2026-03-27
 
 ### Added

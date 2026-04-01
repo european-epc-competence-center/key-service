@@ -267,4 +267,23 @@ describe("Input Validation (e2e)", () => {
         .expect(400);
     });
   });
+
+  describe("POST /sign/pop/:type - Input Validation", () => {
+    const validVP = {
+      "@context": ["https://www.w3.org/ns/credentials/v2"],
+      type: ["VerifiablePresentation"],
+      verifiableCredential: [],
+    };
+
+    it("should reject invalid pop type in URL param", () => {
+      return request(app.getHttpServer())
+        .post("/sign/pop/sd-jwt")
+        .send({
+          verifiable: validVP,
+          secrets: ["secret1"],
+          identifier: "test-key",
+        })
+        .expect(400);
+    });
+  });
 });

@@ -13,7 +13,7 @@ import {cryptosuite as eddsaRdfc2022CryptoSuite} from "@digitalbazaar/eddsa-rdfc
 // @ts-ignore
 import {cryptosuite as ecdsaRdfc2019CryptoSuite} from "@digitalbazaar/ecdsa-rdfc-2019-cryptosuite";
 // @ts-ignore
-import { issue, signPresentation } from "@digitalbazaar/vc";
+import { issue, signPresentation as vcSignPresentation } from "@digitalbazaar/vc";
 
 import { logDebug, logError } from "../utils/log/logger";
 import { SignatureType } from "../types/key-types.enum";
@@ -40,7 +40,7 @@ export class DataIntegritySigningService {
    * @param _additionalHeaders - Ignored; accepted for API parity with JWT signing
    * @returns Signed verifiable credential with proof
    */
-  async signVC(
+  async signCredential(
     credential: VerifiableCredential,
     verificationMethod: string,
     secrets: string[],
@@ -101,7 +101,7 @@ export class DataIntegritySigningService {
    * @param _additionalHeaders - Ignored; accepted for API parity with JWT VP signing
    * @returns Signed verifiable presentation with proof
    */
-  async signVP(
+  async signPresentation(
     presentation: VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
@@ -140,7 +140,7 @@ export class DataIntegritySigningService {
 
     const documentLoader = await DocumentLoaderService.getDocumentLoader();
     try {
-        return await signPresentation({ presentation, suite, documentLoader, challenge, domain });
+        return await vcSignPresentation({ presentation, suite, documentLoader, challenge, domain });
     } catch (error: any) {
       if (error.details) {
         logError("Error details:\n" + JSON.stringify(error.details, null, 2));

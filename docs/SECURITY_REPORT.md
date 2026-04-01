@@ -727,8 +727,8 @@ flowchart TD
 
      // Anyone can sign credentials with any identifier
      @Post("sign/vc/:type")
-     async signVC(@Param("type") type: SignType, @Body() body: SignRequestDto) {
-       return await this.appService.signVC(type, body);
+     async signCredential(@Param("type") type: SignType, @Body() body: SignRequestDto) {
+       return await this.appService.signCredential(type, body);
      }
      ```
 

@@ -323,7 +323,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -393,7 +393,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -463,7 +463,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -533,7 +533,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -603,7 +603,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -666,7 +666,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -729,7 +729,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -792,7 +792,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -855,7 +855,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -926,7 +926,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -989,7 +989,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod,
         mockSecrets
@@ -1055,7 +1055,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod,
         mockSecrets
@@ -1121,7 +1121,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1190,7 +1190,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1259,7 +1259,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1324,7 +1324,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1389,7 +1389,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2WithoutValidFrom,
         verificationMethod,
         mockSecrets
@@ -1455,7 +1455,7 @@ describe("JwtSigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2WithoutValidFrom,
         verificationMethod,
         mockSecrets
@@ -1512,11 +1512,11 @@ describe("JwtSigningService", () => {
       const verificationMethod = "did:web:nonexistent.com#key";
 
       await expect(
-        service.signVC(exampleCredentialV1, verificationMethod, mockSecrets)
+        service.signCredential(exampleCredentialV1, verificationMethod, mockSecrets)
       ).rejects.toThrow();
     });
 
-    it("should include typ openid4vci-proof+jwt in signed JWT when passed in additionalHeaders", async () => {
+    it("should set typ openid4vci-proof+jwt via signProofOfPossession (credential)", async () => {
       const verificationMethod = "did:web:example.com#key-typ";
 
       await keyService.generateKeyPair(
@@ -1526,19 +1526,23 @@ describe("JwtSigningService", () => {
         mockSecrets
       );
 
-      const signedJwt = await service.signVC(
+      const signedJwt = await service.signProofOfPossession(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets,
-        { typ: "openid4vci-proof+jwt" },
       );
 
       const parts = signedJwt.split(".");
       expect(parts).toHaveLength(3);
       const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
       expect(header.typ).toBe("openid4vci-proof+jwt");
       expect(header.alg).toBe("Ed25519");
       expect(header.kid).toBe(verificationMethod);
+      expect(header).not.toHaveProperty("iat");
+      expect(header).not.toHaveProperty("iss");
+      expect(typeof payload.iat).toBe("number");
+      expect(payload.iss).toBe(verificationMethod.split("#")[0]);
     });
 
     it("should handle database operations and maintain consistency", async () => {
@@ -1568,13 +1572,13 @@ describe("JwtSigningService", () => {
       expect(count).toBe(2);
 
       // Sign with both keys
-      const result1 = await service.signVC(
+      const result1 = await service.signCredential(
         exampleCredentialV1,
         verificationMethod1,
         mockSecrets
       );
 
-      const result2 = await service.signVC(
+      const result2 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod2,
         mockSecrets
@@ -1631,13 +1635,13 @@ describe("JwtSigningService", () => {
       expect(count).toBe(2);
 
       // Sign with both keys
-      const result1 = await service.signVC(
+      const result1 = await service.signCredential(
         exampleCredentialV1,
         verificationMethod1,
         mockSecrets
       );
 
-      const result2 = await service.signVC(
+      const result2 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod2,
         mockSecrets
@@ -1668,6 +1672,115 @@ describe("JwtSigningService", () => {
     });
   });
 
+  describe("OpenID4VCI proof JWT (signProofOfPossession*)", () => {
+    it("should sign a VC as OID4VCI proof JWT with extra JOSE header fields", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const verificationMethod = "did:web:example.com#key-oid4vci-vc";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets,
+      );
+
+      const signedJwt = await service.signProofOfPossession(
+        exampleCredentialV1,
+        verificationMethod,
+        mockSecrets,
+        {
+          custom: "header-passthrough",
+        },
+      );
+
+      const parts = signedJwt.split(".");
+      expect(parts).toHaveLength(3);
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+
+      // Appendix F.1: JOSE header — typ, alg, kid; other header params from additionalHeaders
+      expect(header.typ).toBe("openid4vci-proof+jwt");
+      expect(header.alg).toBe("Ed25519");
+      expect(header.kid).toBe(verificationMethod);
+      expect(header.custom).toBe("header-passthrough");
+      expect(header).not.toHaveProperty("iat");
+      expect(header).not.toHaveProperty("iss");
+
+      // Appendix F.1: JWT body — iat, iss (optional), aud/nonce when applicable
+      expect(typeof payload.iat).toBe("number");
+      expect(payload.iss).toBe(verificationMethod.split("#")[0]);
+      expect(payload.type).toEqual(exampleCredentialV1.type);
+      expect(payload.issuer).toBe("did:web:example.com");
+    });
+
+    it("should sign a VP as OID4VCI proof JWT with nonce and aud in the JWT body", async () => {
+      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
+      await encryptedKeyRepository.clear();
+
+      const verificationMethod = "did:web:example.com#key-oid4vci-vp";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        verificationMethod,
+        mockSecrets,
+      );
+
+      const signedCredentialJWT = await service.signCredential(
+        exampleCredentialV2,
+        verificationMethod,
+        mockSecrets,
+      );
+
+      const presentation: VerifiablePresentation = {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        id: "urn:uuid:oid4vci-vp-test",
+        type: ["VerifiablePresentation"],
+        verifiableCredential: [
+          {
+            "@context": "https://www.w3.org/ns/credentials/v2",
+            id: `data:application/vc+jwt,${signedCredentialJWT}`,
+            type: "EnvelopedVerifiableCredential",
+          } as any,
+        ],
+      };
+
+      const cNonce = "c_nonce-from-issuer-oid4vci-test";
+      const credentialIssuerId = "https://credential-issuer.example.com";
+
+      const signedPresentation = await service.signProofOfPossession(
+        presentation,
+        verificationMethod,
+        mockSecrets,
+        cNonce,
+        credentialIssuerId,
+      );
+
+      const parts = signedPresentation.split(".");
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+
+      // Appendix F.1: JOSE header — no iat/iss/nonce/aud (those are JWT body claims)
+      expect(header.typ).toBe("openid4vci-proof+jwt");
+      expect(header.kid).toBe(verificationMethod);
+      expect(header).not.toHaveProperty("iat");
+      expect(header).not.toHaveProperty("iss");
+      expect(header).not.toHaveProperty("nonce");
+      expect(header).not.toHaveProperty("aud");
+
+      expect(typeof payload.iat).toBe("number");
+      expect(payload.iss).toBe(verificationMethod.split("#")[0]);
+      expect(payload.nonce).toBe(cNonce);
+      expect(payload.aud).toBe(credentialIssuerId);
+      expect(payload.type).toContain("VerifiablePresentation");
+    });
+  });
+
   describe("Verifiable Presentation Signing", () => {
     it("should sign a presentation with a single enveloped credential (V2)", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
@@ -1684,7 +1797,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign a credential first
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1708,7 +1821,7 @@ describe("JwtSigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets
@@ -1762,7 +1875,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign a credential first
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1786,7 +1899,7 @@ describe("JwtSigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets
@@ -1857,13 +1970,13 @@ describe("JwtSigningService", () => {
       );
 
       // Sign multiple credentials
-      const signedCredentialJWT1 = await service.signVC(
+      const signedCredentialJWT1 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod1,
         mockSecrets
       );
 
-      const signedCredentialJWT2 = await service.signVC(
+      const signedCredentialJWT2 = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod2,
         mockSecrets
@@ -1893,7 +2006,7 @@ describe("JwtSigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -1963,13 +2076,13 @@ describe("JwtSigningService", () => {
       );
 
       // Sign multiple credentials
-      const signedCredentialJWT1 = await service.signVC(
+      const signedCredentialJWT1 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod1,
         mockSecrets
       );
 
-      const signedCredentialJWT2 = await service.signVC(
+      const signedCredentialJWT2 = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod2,
         mockSecrets
@@ -1999,7 +2112,7 @@ describe("JwtSigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -2060,7 +2173,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign credential
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2083,7 +2196,7 @@ describe("JwtSigningService", () => {
         ],
       };
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -2124,7 +2237,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign credential
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2147,7 +2260,7 @@ describe("JwtSigningService", () => {
         ],
       };
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -2188,7 +2301,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign credential
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         credentialVerificationMethod,
         mockSecrets
@@ -2212,7 +2325,7 @@ describe("JwtSigningService", () => {
         ],
       };
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -2253,7 +2366,7 @@ describe("JwtSigningService", () => {
       );
 
       // Sign credential
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         credentialVerificationMethod,
         mockSecrets
@@ -2277,7 +2390,7 @@ describe("JwtSigningService", () => {
         ],
       };
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets
@@ -2295,7 +2408,7 @@ describe("JwtSigningService", () => {
       expect(header.iss).toBe(presentationVerificationMethod.split("#")[0]);
     });
 
-    it("should merge additional VP headers including typ openid4vci-proof+jwt", async () => {
+    it("should merge additional JOSE headers on OID4VCI proof JWT (signProofOfPossession)", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
 
@@ -2308,7 +2421,7 @@ describe("JwtSigningService", () => {
         mockSecrets
       );
 
-      const signedCredentialJWT = await service.signVC(
+      const signedCredentialJWT = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -2330,27 +2443,35 @@ describe("JwtSigningService", () => {
         ],
       };
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signProofOfPossession(
         presentation,
         verificationMethod,
         mockSecrets,
         "challenge-val",
         "https://issuer.example.com",
-        { typ: "openid4vci-proof+jwt", custom: "x" },
+        { custom: "x" },
       );
 
       const parts = signedPresentation.split(".");
       const header = JSON.parse(
         Buffer.from(parts[0], "base64url").toString()
       );
+      const payload = JSON.parse(
+        Buffer.from(parts[1], "base64url").toString()
+      );
 
-      expect(typeof header.iat).toBe("number");
+      // OID4VCI F.1: proof claims live in the JWT body, not the JOSE header
       expect(header.typ).toBe("openid4vci-proof+jwt");
       expect(header.custom).toBe("x");
-      expect(header.nonce).toBe("challenge-val");
-      expect(header.aud).toBe("https://issuer.example.com");
       expect(header.kid).toBe(verificationMethod);
-      expect(header.iss).toBe(verificationMethod.split("#")[0]);
+      expect(header).not.toHaveProperty("iat");
+      expect(header).not.toHaveProperty("iss");
+      expect(header).not.toHaveProperty("nonce");
+      expect(header).not.toHaveProperty("aud");
+      expect(typeof payload.iat).toBe("number");
+      expect(payload.nonce).toBe("challenge-val");
+      expect(payload.aud).toBe("https://issuer.example.com");
+      expect(payload.iss).toBe(verificationMethod.split("#")[0]);
     });
   });
 });

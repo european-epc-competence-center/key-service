@@ -83,7 +83,7 @@ ES256 keys use JWK format:
 ### Signing a Verifiable Credential
 
 ```typescript
-const signedVC = await dataIntegritySigningService.signVC(
+const signedVC = await dataIntegritySigningService.signCredential(
   credential,
   verificationMethod, // e.g., "did:web:example.com#key-1"
   secrets
@@ -95,7 +95,7 @@ The service automatically selects the appropriate signature suite based on the k
 ### Signing a Verifiable Presentation
 
 ```typescript
-const signedVP = await dataIntegritySigningService.signVP(
+const signedVP = await dataIntegritySigningService.signPresentation(
   presentation,
   verificationMethod,
   secrets,

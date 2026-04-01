@@ -90,6 +90,7 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 
 - `POST /sign/vc/:type` - Sign verifiable credentials (type: jwt, data-integrity, sd-jwt)
 - `POST /sign/vp/:type` - Sign verifiable presentations (type: jwt, data-integrity, sd-jwt)
+- `POST /sign/pop/:type` - Same `type` enum as `/sign/vp` (`jwt` → OpenID4VCI proof JWT, `data-integrity` → linked-data VP; `sd-jwt` not supported); `AppService.signProofOfPossession`; body `PresentRequestDto`
 - `POST /generate` - Generate new key pairs (algorithms: Ed25519, ES256, PS256)
 - **Note**: All POST endpoints automatically support encrypted requests (decryption handled in AppService layer for enhanced security)
 - `GET /health` - General health check

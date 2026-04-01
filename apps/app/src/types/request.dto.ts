@@ -87,6 +87,7 @@ export class SignRequestDto extends KeyRequestDto {
 
   /**
    * Extra JWS protected-header properties for JWT signing (VC and VP; ignored for data-integrity).
+   * For `POST /sign/pop/jwt`, OID4VCI `typ` is set by the service; other header fields (e.g. `jwk`) may be passed here.
    */
   @IsOptional()
   @IsObject({ message: "Additional headers must be an object" })

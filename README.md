@@ -323,6 +323,20 @@ POST /sign/vp/:type
 
 Returns the signed presentation in the format specified by the signature type.
 
+### Proof of possession (OpenID4VCI JWT or linked-data VP)
+
+Use this for credential-request key proofs (OpenID4VCI Appendix F.1 JWT) or a Data Integrity VP without going through `POST /sign/vp/jwt` with OID4VCI `typ`.
+
+```
+POST /sign/pop/:type
+```
+
+**Parameters:**
+
+- `type`: Same values as `POST /sign/vp/:type` (`jwt`, `data-integrity`, `sd-jwt`). For POP, use `jwt` (OpenID4VCI Appendix F.1 proof JWT) or `data-integrity` (same as `POST /sign/vp/data-integrity`). `sd-jwt` returns 400.
+
+**Request body:** Same as `POST /sign/vp/:type` (`PresentRequestDto`: `verifiable`, `secrets`, `identifier`, optional `challenge`, `domain`, `additionalHeaders`).
+
 ### Generate Key Pair
 
 Generate a new cryptographic key pair and store it encrypted in the database.
