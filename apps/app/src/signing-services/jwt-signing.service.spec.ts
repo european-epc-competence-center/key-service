@@ -1516,8 +1516,9 @@ describe("JwtSigningService", () => {
       ).rejects.toThrow();
     });
 
-    it("should set typ openid4vci-proof+jwt via signProofOfPossession (credential)", async () => {
+    it("should set typ openid4vci-proof+jwt via signProofOfPossession (F.1 body)", async () => {
       const verificationMethod = "did:web:example.com#key-typ";
+      const credentialIssuerId = "https://credential-issuer.example.com";
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
@@ -1527,9 +1528,9 @@ describe("JwtSigningService", () => {
       );
 
       const signedJwt = await service.signProofOfPossession(
-        exampleCredentialV1,
         verificationMethod,
         mockSecrets,
+        credentialIssuerId,
       );
 
       const parts = signedJwt.split(".");
@@ -1542,7 +1543,11 @@ describe("JwtSigningService", () => {
       expect(header).not.toHaveProperty("iat");
       expect(header).not.toHaveProperty("iss");
       expect(typeof payload.iat).toBe("number");
+      expect(payload.aud).toBe(credentialIssuerId);
       expect(payload.iss).toBe(verificationMethod.split("#")[0]);
+      expect(Object.keys(payload).sort()).toEqual(
+        ["aud", "iat", "iss"].sort(),
+      );
     });
 
     it("should handle database operations and maintain consistency", async () => {
@@ -1673,11 +1678,12 @@ describe("JwtSigningService", () => {
   });
 
   describe("OpenID4VCI proof JWT (signProofOfPossession*)", () => {
-    it("should sign a VC as OID4VCI proof JWT with extra JOSE header fields", async () => {
+    it("should sign OID4VCI proof JWT with F.1 JOSE header and minimal body (aud, iat, iss)", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
 
       const verificationMethod = "did:web:example.com#key-oid4vci-vc";
+      const credentialIssuerId = "https://credential-issuer.example.com";
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
@@ -1687,12 +1693,9 @@ describe("JwtSigningService", () => {
       );
 
       const signedJwt = await service.signProofOfPossession(
-        exampleCredentialV1,
         verificationMethod,
         mockSecrets,
-        {
-          custom: "header-passthrough",
-        },
+        credentialIssuerId,
       );
 
       const parts = signedJwt.split(".");
@@ -1700,26 +1703,26 @@ describe("JwtSigningService", () => {
       const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
       const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
 
-      // Appendix F.1: JOSE header — typ, alg, kid; other header params from additionalHeaders
+      expect(Object.keys(header).sort()).toEqual(["alg", "kid", "typ"].sort());
       expect(header.typ).toBe("openid4vci-proof+jwt");
       expect(header.alg).toBe("Ed25519");
       expect(header.kid).toBe(verificationMethod);
-      expect(header.custom).toBe("header-passthrough");
       expect(header).not.toHaveProperty("iat");
       expect(header).not.toHaveProperty("iss");
 
-      // Appendix F.1: JWT body — iat, iss (optional), aud/nonce when applicable
       expect(typeof payload.iat).toBe("number");
+      expect(payload.aud).toBe(credentialIssuerId);
       expect(payload.iss).toBe(verificationMethod.split("#")[0]);
-      expect(payload.type).toEqual(exampleCredentialV1.type);
-      expect(payload.issuer).toBe("did:web:example.com");
+      expect(Object.keys(payload).sort()).toEqual(
+        ["aud", "iat", "iss"].sort(),
+      );
     });
 
-    it("should sign a VP as OID4VCI proof JWT with nonce and aud in the JWT body", async () => {
+    it("should put nonce and aud in the JWT body when challenge and domain are set", async () => {
       const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
       await encryptedKeyRepository.clear();
 
-      const verificationMethod = "did:web:example.com#key-oid4vci-vp";
+      const verificationMethod = "did:web:example.com#key-oid4vci-nonce-aud";
 
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
@@ -1728,40 +1731,17 @@ describe("JwtSigningService", () => {
         mockSecrets,
       );
 
-      const signedCredentialJWT = await service.signCredential(
-        exampleCredentialV2,
-        verificationMethod,
-        mockSecrets,
-      );
-
-      const presentation: VerifiablePresentation = {
-        "@context": [
-          "https://www.w3.org/ns/credentials/v2",
-          "https://www.w3.org/ns/credentials/examples/v2",
-        ],
-        id: "urn:uuid:oid4vci-vp-test",
-        type: ["VerifiablePresentation"],
-        verifiableCredential: [
-          {
-            "@context": "https://www.w3.org/ns/credentials/v2",
-            id: `data:application/vc+jwt,${signedCredentialJWT}`,
-            type: "EnvelopedVerifiableCredential",
-          } as any,
-        ],
-      };
-
       const cNonce = "c_nonce-from-issuer-oid4vci-test";
       const credentialIssuerId = "https://credential-issuer.example.com";
 
-      const signedPresentation = await service.signProofOfPossession(
-        presentation,
+      const signedJwt = await service.signProofOfPossession(
         verificationMethod,
         mockSecrets,
-        cNonce,
         credentialIssuerId,
+        cNonce,
       );
 
-      const parts = signedPresentation.split(".");
+      const parts = signedJwt.split(".");
       const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
       const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
 
@@ -1777,7 +1757,9 @@ describe("JwtSigningService", () => {
       expect(payload.iss).toBe(verificationMethod.split("#")[0]);
       expect(payload.nonce).toBe(cNonce);
       expect(payload.aud).toBe(credentialIssuerId);
-      expect(payload.type).toContain("VerifiablePresentation");
+      expect(Object.keys(payload).sort()).toEqual(
+        ["aud", "iat", "iss", "nonce"].sort(),
+      );
     });
   });
 
@@ -2408,70 +2390,5 @@ describe("JwtSigningService", () => {
       expect(header.iss).toBe(presentationVerificationMethod.split("#")[0]);
     });
 
-    it("should merge additional JOSE headers on OID4VCI proof JWT (signProofOfPossession)", async () => {
-      const encryptedKeyRepository = dataSource.getRepository(EncryptedKey);
-      await encryptedKeyRepository.clear();
-
-      const verificationMethod = "did:web:example.com#key-iat";
-
-      await keyService.generateKeyPair(
-        SignatureType.ED25519_2020,
-        KeyType.MULTIKEY,
-        verificationMethod,
-        mockSecrets
-      );
-
-      const signedCredentialJWT = await service.signCredential(
-        exampleCredentialV2,
-        verificationMethod,
-        mockSecrets
-      );
-
-      const presentation: VerifiablePresentation = {
-        "@context": [
-          "https://www.w3.org/ns/credentials/v2",
-          "https://www.w3.org/ns/credentials/examples/v2",
-        ],
-        id: "urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5",
-        type: ["VerifiablePresentation"],
-        verifiableCredential: [
-          {
-            "@context": "https://www.w3.org/ns/credentials/v2",
-            id: `data:application/vc+jwt,${signedCredentialJWT}`,
-            type: "EnvelopedVerifiableCredential",
-          } as any,
-        ],
-      };
-
-      const signedPresentation = await service.signProofOfPossession(
-        presentation,
-        verificationMethod,
-        mockSecrets,
-        "challenge-val",
-        "https://issuer.example.com",
-        { custom: "x" },
-      );
-
-      const parts = signedPresentation.split(".");
-      const header = JSON.parse(
-        Buffer.from(parts[0], "base64url").toString()
-      );
-      const payload = JSON.parse(
-        Buffer.from(parts[1], "base64url").toString()
-      );
-
-      // OID4VCI F.1: proof claims live in the JWT body, not the JOSE header
-      expect(header.typ).toBe("openid4vci-proof+jwt");
-      expect(header.custom).toBe("x");
-      expect(header.kid).toBe(verificationMethod);
-      expect(header).not.toHaveProperty("iat");
-      expect(header).not.toHaveProperty("iss");
-      expect(header).not.toHaveProperty("nonce");
-      expect(header).not.toHaveProperty("aud");
-      expect(typeof payload.iat).toBe("number");
-      expect(payload.nonce).toBe("challenge-val");
-      expect(payload.aud).toBe("https://issuer.example.com");
-      expect(payload.iss).toBe(verificationMethod.split("#")[0]);
-    });
   });
 });

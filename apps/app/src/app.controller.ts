@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { AppService } from "./app.service";
 import { SignType } from "./types/sign-types.enum";
-import { GenerateRequestDto, KeyRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
+import { GenerateRequestDto, KeyRequestDto, SignRequestDto } from "./types/request.dto";
 import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
 
 @Controller()
@@ -25,7 +25,7 @@ export class AppController {
   @Post("sign/vp/:type")
   async signPresentation(
     @Param("type", new ParseEnumPipe(SignType)) type: SignType,
-    @Body() body: PresentRequestDto | EncryptedPayloadDto
+    @Body() body: SignRequestDto | EncryptedPayloadDto
   ) {
     return await this.appService.signPresentation(type, body);
   }
@@ -33,7 +33,7 @@ export class AppController {
   @Post("sign/pop/:type")
   async signProofOfPossession(
     @Param("type", new ParseEnumPipe(SignType)) type: SignType,
-    @Body() body: PresentRequestDto | EncryptedPayloadDto,
+    @Body() body: SignRequestDto | EncryptedPayloadDto,
   ) {
     return await this.appService.signProofOfPossession(type, body);
   }

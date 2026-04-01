@@ -68,8 +68,8 @@ AppModule
 - Supports Ed25519 and ES256 signatures
 - Auto-sets issuer and issuance date
 - **W3C JWT-VC** (`signCredential` / `signPresentation`, `POST /sign/vc|vp/jwt`): JWS protected header includes `iat` and `iss` (controller DID from `kid`); for VP also `nonce`/`aud` when `challenge`/`domain` are passed — not duplicated as top-level JWT claims in the payload; VC issuer mutation from `preSignHook` runs before the payload is copied for signing; internal helper `signJwt`
-- **OpenID4VCI proof JWT** (`signProofOfPossession`, `POST /sign/pop/jwt`): Appendix F.1 — JOSE header `typ` is always `openid4vci-proof+jwt` plus optional params from `additionalHeaders`; `iss`/`aud`/`iat`/`nonce` only in the JWT body (VC or VP overloads)
-- **Proof-of-possession HTTP**: `POST /sign/pop/:type` with the same `SignType` as `POST /sign/vp/:type` (`jwt` → OID4VCI proof JWT; `data-integrity` → same as `POST /sign/vp/data-integrity`; `sd-jwt` → 400)
+- **OpenID4VCI proof JWT** (`signProofOfPossession`, `POST /sign/pop/jwt`): Credential Request `proofs.jwt` (spec §8.2), Appendix F.1 `jwt` proof — JWT body is only `aud` (required), `iat` (required), optional `iss` / `nonce`; not a VC; JOSE header `typ` `openid4vci-proof+jwt`, `alg`, `kid`; API requires `domain` → `aud`, optional `challenge` → `nonce`; `verifiable` ignored for `jwt`
+- **Proof-of-possession HTTP**: `POST /sign/pop/:type` — body `SignRequestDto` (same as `/sign/vp`); same `SignType` as `POST /sign/vp/:type` (`jwt` → OID4VCI proof JWT; `data-integrity` → same as `POST /sign/vp/data-integrity`; `sd-jwt` → 400)
 - Implements private `sign()` method for code reuse between VC and VP signing
 
 ### Data Integrity Signing (`data-integrity-signing.service.ts`)

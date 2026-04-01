@@ -4,7 +4,11 @@ import { DataIntegritySigningService } from "./signing-services/data-integrity-s
 import { KeyService } from "./key-services/key.service";
 import { PayloadEncryptionService } from "./key-services/payload-encryption.service";
 import { SignType } from "./types/sign-types.enum";
-import { GenerateRequestDto, KeyRequestDto, PresentRequestDto, SignRequestDto } from "./types/request.dto";
+import {
+  GenerateRequestDto,
+  KeyRequestDto,
+  SignRequestDto,
+} from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
 import { logInfo } from "./utils/log/logger";
@@ -51,12 +55,6 @@ export class AppService {
     return body as T;
   }
 
-  private decryptPresent(
-    body: PresentRequestDto | EncryptedPayloadDto,
-  ): PresentRequestDto {
-    return this.decryptPayloadIfNeeded<PresentRequestDto>(body);
-  }
-
   private getSigningService(type: SignType) {
     switch (type) {
       case SignType.JWT:
@@ -79,22 +77,21 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
-    const { verifiable, identifier, secrets, additionalHeaders } = decryptedBody;
+    const { verifiable, identifier, secrets } = decryptedBody;
     const service = this.getSigningService(type);
     return service.signCredential(
       verifiable as VerifiableCredential,
       identifier,
       secrets,
-      additionalHeaders,
     );
   }
 
   async signPresentation(
     type: SignType,
-    body: PresentRequestDto | EncryptedPayloadDto
+    body: SignRequestDto | EncryptedPayloadDto
   ): Promise<VerifiablePresentation | string> {
-    const { verifiable, identifier, secrets, challenge, domain, additionalHeaders } =
-      this.decryptPresent(body);
+    const { verifiable, identifier, secrets, challenge, domain } =
+      this.decryptPayloadIfNeeded<SignRequestDto>(body);
     const service = this.getSigningService(type);
     return service.signPresentation(
       verifiable as VerifiablePresentation,
@@ -102,16 +99,17 @@ export class AppService {
       secrets,
       challenge,
       domain,
-      additionalHeaders,
     );
   }
 
   /**
-   * Proof-of-possession: same `type` values as `POST /sign/vp/:type`, but `jwt` uses OID4VCI proof JWT instead of W3C JWT VP.
+   * Proof-of-possession: same `type` values as `POST /sign/vp/:type`.
+   * For `jwt`, OpenID4VCI Appendix F.1 key proof JWT — `domain` (Credential Issuer Identifier) is required for claim `aud`; `verifiable` is ignored.
+   * `data-integrity` uses a VP like `/sign/vp/data-integrity`.
    */
   async signProofOfPossession(
     type: SignType,
-    body: PresentRequestDto | EncryptedPayloadDto,
+    body: SignRequestDto | EncryptedPayloadDto,
   ): Promise<VerifiablePresentation | string> {
     if (type === SignType.SD_JWT) {
       throw new BadRequestException(
@@ -119,18 +117,22 @@ export class AppService {
       );
     }
 
-    const { verifiable, identifier, secrets, challenge, domain, additionalHeaders } =
-      this.decryptPresent(body);
+    const { verifiable, identifier, secrets, challenge, domain } =
+      this.decryptPayloadIfNeeded<SignRequestDto>(body);
     const presentation = verifiable as VerifiablePresentation;
 
     if (type === SignType.JWT) {
+      const aud = domain?.trim();
+      if (!aud) {
+        throw new BadRequestException(
+          "JWT proof of possession requires non-empty `domain` (Credential Issuer Identifier) for JWT claim `aud` (OpenID4VCI Appendix F.1).",
+        );
+      }
       return this.jwtSigningService.signProofOfPossession(
-        presentation,
         identifier,
         secrets,
-        challenge,
-        domain,
-        additionalHeaders,
+        aud,
+        challenge?.trim() || undefined,
       );
     }
 
@@ -140,7 +142,6 @@ export class AppService {
       secrets,
       challenge,
       domain,
-      additionalHeaders,
     );
   }
 
