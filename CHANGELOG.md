@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-04-02
 
 ### Added
 - `POST /sign/pop/:type` — proof-of-possession signing with `type` `jwt` (OpenID4VCI Appendix F.1 key proof JWT) or `data-integrity` (linked-data VP, same as `POST /sign/vp/data-integrity`); body uses `SignRequestDto` (same as `/sign/vp`)
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - **Breaking**: `additionalHeaders` on `SignRequestDto` and on `JwtSigningService` / `DataIntegritySigningService` VC/VP signing — extra JWS protected-header fields are no longer accepted; use `POST /sign/pop/jwt` for OpenID4VCI proof JWT header `typ`
+
 
 ## [2.2.0] - 2026-03-27
 
