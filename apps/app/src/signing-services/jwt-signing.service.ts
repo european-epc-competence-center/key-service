@@ -42,7 +42,7 @@ export class JwtSigningService {
         .replace(/\.\d{3}Z$/, "Z");
     }
 
-    return this.signJwt(
+    return this.signJwtVerifiable(
       credential,
       verificationMethod,
       secrets,
@@ -60,7 +60,7 @@ export class JwtSigningService {
     challenge?: string,
     domain?: string,
   ): Promise<string> {
-    return this.signJwt(
+    return this.signJwtVerifiable(
       presentation,
       verificationMethod,
       secrets,
@@ -120,8 +120,12 @@ export class JwtSigningService {
     return [signingInput, signature].join(".");
   }
 
-  /** W3C JWT-VC: protected header carries `iat`/`iss`/`nonce`/`aud` as applicable. */
-  private async signJwt(
+  /**
+   * W3C JWT-VC / JWT-VP: JWS protected header carries `alg`, `kid`, and `iss` (signing key controller:
+   * `kid` without the fragment), per [VC-JOSE-COSE key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery).
+   * JWT Claims Set carries `iat` and optional `nonce` / `aud` only (no `iss`, to avoid conflicting with VC `issuer`).
+   */
+  private async signJwtVerifiable(
     payload: VerifiableCredential | VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
@@ -151,20 +155,24 @@ export class JwtSigningService {
         : {};
 
     const jwtPayload: Record<string, unknown> = { ...basePayload };
+
+    Object.assign(jwtPayload, {
+      iat,
+      ...(nonce !== undefined && nonce !== "" && { nonce }),
+      ...(aud !== undefined && aud !== "" && { aud }),
+    });
+
     const header: Record<string, unknown> = {
       kid: keyPair.id,
       alg: keyPair.signatureType,
-      iat,
       ...(iss !== undefined && iss !== "" && { iss }),
-      ...(nonce !== undefined && nonce !== "" && { nonce }),
-      ...(aud !== undefined && aud !== "" && { aud }),
     };
 
     const signingInput: string = [
       jose.base64url.encode(JSON.stringify(header)),
       jose.base64url.encode(JSON.stringify(jwtPayload)),
     ].join(".");
-    
+
     const signature = jose.base64url.encode(
       await signer.sign({ data: new TextEncoder().encode(signingInput) })
     );
