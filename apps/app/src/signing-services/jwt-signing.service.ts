@@ -6,19 +6,23 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 import * as jose from "jose";
-import { SignatureType } from "../types/key-types.enum";
+
+/**
+ * OpenID4VCI 1.0 — `jwt` proof type (Appendix F.1): JOSE `typ` for key proof JWTs sent in
+ * `proofs.jwt` on the [Credential Request](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request) (Section 8.2).
+ * Used by `signProofOfPossession` / `POST /sign/pop/jwt`.
+ */
+const OPENID4VCI_PROOF_JWT_TYP = "openid4vci-proof+jwt";
 
 @Injectable()
 export class JwtSigningService {
   constructor(private readonly keyService: KeyService) {}
 
-  async signVC(
+  async signCredential(
     credential: VerifiableCredential,
     verificationMethod: string,
     secrets: string[],
-    additionalHeaders?: Record<string, unknown>,
   ): Promise<string> {
-    // set issuer from key pair controller
     const setIssuer = (keyPairId: string) => {
       if (!credential.issuer || typeof credential.issuer === "string") {
         credential.issuer = keyPairId.split("#")[0] as Issuer;
@@ -27,10 +31,9 @@ export class JwtSigningService {
       }
     };
 
-    // add issuance date in DM V1
     if (
       credential["@context"].includes(
-        "https://www.w3.org/2018/credentials/v1"
+        "https://www.w3.org/2018/credentials/v1",
       ) &&
       !credential.issuanceDate
     ) {
@@ -39,44 +42,96 @@ export class JwtSigningService {
         .replace(/\.\d{3}Z$/, "Z");
     }
 
-    return this.sign(
+    return this.signJwtVerifiable(
       credential,
       verificationMethod,
       secrets,
       setIssuer,
       undefined,
       undefined,
-      additionalHeaders,
     );
   }
 
-  async signVP(
+  /** W3C JWT VP (`POST /sign/vp/jwt`). */
+  async signPresentation(
     presentation: VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
     challenge?: string,
     domain?: string,
-    additionalHeaders?: Record<string, unknown>,
   ): Promise<string> {
-    return this.sign(
+    return this.signJwtVerifiable(
       presentation,
       verificationMethod,
       secrets,
       () => {},
       challenge,
       domain,
-      additionalHeaders,
     );
   }
 
-  private async sign(
+  /**
+   * OpenID4VCI 1.0 Appendix F.1 [jwt proof type](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-jwt-proof-type):
+   * a normal JWT for key proof (not a VC). JOSE header: `typ` `openid4vci-proof+jwt`, `alg`, `kid` (and optionally `jwk` / `x5c` / attestation — not set here).
+   * JWT body: `aud` (Credential Issuer Identifier), `iat` (required); optional `iss` (e.g. wallet `client_id` / holder DID from `kid`), `nonce` (`c_nonce` when the issuer uses the Nonce Endpoint).
+   *
+   * HTTP: `POST /sign/pop/jwt` — `domain` is required (maps to `aud`); `verifiable` is ignored.
+   */
+  async signProofOfPossession(
+    verificationMethod: string,
+    secrets: string[],
+    credentialIssuerIdentifier: string,
+    challenge?: string,
+  ): Promise<string> {
+    const keyPair = await this.keyService.getKeyPair(
+      verificationMethod,
+      secrets,
+    );
+    const signer = await keyPair.signer();
+    const iat = Math.floor(Date.now() / 1000);
+    const iss = keyPair.id
+      ? keyPair.id.includes("#")
+        ? keyPair.id.split("#")[0]
+        : keyPair.id
+      : undefined;
+
+    const jwtPayload: Record<string, unknown> = {
+      aud: credentialIssuerIdentifier,
+      iat,
+      ...(iss !== undefined && iss !== "" && { iss }),
+      ...(challenge !== undefined &&
+        challenge !== "" && { nonce: challenge }),
+    };
+
+    const header: Record<string, unknown> = {
+      typ: OPENID4VCI_PROOF_JWT_TYP,
+      kid: keyPair.id,
+      alg: keyPair.signatureType,
+    };
+
+    const signingInput: string = [
+      jose.base64url.encode(JSON.stringify(header)),
+      jose.base64url.encode(JSON.stringify(jwtPayload)),
+    ].join(".");
+
+    const signature = jose.base64url.encode(
+      await signer.sign({ data: new TextEncoder().encode(signingInput) }),
+    );
+    return [signingInput, signature].join(".");
+  }
+
+  /**
+   * W3C JWT-VC / JWT-VP: JWS protected header carries `alg`, `kid`, and `iss` (signing key controller:
+   * `kid` without the fragment), per [VC-JOSE-COSE key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery).
+   * JWT Claims Set carries `iat` and optional `nonce` / `aud` only (no `iss`, to avoid conflicting with VC `issuer`).
+   */
+  private async signJwtVerifiable(
     payload: VerifiableCredential | VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
     preSignHook?: (keyPairId: string) => void,
     nonce?: string,
     aud?: string,
-    additionalHeaders?: Record<string, unknown>,
   ): Promise<string> {
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
@@ -89,25 +144,35 @@ export class JwtSigningService {
         ? keyPair.id.split("#")[0]
         : keyPair.id
       : undefined;
-    const header = {
-      ...(additionalHeaders ?? {}),
-      kid: keyPair.id,
-      alg: keyPair.signatureType,
-      iat,
-      ...(iss && { iss }),
-      ...(nonce && { nonce }),
-      ...(aud && { aud }),
-    };
 
     if (preSignHook && keyPair.id) {
       preSignHook(keyPair.id);
     }
 
+    const basePayload =
+      typeof payload === "object" && payload !== null
+        ? { ...(payload as unknown as Record<string, unknown>) }
+        : {};
+
+    const jwtPayload: Record<string, unknown> = { ...basePayload };
+
+    Object.assign(jwtPayload, {
+      iat,
+      ...(nonce !== undefined && nonce !== "" && { nonce }),
+      ...(aud !== undefined && aud !== "" && { aud }),
+    });
+
+    const header: Record<string, unknown> = {
+      kid: keyPair.id,
+      alg: keyPair.signatureType,
+      ...(iss !== undefined && iss !== "" && { iss }),
+    };
+
     const signingInput: string = [
       jose.base64url.encode(JSON.stringify(header)),
-      jose.base64url.encode(JSON.stringify(payload)),
+      jose.base64url.encode(JSON.stringify(jwtPayload)),
     ].join(".");
-    
+
     const signature = jose.base64url.encode(
       await signer.sign({ data: new TextEncoder().encode(signingInput) })
     );

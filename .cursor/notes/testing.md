@@ -95,7 +95,7 @@ npm run test:coverage         # Combined coverage
 - Error handling for invalid keys/secrets
 - Verifiable Credential (VC) signing with JWT and Data Integrity
 - Verifiable Presentation (VP) signing:
-  - JWT: Enveloped credentials with multiple algorithms (Ed25519, ES256, PS256)
+  - JWT: Enveloped credentials with multiple algorithms (Ed25519, ES256, PS256); `jwt-signing.service.spec.ts` expects VC/VP `iss` on the JWS protected header (`kid` fragment stripped), `iat` (and VP `nonce`/`aud` when used) in the JWT payload; OpenID4VCI PoP keeps `iss` in the body (F.1)
   - Data Integrity: Embedded credentials with Ed25519 proofs, challenge/domain support
 
 ### API Contract Testing

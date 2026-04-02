@@ -528,7 +528,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -592,7 +592,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -656,7 +656,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -710,7 +710,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -768,7 +768,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod,
         mockSecrets
@@ -827,7 +827,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod,
         mockSecrets
@@ -886,7 +886,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -950,7 +950,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1014,7 +1014,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1068,7 +1068,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1122,7 +1122,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2WithoutValidFrom,
         verificationMethod,
         mockSecrets
@@ -1176,7 +1176,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2WithoutValidFrom,
         verificationMethod,
         mockSecrets
@@ -1233,7 +1233,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1291,7 +1291,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1349,7 +1349,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1406,7 +1406,7 @@ describe("DataIntegritySigningService", () => {
       console.log("Verification Method Object:", JSON.stringify(verificationMethodObj, null, 2));
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1465,7 +1465,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -1523,7 +1523,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1578,7 +1578,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result = await service.signVC(
+      const result = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1623,7 +1623,7 @@ describe("DataIntegritySigningService", () => {
       const verificationMethod = "did:web:nonexistent.com#key";
 
       await expect(
-        service.signVC(exampleCredentialV1, verificationMethod, mockSecrets)
+        service.signCredential(exampleCredentialV1, verificationMethod, mockSecrets)
       ).rejects.toThrow();
     });
 
@@ -1654,13 +1654,13 @@ describe("DataIntegritySigningService", () => {
       expect(count).toBe(2);
 
       // Sign with both keys
-      const result1 = await service.signVC(
+      const result1 = await service.signCredential(
         exampleCredentialV1,
         verificationMethod1,
         mockSecrets
       );
 
-      const result2 = await service.signVC(
+      const result2 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod2,
         mockSecrets
@@ -1710,13 +1710,13 @@ describe("DataIntegritySigningService", () => {
       expect(count).toBe(2);
 
       // Sign with both keys
-      const result1 = await service.signVC(
+      const result1 = await service.signCredential(
         exampleCredentialV1,
         verificationMethod1,
         mockSecrets
       );
 
-      const result2 = await service.signVC(
+      const result2 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod2,
         mockSecrets
@@ -1756,7 +1756,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign a credential first
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1774,7 +1774,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets,
@@ -1822,7 +1822,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign a credential first
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         verificationMethod,
         mockSecrets
@@ -1840,7 +1840,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets,
@@ -1904,13 +1904,13 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign multiple credentials
-      const signedCredential1 = await service.signVC(
+      const signedCredential1 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod1,
         mockSecrets
       );
 
-      const signedCredential2 = await service.signVC(
+      const signedCredential2 = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod2,
         mockSecrets
@@ -1929,7 +1929,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -1990,13 +1990,13 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign multiple credentials
-      const signedCredential1 = await service.signVC(
+      const signedCredential1 = await service.signCredential(
         exampleCredentialV2,
         verificationMethod1,
         mockSecrets
       );
 
-      const signedCredential2 = await service.signVC(
+      const signedCredential2 = await service.signCredential(
         exampleCredentialV1WithIssuanceDate,
         verificationMethod2,
         mockSecrets
@@ -2015,7 +2015,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2067,7 +2067,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2087,7 +2087,7 @@ describe("DataIntegritySigningService", () => {
       const challenge = "test-challenge-12345";
       const domain = "https://example.com";
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2135,7 +2135,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2155,7 +2155,7 @@ describe("DataIntegritySigningService", () => {
       const challenge = "test-challenge-12345";
       const domain = "https://example.com";
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2205,7 +2205,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2222,7 +2222,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation with ES256 key
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2282,7 +2282,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2299,7 +2299,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation with ES256 key
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2349,7 +2349,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -2364,7 +2364,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets,
@@ -2390,7 +2390,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV1,
         verificationMethod,
         mockSecrets
@@ -2405,7 +2405,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         verificationMethod,
         mockSecrets,
@@ -2440,7 +2440,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2457,7 +2457,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation with PS256 key
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2516,7 +2516,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2533,7 +2533,7 @@ describe("DataIntegritySigningService", () => {
       };
 
       // Sign the presentation with PS256 key
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2590,7 +2590,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Sign credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         exampleCredentialV2,
         credentialVerificationMethod,
         mockSecrets
@@ -2610,7 +2610,7 @@ describe("DataIntegritySigningService", () => {
       const challenge = "ps256-test-challenge-67890";
       const domain = "https://ps256.example.com";
 
-      const signedPresentation = await service.signVP(
+      const signedPresentation = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -2657,7 +2657,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialCopy,
         verificationMethod,
         mockSecrets
@@ -2735,7 +2735,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialCopy,
         verificationMethod,
         mockSecrets
@@ -2820,7 +2820,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialCopy,
         verificationMethod,
         mockSecrets
@@ -2906,7 +2906,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialCopy,
         verificationMethod,
         mockSecrets
@@ -3015,7 +3015,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialWithMultipleRenders,
         verificationMethod,
         mockSecrets
@@ -3097,7 +3097,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialWithMultipleRenders,
         verificationMethod,
         mockSecrets
@@ -3160,7 +3160,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act - Sign the rendered credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         credentialCopy,
         credentialVerificationMethod,
         mockSecrets
@@ -3177,7 +3177,7 @@ describe("DataIntegritySigningService", () => {
         "verifiableCredential": [signedCredential]
       };
 
-      const signedPresentation: any = await service.signVP(
+      const signedPresentation: any = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -3247,7 +3247,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act - Sign the rendered credential
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         credentialCopy,
         credentialVerificationMethod,
         mockSecrets
@@ -3264,7 +3264,7 @@ describe("DataIntegritySigningService", () => {
         "verifiableCredential": [signedCredential]
       };
 
-      const signedPresentation: any = await service.signVP(
+      const signedPresentation: any = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,
@@ -3327,7 +3327,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialCopy,
         verificationMethod,
         mockSecrets
@@ -3445,7 +3445,7 @@ describe("DataIntegritySigningService", () => {
       );
 
       // Act
-      const result: any = await service.signVC(
+      const result: any = await service.signCredential(
         credentialWithMultipleRenders,
         verificationMethod,
         mockSecrets
@@ -3521,7 +3521,7 @@ describe("DataIntegritySigningService", () => {
       const credentialCopy = JSON.parse(JSON.stringify(exampleRenderedCredentialV2));
 
       // Act - Sign the rendered credential with PS256
-      const signedCredential = await service.signVC(
+      const signedCredential = await service.signCredential(
         credentialCopy,
         credentialVerificationMethod,
         mockSecrets
@@ -3538,7 +3538,7 @@ describe("DataIntegritySigningService", () => {
         "verifiableCredential": [signedCredential]
       };
 
-      const signedPresentation: any = await service.signVP(
+      const signedPresentation: any = await service.signPresentation(
         presentation,
         presentationVerificationMethod,
         mockSecrets,

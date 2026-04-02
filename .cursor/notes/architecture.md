@@ -67,7 +67,9 @@ AppModule
 - Uses `jose` library for JWT operations
 - Supports Ed25519 and ES256 signatures
 - Auto-sets issuer and issuance date
-- JWS protected header includes `iat` and `iss` (controller DID from `kid`); `nonce`/`aud` when passed for VP
+- **W3C JWT-VC** (`signCredential` / `signPresentation`, `POST /sign/vc|vp/jwt`): JWS protected header is `alg` + `kid` + `iss` (signing key controller: `kid` without fragment), per [VC-JOSE-COSE key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery); JWT Claims Set has `iat` and optional VP `nonce`/`aud` only (no `iss`); `preSignHook` runs before the payload snapshot; private `signJwtVerifiable`
+- **OpenID4VCI proof JWT** (`signProofOfPossession`, `POST /sign/pop/jwt`): Credential Request `proofs.jwt` (spec §8.2), Appendix F.1 `jwt` proof — JWT body is only `aud` (required), `iat` (required), optional `iss` / `nonce`; not a VC; JOSE header `typ` `openid4vci-proof+jwt`, `alg`, `kid`; API requires `domain` → `aud`, optional `challenge` → `nonce`; `verifiable` ignored for `jwt`
+- **Proof-of-possession HTTP**: `POST /sign/pop/:type` — body `SignRequestDto` (same as `/sign/vp`); same `SignType` as `POST /sign/vp/:type` (`jwt` → OID4VCI proof JWT; `data-integrity` → same as `POST /sign/vp/data-integrity`; `sd-jwt` → 400)
 - Implements private `sign()` method for code reuse between VC and VP signing
 
 ### Data Integrity Signing (`data-integrity-signing.service.ts`)
@@ -78,7 +80,7 @@ AppModule
 
 ### Common Patterns
 Both signing services follow the same architectural pattern:
-- Public methods: `signVC()` and `signVP()`
+- Public methods: `signCredential()` and `signPresentation()`
 - Private method: `sign()` containing shared signing logic
 - Optional `preSignHook` parameter for credential-specific setup (e.g., setting issuer)
 

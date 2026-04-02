@@ -7,7 +7,6 @@ import {
   IsEnum,
   ValidateNested,
   IsObject,
-  IsOptional,
   MaxLength,
   MinLength,
   Matches,
@@ -76,8 +75,9 @@ export class KeyRequestDto {
  */
 export class SignRequestDto extends KeyRequestDto {
   /**
-   * The verifiable credential or presentation to be signed
-   * Must be a valid object structure
+   * The verifiable credential or presentation to be signed.
+   * VC for `POST /sign/vc`; VP for `POST /sign/vp` and `POST /sign/pop/data-integrity`.
+   * For `POST /sign/pop/jwt` (OpenID4VCI Appendix F.1) the JWT body is not a VC — this field is ignored; use `{}` if needed. Non-empty `domain` (Credential Issuer Identifier) is required for JWT claim `aud`.
    */
   @IsNotEmpty({ message: "Verifiable credential/presentation is required" })
   @IsObject({ message: "Verifiable credential/presentation must be an object" })
@@ -86,23 +86,8 @@ export class SignRequestDto extends KeyRequestDto {
   verifiable!: VerifiableCredential | VerifiablePresentation;
 
   /**
-   * Extra JWS protected-header properties for JWT signing (VC and VP; ignored for data-integrity).
-   */
-  @IsOptional()
-  @IsObject({ message: "Additional headers must be an object" })
-  additionalHeaders?: Record<string, unknown>;
-}
-
-/**
- * DTO for presentation signing operations
- * Extends SignRequestDto with additional challenge and domain properties
- * for verifiable presentation proof requirements
- */
-export class PresentRequestDto extends SignRequestDto {
-  /**
-   * Challenge string for the presentation proof
-   * Also accepts 'nonce' as an alternative property name
-   * Must be a non-empty string with length constraints
+   * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).
+   * Also accepts property name `nonce`.
    */
   @Transform(({ value, obj }) => value ?? obj.nonce)
   @IsString({ message: "Challenge must be a string" })
@@ -112,9 +97,8 @@ export class PresentRequestDto extends SignRequestDto {
   challenge?: string;
 
   /**
-   * Domain string for the presentation proof
-   * Also accepts 'audience' as an alternative property name
-   * Must be a non-empty string with length constraints
+   * Domain / audience (e.g. VP proof, Credential Issuer Identifier → JWT `aud` on PoP).
+   * Also accepts property name `audience`.
    */
   @Transform(({ value, obj }) => value ?? obj.audience)
   @IsString({ message: "Domain must be a string" })
