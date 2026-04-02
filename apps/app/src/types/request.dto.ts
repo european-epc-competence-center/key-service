@@ -7,6 +7,7 @@ import {
   IsEnum,
   ValidateNested,
   IsObject,
+  IsOptional,
   MaxLength,
   MinLength,
   Matches,
@@ -76,14 +77,14 @@ export class KeyRequestDto {
 export class SignRequestDto extends KeyRequestDto {
   /**
    * The verifiable credential or presentation to be signed.
-   * VC for `POST /sign/vc`; VP for `POST /sign/vp` and `POST /sign/pop/data-integrity`.
-   * For `POST /sign/pop/jwt` (OpenID4VCI Appendix F.1) the JWT body is not a VC — this field is ignored; use `{}` if needed. Non-empty `domain` (Credential Issuer Identifier) is required for JWT claim `aud`.
+   * Required for `POST /sign/vc` and `POST /sign/vp` (enforced in the service).
+   * Optional for `POST /sign/pop`: JWT PoP (F.1) ignores it; Data Integrity PoP (F.2 `di_vp`) ignores it (service builds the VP shell; `domain` required).
    */
-  @IsNotEmpty({ message: "Verifiable credential/presentation is required" })
+  @IsOptional()
   @IsObject({ message: "Verifiable credential/presentation must be an object" })
   @ValidateNested()
   @Type(() => Object)
-  verifiable!: VerifiableCredential | VerifiablePresentation;
+  verifiable?: VerifiableCredential | VerifiablePresentation;
 
   /**
    * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).
@@ -97,7 +98,7 @@ export class SignRequestDto extends KeyRequestDto {
   challenge?: string;
 
   /**
-   * Domain / audience (e.g. VP proof, Credential Issuer Identifier → JWT `aud` on PoP).
+   * Domain / audience (VP Data Integrity proof `domain`; OpenID4VCI Credential Issuer Identifier on PoP — F.1 JWT `aud`, F.2 `di_vp` proof `domain`).
    * Also accepts property name `audience`.
    */
   @Transform(({ value, obj }) => value ?? obj.audience)

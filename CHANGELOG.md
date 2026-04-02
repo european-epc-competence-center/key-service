@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `SignRequestDto.verifiable` is optional at the DTO layer; `POST /sign/vc` and `POST /sign/vp` still require a non-array object (enforced in `AppService`). `POST /sign/pop/jwt` can omit it; `POST /sign/pop/data-integrity` ignores it and always builds a minimal VP shell, then calls `signPresentation` (OpenID4VCI Appendix F.2 `di_vp`)
+- **Breaking**: `POST /sign/pop/data-integrity` requires non-empty `domain` (Credential Issuer Identifier for proof `domain`, [OpenID4VCI F.2 `di_vp`](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-di_vp-proof-type)); `POST /sign/vp/data-integrity` unchanged (`domain` still optional there)
+- **Breaking**: `POST /sign/pop/data-integrity` no longer uses request `verifiable` — use `POST /sign/vp/data-integrity` for a custom VP
+
 ## [2.3.0] - 2026-04-02
 
 ### Added

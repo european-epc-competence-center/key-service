@@ -214,7 +214,7 @@ describe("Input Validation (e2e)", () => {
         .expect(400);
     });
 
-    it("should reject missing verifiable field", () => {
+    it("should reject missing verifiable field (service validation)", () => {
       return request(app.getHttpServer())
         .post("/sign/vc/jwt")
         .send({
@@ -280,6 +280,29 @@ describe("Input Validation (e2e)", () => {
         .post("/sign/pop/sd-jwt")
         .send({
           verifiable: validVP,
+          secrets: ["secret1"],
+          identifier: "test-key",
+        })
+        .expect(400);
+    });
+
+    it("should accept missing verifiable for jwt PoP (DTO allows omit)", () => {
+      return request(app.getHttpServer())
+        .post("/sign/pop/jwt")
+        .send({
+          secrets: ["secret1"],
+          identifier: "test-key",
+          domain: "https://issuer.example",
+        })
+        .expect((res) => {
+          expect(res.status).not.toBe(400);
+        });
+    });
+
+    it("should reject data-integrity PoP without domain (OpenID4VCI F.2 di_vp)", () => {
+      return request(app.getHttpServer())
+        .post("/sign/pop/data-integrity")
+        .send({
           secrets: ["secret1"],
           identifier: "test-key",
         })

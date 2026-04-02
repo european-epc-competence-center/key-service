@@ -11,7 +11,6 @@ import {
 } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
-import { logInfo } from "./utils/log/logger";
 import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
 
 @Injectable()
@@ -104,8 +103,8 @@ export class AppService {
 
   /**
    * Proof-of-possession: same `type` values as `POST /sign/vp/:type`.
-   * For `jwt`, OpenID4VCI Appendix F.1 key proof JWT — `domain` (Credential Issuer Identifier) is required for claim `aud`; `verifiable` is ignored.
-   * `data-integrity` uses a VP like `/sign/vp/data-integrity`.
+   * For `jwt`, OpenID4VCI Appendix F.1 — non-empty `domain` → JWT `aud`; `verifiable` optional and ignored.
+   * For `data-integrity`, OpenID4VCI Appendix F.2 `di_vp` — builds a minimal VP shell and delegates to `signPresentation` (`domain` required, optional `challenge`); request `verifiable` is ignored.
    */
   async signProofOfPossession(
     type: SignType,
@@ -117,9 +116,8 @@ export class AppService {
       );
     }
 
-    const { verifiable, identifier, secrets, challenge, domain } =
-      this.decryptPayloadIfNeeded<SignRequestDto>(body);
-    const presentation = verifiable as VerifiablePresentation;
+    const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
+    const { identifier, secrets, challenge, domain } = decryptedBody;
 
     if (type === SignType.JWT) {
       const aud = domain?.trim();
@@ -136,13 +134,23 @@ export class AppService {
       );
     }
 
-    return this.dataIntegritySigningService.signPresentation(
-      presentation,
-      identifier,
-      secrets,
-      challenge,
-      domain,
-    );
+    if (!domain?.trim()) {
+      throw new BadRequestException(
+        "Data Integrity proof of possession requires non-empty `domain` (Credential Issuer Identifier) for proof `domain` (OpenID4VCI Appendix F.2 di_vp).",
+      );
+    }
+
+    return this.signPresentation(SignType.DATA_INTEGRITY, {
+      ...decryptedBody,
+      verifiable: {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        type: ["VerifiablePresentation"],
+        holder: identifier?.split("#")[0] as string,
+      } satisfies VerifiablePresentation,
+    });
   }
 
   async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<VerificationMethod> {

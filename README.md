@@ -335,7 +335,7 @@ POST /sign/pop/:type
 
 - `type`: Same values as `POST /sign/vp/:type` (`jwt`, `data-integrity`, `sd-jwt`). For POP, use `jwt` (OpenID4VCI Appendix F.1 proof JWT) or `data-integrity` (same as `POST /sign/vp/data-integrity`). `sd-jwt` returns 400.
 
-**Request body:** `SignRequestDto` — `secrets`, `identifier`, **`domain`** (required for `jwt`: Credential Issuer Identifier → JWT `aud` per OpenID4VCI F.1), optional `challenge` (`c_nonce` → `nonce`). `verifiable` is required by the DTO but **ignored** for `jwt` (use `{}`). Data Integrity PoP uses a VP in `verifiable` like `POST /sign/vp/data-integrity`. JWT PoP uses fixed JOSE `typ` `openid4vci-proof+jwt` and a minimal JWT payload (`aud`, `iat`, optional `iss` / `nonce`), not a VC.
+**Request body:** `SignRequestDto` — `secrets`, `identifier`, optional **`verifiable`**, **`domain`** (required for both PoP types: Credential Issuer Identifier — OpenID4VCI F.1 JWT `aud`, F.2 `di_vp` proof `domain`), optional **`challenge`** (F.1 JWT `nonce` / F.2 proof `challenge` when the issuer uses `c_nonce`). For `POST /sign/vc` and `POST /sign/vp`, `verifiable` is required (validated in the service). For `POST /sign/pop/jwt`, `verifiable` is optional and ignored. For `POST /sign/pop/data-integrity`, the service always builds a minimal VP shell per F.2 and signs it via the same path as `POST /sign/vp/data-integrity`; request `verifiable` is ignored (use `POST /sign/vp/data-integrity` for a custom VP). JWT PoP uses JOSE `typ` `openid4vci-proof+jwt` and a minimal F.1 JWT body, not a VC.
 
 ### Generate Key Pair
 

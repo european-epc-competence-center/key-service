@@ -139,7 +139,7 @@ export interface VerifiableCredential {
 export interface VerifiablePresentation {
   "@context": Context;
   type: string | string[];
-  verifiableCredential: VerifiableCredential | VerifiableCredential[];
+  verifiableCredential?: VerifiableCredential | VerifiableCredential[];
 
   id?: URI;
   holder?: URI;

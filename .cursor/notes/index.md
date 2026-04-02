@@ -100,10 +100,10 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 ### Request Structure (v1.5.0)
 
 All signing and generation requests use:
-- `verifiable`: The VC or VP object (not "credential")
+- `verifiable`: Optional in DTO; required for `/sign/vc` and `/sign/vp` at service layer; VC or VP object (not `"credential"`)
 - `secrets`: Array of 1-10 secrets (not single "secret")
 - `identifier`: Key identifier (alphanumeric + `-_:.`)
-- `SignRequestDto`: `verifiable`, `secrets`, `identifier`, optional `challenge`, `domain` — used for `/sign/vc`, `/sign/vp`, `/sign/pop` (VC signing ignores `challenge`/`domain`; JWT `/sign/pop/jwt` ignores `verifiable` and requires `domain` for OpenID4VCI F.1 `aud`)
+- `SignRequestDto`: optional `verifiable`, `secrets`, `identifier`, optional `challenge`, `domain` — used for `/sign/vc`, `/sign/vp`, `/sign/pop` (`verifiable` required for vc/vp; PoP `jwt` / `data-integrity` ignore `verifiable`; di PoP builds minimal VP then `signPresentation`; F.1/F.2 require `domain`)
 
 ## Notes Files Reference
 

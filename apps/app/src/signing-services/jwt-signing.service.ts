@@ -75,7 +75,7 @@ export class JwtSigningService {
    * a normal JWT for key proof (not a VC). JOSE header: `typ` `openid4vci-proof+jwt`, `alg`, `kid` (and optionally `jwk` / `x5c` / attestation — not set here).
    * JWT body: `aud` (Credential Issuer Identifier), `iat` (required); optional `iss` (e.g. wallet `client_id` / holder DID from `kid`), `nonce` (`c_nonce` when the issuer uses the Nonce Endpoint).
    *
-   * HTTP: `POST /sign/pop/jwt` — `domain` is required (maps to `aud`); `verifiable` is ignored.
+   * HTTP: `POST /sign/pop/jwt` — `domain` is required (maps to `aud`); `verifiable` is optional and ignored.
    */
   async signProofOfPossession(
     verificationMethod: string,

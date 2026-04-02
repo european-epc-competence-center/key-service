@@ -94,8 +94,8 @@ export class DataIntegritySigningService {
    * @param presentation - The verifiable presentation to sign
    * @param verificationMethod - The verification method identifier
    * @param secrets - Array of secrets for key derivation
-   * @param challenge - Challenge string for the proof
-   * @param domain - Optional domain for the proof
+   * @param challenge - Challenge for the proof (e.g. OpenID4VCI `c_nonce` for `di_vp` when the issuer uses a Nonce Endpoint)
+   * @param domain - Optional domain for the proof; required for OpenID4VCI `di_vp` (Credential Issuer Identifier), enforced at `AppService.signProofOfPossession`
    * @returns Signed verifiable presentation with proof
    */
   async signPresentation(
