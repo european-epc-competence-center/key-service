@@ -8,13 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.2] - 2026-04-28
 
 ### Security
-- `npm audit fix`: updated transitive dependencies to resolve reported CVEs
-  - **high**: `uuid` — missing buffer bounds check in v3/v5/v6 when `buf` is provided (transitive via `typeorm`)
-  - **high**: `tar` — multiple path-traversal and symlink CVEs; residual `minimatch@3.1.5` and `tar` instances remain in dev/build tooling (`node-gyp`, `sqlite3`, `rimraf`) — not reachable at runtime
-  - **high**: `minimatch` — ReDoS via repeated wildcards and GLOBSTAR segments; residual `3.1.5` is dev-only (build tooling), not runtime
-  - **high**: `cacache`, `make-fetch-happen`, `node-gyp`, `sqlite3` — resolved via updated `tar` dependency chain
-  - **moderate**: `jsonld`, `@digitalbazaar/http-client` — `npm audit` flagged `undici`; installed versions (`6.25.0`, `5.29.0`) are already above the fix threshold (`≥6.24.0`) — false positive, no change needed
-  - **low**: `@tootallnate/once` — incorrect control flow scoping; `http-proxy-agent` resolved transitively
+- Upgraded `sqlite3` `5.1.7` → `6.0.1`; pulls in `node-gyp@12` and `tar@7.5.13`, resolving all `tar` CVEs
+  - **high**: `tar` — arbitrary file creation/overwrite via hardlink path traversal, symlink poisoning via insufficient path sanitisation, hardlink/symlink drive-relative linkpath traversal, race condition via Unicode ligature collisions on macOS APFS (all fixed in `tar≥7.5.11`)
+  - **high**: `cacache`, `make-fetch-happen`, `node-gyp` — resolved transitively via updated `tar`
+- Remaining audit findings (accepted / not actionable):
+  - **high**: `minimatch@3.1.5` — ReDoS via repeated wildcards and GLOBSTAR segments; dev/build-only (via `node-gyp`), not reachable at runtime
+  - **high**: `undici` — `npm audit` flags range `≤6.23.0`; installed versions `6.25.0` and `5.29.0` are already above the fix threshold — false positive
+  - **moderate**: `jsonld`, `@digitalbazaar/http-client` — flagged transitively via `undici`; false positive (see above)
+  - **moderate**: `uuid` — missing buffer bounds check (transitive via `typeorm`); fix requires downgrading `typeorm` to `0.2.41` — breaking, not applied
+  - **low**: `@tootallnate/once` — incorrect control flow scoping (transitive via `node-gyp`); dev/build-only
 
 
 ## [2.3.1] - 2026-04-02
