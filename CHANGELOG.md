@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- `npm audit fix`: updated transitive dependencies to resolve multiple CVEs
+  - **high**: `undici` — unbounded decompression chain, HTTP request/response smuggling, unbounded WebSocket memory consumption, unhandled exception via invalid `server_max_window_bits`, CRLF injection via `upgrade` option
+  - **high**: `tar` — arbitrary file creation/overwrite via hardlink path traversal, symlink poisoning via insufficient path sanitisation, hardlink/symlink drive-relative linkpath traversal, race condition in path reservations via Unicode ligature collisions (macOS APFS)
+  - **high**: `minimatch` — ReDoS via repeated wildcards with non-matching literal, ReDoS via multiple non-adjacent GLOBSTAR segments, catastrophic backtracking from nested `*()` extglobs
+  - **high**: `uuid` — missing buffer bounds check in v3/v5/v6 when `buf` is provided (transitive via `typeorm`)
+  - **high**: `cacache`, `make-fetch-happen`, `node-gyp`, `sqlite3` — resolved via updated `tar` and related dependency chain
+  - **moderate**: `jsonld`, `@digitalbazaar/http-client` — resolved via updated `undici`
+  - **low**: `@tootallnate/once` — incorrect control flow scoping; `http-proxy-agent` resolved transitively
+
+
 ## [2.3.1] - 2026-04-02
 
 ### Changed

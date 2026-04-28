@@ -4,7 +4,7 @@
 
 The Key Service is a NestJS-based API for signing verifiable credentials using multiple signature formats (JWT, Data Integrity, SD-JWT). It provides secure key management, credential signing, and public key retrieval capabilities.
 
-**Current Version**: v1.7.0  
+**Current Version**: v2.3.2  
 **License**: AGPL-3.0 (GNU Affero General Public License v3.0)  
 **Author**: Christian Fries  
 **Technology Stack**: NestJS, TypeScript, PostgreSQL, Docker  
@@ -146,7 +146,7 @@ npm run build
 - `docs/security_and_key_management_concept.md` - Security architecture concept
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
 - `SECURITY_REPORT.md` - External security analysis report; reformatted for pandoc PDF compilation (no emojis, correct heading hierarchy, list spacing, `lang: en`, fancyhdr)
-- `CHANGELOG.md` - Version history and changes (current: v1.7.0)
+- `CHANGELOG.md` - Version history and changes (current: v2.3.2)
 - `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
 - `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide
 - `docs/REQUEST_ENCRYPTION_USAGE.md` - **NEW** Multi-language client examples (Java, Node.js, Python)
