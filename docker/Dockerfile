@@ -1,5 +1,5 @@
 # Multi-stage build for production-ready Docker image
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 
 # Install production dependencies
 FROM base AS deps
@@ -23,7 +23,7 @@ COPY . .
 RUN npm run build
 
 # Production image, copy all the files and run the app
-FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runner
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -43,4 +43,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application
 CMD ["dist/apps/app/main.js"]
-

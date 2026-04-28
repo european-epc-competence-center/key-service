@@ -3,7 +3,7 @@
   "version": "2.3.1",
   "main": "index.js",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build": "nest build && tsc migrations/*.ts --outDir dist --target es2020 --module commonjs --esModuleInterop --experimentalDecorators --emitDecoratorMetadata --skipLibCheck",
