@@ -5,11 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.3.2] - 2026-04-28
+## [2.3.2] - 2026-04-29
 
 ### Security
 - Upgrade node 22 to 24
-- Upgraded `sqlite3` `5.1.7` → `6.0.1`; pulls in `node-gyp@12` and `tar@7.5.13`, resolving all `tar` CVEs
   - **high**: `tar` — arbitrary file creation/overwrite via hardlink path traversal, symlink poisoning via insufficient path sanitisation, hardlink/symlink drive-relative linkpath traversal, race condition via Unicode ligature collisions on macOS APFS (all fixed in `tar≥7.5.11`)
   - **high**: `cacache`, `make-fetch-happen`, `node-gyp` — resolved transitively via updated `tar`
 - Remaining audit findings (accepted / not actionable):
