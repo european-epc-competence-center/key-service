@@ -15,8 +15,8 @@ This directory contains all Docker-related files for the key-service application
 ### Manual Docker commands
 
 ```bash
-# Production
-docker build -t key-service:latest -f docker/Dockerfile .
+# Production (use --pull so distroless/OpenSSL layers stay current)
+docker build --pull -t key-service:latest -f docker/Dockerfile .
 docker-compose -f docker/docker-compose.yml up -d
 
 # Development
@@ -29,10 +29,10 @@ docker-compose -f docker/docker-compose.dev.yml up --build
 ### Production Image (`key-service:latest`)
 
 - Multi-stage build for optimized size
-- Non-root user for security
+- Runtime: `gcr.io/distroless/nodejs24-debian12:nonroot` (Alpine for build stages); rootless UID/GID **65532** (`nonroot`)
+- Refresh the distroless base (including OpenSSL) with `docker build --pull` when rebuilding
 - Health checks included
-- Production dependencies only
-- Alpine Linux base for minimal attack surface
+- Production dependencies only (no `tsx` / `esbuild` in the runtime image)
 
 ### Development Image (`key-service:dev`)
 
@@ -63,9 +63,9 @@ The production container includes health checks that verify the application is r
 
 ## Security Features
 
-- Non-root user execution
-- Minimal base image (Alpine Linux)
-- Production-only dependencies in final image
+- Non-root user execution (distroless `nonroot`, UID/GID 65532)
+- Minimal production runtime (distroless Debian 12 + Node); build stages use Alpine
+- Production-only dependencies in final image (dev tooling such as `tsx` excluded)
 - Proper file permissions
 
 ## Development Features

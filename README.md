@@ -227,8 +227,8 @@ The Docker Compose setup includes:
 ### Building Docker Image Manually
 
 ```bash
-# Build production image
-docker build -t key-service:latest -f docker/Dockerfile .
+# Build production image (--pull recommended: refreshes distroless base, including OpenSSL)
+docker build --pull -t key-service:latest -f docker/Dockerfile .
 
 # Run with environment variables
 docker run -p 3000:3000 \
