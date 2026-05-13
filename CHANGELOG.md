@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.4] - 2026-05-13
 
 ### Security
 - Docker production runner: `gcr.io/distroless/nodejs24-debian12:nonroot` again (minimal image); OpenSSL tracks the distroless base — rebuild with `docker build --pull` to pick up newer digests when Google refreshes Debian layers
 - Helm `securityContext`: `runAsUser` / `runAsGroup` **65532** to match distroless `nonroot`
 - Move `tsx` to devDependencies so production `node_modules` no longer ships `esbuild` (Go binary / stdlib CVE noise such as CVE-2026-27143, CVE-2025-68121); runtime remains `node dist/...` — `npm start` / `npm run dev` still use `tsx` where dev deps are installed
+
 
 ## [2.3.3] - 2026-04-29
 
