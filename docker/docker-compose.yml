@@ -24,6 +24,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      pull: true
     ports:
       - "3000:3000"
     environment:
