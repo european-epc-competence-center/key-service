@@ -48,17 +48,18 @@ export class JwtSigningService {
       secrets,
       setIssuer,
       undefined,
-      undefined,
+      credential.validUntil
     );
   }
 
-  /** W3C JWT VP (`POST /sign/vp/jwt`). */
+  /** W3C JWT VP (`POST /sign/vp/jwt`). Sets `exp` from `validUntil` ISO 8601 when present. */
   async signPresentation(
     presentation: VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
     challenge?: string,
     domain?: string,
+    validUntil?: string,
   ): Promise<string> {
     return this.signJwtVerifiable(
       presentation,
@@ -67,13 +68,14 @@ export class JwtSigningService {
       () => {},
       challenge,
       domain,
+      validUntil || presentation.validUntil,
     );
   }
 
   /**
    * OpenID4VCI 1.0 Appendix F.1 [jwt proof type](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-jwt-proof-type):
    * a normal JWT for key proof (not a VC). JOSE header: `typ` `openid4vci-proof+jwt`, `alg`, `kid` (and optionally `jwk` / `x5c` / attestation — not set here).
-   * JWT body: `aud` (Credential Issuer Identifier), `iat` (required); optional `iss` (e.g. wallet `client_id` / holder DID from `kid`), `nonce` (`c_nonce` when the issuer uses the Nonce Endpoint).
+   * JWT body: `aud` (Credential Issuer Identifier), `iat` (required); optional `iss` (e.g. wallet `client_id` / holder DID from `kid`), `nonce` (`c_nonce` when the issuer uses the Nonce Endpoint), `exp` (derived from `validUntil` ISO 8601).
    *
    * HTTP: `POST /sign/pop/jwt` — `domain` is required (maps to `aud`); `verifiable` is optional and ignored.
    */
@@ -82,6 +84,7 @@ export class JwtSigningService {
     secrets: string[],
     credentialIssuerIdentifier: string,
     challenge?: string,
+    validUntil?: string,
   ): Promise<string> {
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
@@ -95,12 +98,17 @@ export class JwtSigningService {
         : keyPair.id
       : undefined;
 
+    const exp = validUntil
+      ? Math.floor(new Date(validUntil).getTime() / 1000)
+      : undefined;
+
     const jwtPayload: Record<string, unknown> = {
       aud: credentialIssuerIdentifier,
       iat,
       ...(iss !== undefined && iss !== "" && { iss }),
       ...(challenge !== undefined &&
         challenge !== "" && { nonce: challenge }),
+      ...(exp !== undefined && { exp }),
     };
 
     const header: Record<string, unknown> = {
@@ -123,7 +131,7 @@ export class JwtSigningService {
   /**
    * W3C JWT-VC / JWT-VP: JWS protected header carries `alg`, `kid`, and `iss` (signing key controller:
    * `kid` without the fragment), per [VC-JOSE-COSE key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery).
-   * JWT Claims Set carries `iat` and optional `nonce` / `aud` only (no `iss`, to avoid conflicting with VC `issuer`).
+   * VP path may pass `validUntil` (ISO 8601) → `exp` claim.
    */
   private async signJwtVerifiable(
     payload: VerifiableCredential | VerifiablePresentation,
@@ -132,6 +140,7 @@ export class JwtSigningService {
     preSignHook?: (keyPairId: string) => void,
     nonce?: string,
     aud?: string,
+    validUntil?: string,
   ): Promise<string> {
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
@@ -154,12 +163,21 @@ export class JwtSigningService {
         ? { ...(payload as unknown as Record<string, unknown>) }
         : {};
 
+    // When `validUntil` is provided, replace the VC/VP-level `validUntil` in the payload
+    // with the request parameter value, and also set a JWT `exp` claim derived from it.
+    if (validUntil) {
+      basePayload.validUntil = validUntil;
+    }
+
     const jwtPayload: Record<string, unknown> = { ...basePayload };
 
     Object.assign(jwtPayload, {
       iat,
       ...(nonce !== undefined && nonce !== "" && { nonce }),
       ...(aud !== undefined && aud !== "" && { aud }),
+      ...(validUntil && {
+        exp: Math.floor(new Date(validUntil).getTime() / 1000),
+      }),
     });
 
     const header: Record<string, unknown> = {

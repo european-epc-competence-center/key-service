@@ -96,6 +96,7 @@ export class DataIntegritySigningService {
    * @param secrets - Array of secrets for key derivation
    * @param challenge - Challenge for the proof (e.g. OpenID4VCI `c_nonce` for `di_vp` when the issuer uses a Nonce Endpoint)
    * @param domain - Optional domain for the proof; required for OpenID4VCI `di_vp` (Credential Issuer Identifier), enforced at `AppService.signProofOfPossession`
+   * @param validUntil - ISO 8601 date-time; overwrites `presentation.validUntil` when set
    * @returns Signed verifiable presentation with proof
    */
   async signPresentation(
@@ -104,6 +105,7 @@ export class DataIntegritySigningService {
     secrets: string[],
     challenge: string = "",
     domain?: string,
+    validUntil?: string,
   ): Promise<VerifiablePresentation> {
 
     const keyPair = await this.keyService.getKeyPair(
@@ -132,6 +134,11 @@ export class DataIntegritySigningService {
 
     if (!presentation.holder) {
       presentation.holder = keyPair.id?.split("#")[0] as string;
+    }
+
+    // Request-level `validUntil` overwrites whatever is on the presentation object
+    if (validUntil) {
+      presentation.validUntil = validUntil;
     }
 
     const documentLoader = await DocumentLoaderService.getDocumentLoader();

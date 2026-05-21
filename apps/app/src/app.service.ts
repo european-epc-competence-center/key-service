@@ -89,7 +89,7 @@ export class AppService {
     type: SignType,
     body: SignRequestDto | EncryptedPayloadDto
   ): Promise<VerifiablePresentation | string> {
-    const { verifiable, identifier, secrets, challenge, domain } =
+    const { verifiable, identifier, secrets, challenge, domain, validUntil } =
       this.decryptPayloadIfNeeded<SignRequestDto>(body);
     const service = this.getSigningService(type);
     return service.signPresentation(
@@ -98,6 +98,7 @@ export class AppService {
       secrets,
       challenge,
       domain,
+      validUntil?.trim() || undefined,
     );
   }
 
@@ -117,7 +118,8 @@ export class AppService {
     }
 
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
-    const { identifier, secrets, challenge, domain } = decryptedBody;
+    const { identifier, secrets, challenge, domain, validUntil } =
+      decryptedBody;
 
     if (type === SignType.JWT) {
       const aud = domain?.trim();
@@ -131,6 +133,7 @@ export class AppService {
         secrets,
         aud,
         challenge?.trim() || undefined,
+        validUntil?.trim() || undefined,
       );
     }
 
@@ -149,6 +152,7 @@ export class AppService {
         ],
         type: ["VerifiablePresentation"],
         holder: identifier?.split("#")[0] as string,
+        ...(validUntil?.trim() && { validUntil: validUntil.trim() }),
       } satisfies VerifiablePresentation,
     });
   }

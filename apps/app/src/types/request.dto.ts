@@ -14,6 +14,7 @@ import {
 } from "class-validator";
 import { Type, Transform } from "class-transformer";
 import {
+  DateTime,
   VerifiableCredential,
   VerifiablePresentation,
 } from "./verifiable-credential.types";
@@ -107,6 +108,22 @@ export class SignRequestDto extends KeyRequestDto {
     message: `Domain must not exceed ${MAX_STRING_LENGTH} characters`,
   })
   domain?: string;
+
+  /**
+   * Expiry of the proof signature (VP and proof-of-possession).
+   * JWT: converted to an `exp` claim.
+   * Data Integrity: overwrites `validUntil` on the presentation object.
+   */
+  @IsOptional()
+  @IsString({ message: "validUntil must be an ISO 8601 date-time string" })
+  @Matches(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/,
+    {
+      message:
+        "validUntil must be a valid ISO 8601 date-time string (e.g. 2026-12-31T23:59:59Z)",
+    },
+  )
+  validUntil?: DateTime;
 }
 
 /**
