@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [2.4.1] - 2026-06-17
 
 ### Security
 - Upgraded npm dependencies and added `overrides` for transitive vulnerabilities: `form-data` (>=4.0.6, CRLF injection), `multer` (>=2.2.0, DoS), `undici` (>=6.24.0, HTTP smuggling/decompression), `js-yaml` (>=4.2.0, DoS)
