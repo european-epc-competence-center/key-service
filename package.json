@@ -1,6 +1,6 @@
 {
   "name": "key-service",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "main": "index.js",
   "engines": {
     "node": ">=24.0.0"
@@ -63,7 +63,6 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "tsx": "^4.20.3",
     "typeorm": "^0.3.20",
     "uint8arrays": "^3.1.1"
   },
@@ -79,6 +78,7 @@
     "ts-jest": "^29.4.1",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.9.2"
   }
 }

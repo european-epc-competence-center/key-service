@@ -98,6 +98,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
+          pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -135,6 +136,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
+          pull: true
           tags: ${{ steps.meta-azure.outputs.tags }}
           labels: ${{ steps.meta-azure.outputs.labels }}
           cache-from: type=gha

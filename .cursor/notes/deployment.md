@@ -120,8 +120,18 @@ Full Helm deployment documentation: `helm/README.md`
 ### Production Dockerfile
 - Location: `docker/Dockerfile`
 - Multi-stage build for optimized image size
-- Runtime: `gcr.io/distroless/nodejs24-debian13:nonroot` (Node.js 24, Debian 13)
+- Node.js ≥22 runtime requirement (see `package.json`; image uses Node 24)
+- Runner stage: `gcr.io/distroless/nodejs24-debian13:nonroot`; OpenSSL tracks distroless rebuilds — use `docker build --pull`; runtime user **65532** (`nonroot`)
+- Helm: `securityContext` uses `runAsUser` / `runAsGroup` **65532** (distroless `nonroot`)
+- `tsx` is dev-only so production images omit `esbuild` (Go stdlib scanner findings)
 - Production dependencies only in final image (PostgreSQL via `pg`; no `sqlite3`)
+
+### Runtime base trade-offs (distroless vs bookworm-slim)
+
+- **Current production image**: `gcr.io/distroless/nodejs24-debian13:nonroot` — minimal; OpenSSL follows Google's Debian trixie rebuilds; use `docker build --pull` to pick up newer digests (may still lag `trixie-security` briefly).
+- **Hybrid option**: keep distroless final stage and `COPY` only `libssl.so.3` / `libcrypto.so.3` from a `debian:trixie-slim` stage that installs pinned `libssl3t64`; ABI must match the distroless glibc/OpenSSL layout.
+- **`node:24-bookworm-slim` + apt**: larger and includes more OS packages than distroless, but **pinning/upgrading OpenSSL at build** is straightforward and auditable — reasonable default when policy requires specific Debian package versions.
+- **Chainguard `cgr.dev/chainguard/node`**: Wolfi-based, very current OpenSSL (e.g. **3.6.x** on `latest`); tags align to Node majors (e.g. `24`); may need org/image policy; Node line may differ from Docker Official `node` images.
 
 ### Development Docker
 - Development containers with hot reload
@@ -130,8 +140,8 @@ Full Helm deployment documentation: `helm/README.md`
 
 ### Docker Commands
 ```bash
-# Build production image
-docker build -t key-service:latest -f docker/Dockerfile .
+# Build production image (recommended: --pull for current distroless/OpenSSL)
+docker build --pull -t key-service:latest -f docker/Dockerfile .
 
 # Run production container
 docker run -p 3000:3000 key-service:latest

@@ -19,6 +19,11 @@ spec:
         - name: key-service
           image: {{ .Values.keyService.image }}:{{ .Values.keyService.tag }}
           imagePullPolicy: {{ .Values.keyService.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
           ports:
             - name: http
               containerPort: {{ .Values.keyService.port }}
