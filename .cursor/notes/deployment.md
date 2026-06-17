@@ -120,8 +120,8 @@ Full Helm deployment documentation: `helm/README.md`
 ### Production Dockerfile
 - Location: `docker/Dockerfile`
 - Multi-stage build for optimized image size
-- Node.js 22+ runtime requirement
-- Production-ready configuration
+- Runtime: `gcr.io/distroless/nodejs24-debian13:nonroot` (Node.js 24, Debian 13)
+- Production dependencies only in final image (PostgreSQL via `pg`; no `sqlite3`)
 
 ### Development Docker
 - Development containers with hot reload

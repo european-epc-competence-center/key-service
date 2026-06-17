@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Docker production runner upgraded from `gcr.io/distroless/nodejs24-debian12:nonroot` to `nodejs24-debian13:nonroot` for current Debian base and patched OS libraries
+
+### Removed
+- Unused `sqlite3` dependency (application uses PostgreSQL only via TypeORM)
+
+### Security
+- Docker image rebuild on Debian 13 distroless base addresses `libssl3` vulnerabilities reported by container scanners
+
 ## [2.3.3] - 2026-04-29
 
 - fix package-lock sync
