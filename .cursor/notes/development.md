@@ -96,6 +96,12 @@ npm run migration:revert   # Rollback last migration
 - Database configuration in `apps/app/src/config/database.config.ts`
 - Migration files in `migrations/` directory
 
+## Dependencies & Security
+
+- Direct versions in `package.json`; transitive CVEs via `overrides` (see `package.json`): `form-data`, `multer`, `undici` (pin `<7` — v8 breaks Jest), `js-yaml`
+- `npm audit fix` for non-breaking fixes; avoid `npm audit fix --force` (downgrades NestJS/Jest)
+- Node engine: `>=24.0.0`
+
 ## Environment Setup
 
 ### Required Environment Variables

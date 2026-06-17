@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Upgraded npm dependencies and added `overrides` for transitive vulnerabilities: `form-data` (>=4.0.6, CRLF injection), `multer` (>=2.2.0, DoS), `undici` (>=6.24.0, HTTP smuggling/decompression), `js-yaml` (>=4.2.0, DoS)
+- Bumped direct dependencies to latest compatible versions (NestJS 11.1.27, Jest 30.4.2, supertest 7.2.2, and others)
+
 ### Removed
 - Unused `sqlite3` dependency (application uses PostgreSQL only via TypeORM)
 
