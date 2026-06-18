@@ -1,0 +1,4 @@
+*
+!.gitignore
+!postgres/
+!postgres/.gitkeep

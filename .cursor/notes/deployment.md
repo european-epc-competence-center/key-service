@@ -179,7 +179,7 @@ CORS_MAX_AGE=86400
 ### Security Considerations
 - **Production**: Always set specific `CORS_ORIGINS`
 - **Secrets**: Use proper secret management for `SIGNING_KEY_PATH`
-- **SSL**: Enable `DB_SSL=true` for production databases
+- **Database transport**: Plain TCP by default; enable TLS/mTLS with `DB_SSL=true` and certificate env vars (see `apps/app/src/config/database-ssl.config.ts`). Helm/Docker server-side TLS wiring is tracked in `.cursor/plans/postgresql-mtls.md`
 
 ## Database Setup
 
@@ -190,12 +190,16 @@ CORS_MAX_AGE=86400
 
 ### Docker Compose Database
 ```bash
-# Start PostgreSQL with Docker Compose
-docker-compose up -d postgres
+# Start PostgreSQL with mTLS (certificates via npm run docker:certs)
+npm run docker:up
+# or postgres only:
+docker compose -f docker/docker-compose.yml up -d postgres
 
 # Check database logs
-docker-compose logs -f postgres
+docker compose -f docker/docker-compose.yml logs -f postgres
 ```
+
+See `docker/README.md` for TLS certificate regeneration and troubleshooting.
 
 ## Health Checks
 

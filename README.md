@@ -121,7 +121,19 @@ docker compose -f docker/docker-compose.yml up -d postgres
 docker compose -f docker/docker-compose.yml logs -f postgres
 ```
 
-When running the app with `npm run dev` against this database, set `DB_*` variables accordingly (see [Environment Variables](#environment-variables)). `npm run dev` generates a local signing key at `docker/signing-key` (gitignored) automatically.
+When running the app with `npm run dev` against this database, set TLS env vars (certificates are created by `npm run docker:certs`):
+
+```bash
+npm run docker:certs
+docker compose -f docker/docker-compose.yml up -d postgres
+export DB_SSL=true DB_SSL_MODE=verify-full
+export DB_SSL_CA=./docker/certs/postgres/ca.crt
+export DB_SSL_CERT=./docker/certs/postgres/client.crt
+export DB_SSL_KEY=./docker/certs/postgres/client.key
+npm run dev
+```
+
+`npm run docker:up` generates certificates automatically and starts the full mTLS stack.
 
 ## Environment Variables
 
@@ -136,7 +148,12 @@ DB_PORT=5432                   # PostgreSQL port
 DB_USERNAME=postgres           # Database username
 DB_PASSWORD=postgres           # Database password
 DB_NAME=key_service           # Database name
-DB_SSL=false                  # Enable SSL for database connection
+DB_SSL=false                  # Enable TLS: true (Docker Compose sets true with mTLS)
+# When DB_SSL=true, also set:
+# DB_SSL_MODE=verify-full     # verify-ca | verify-full | require | disable (default: verify-full)
+# DB_SSL_CA=/path/to/ca.crt   # CA bundle for server verification (required for verify-* modes)
+# DB_SSL_CERT=/path/to/client.crt   # Client cert (mTLS — required by Docker Compose postgres)
+# DB_SSL_KEY=/path/to/client.key    # Client key (mTLS)
 
 # Application Configuration
 NODE_ENV=development          # Environment: development, production
@@ -163,7 +180,8 @@ PBKDF2_ITERATIONS=100000     # PBKDF2 iterations for key derivation (default: 10
 - Set `NODE_ENV=production` in production environments
 - Always configure `CORS_ORIGINS` with specific trusted domains in production
 - Use strong database passwords
-- Enable `DB_SSL=true` for production database connections
+- Enable database TLS/mTLS for production (`DB_SSL=true`, `DB_SSL_MODE=verify-full`, CA + client cert paths — see `.cursor/plans/postgresql-mtls.md`)
+- Do **not** use `DB_SSL_MODE=require` in production — it encrypts traffic but does not authenticate the server (see plan for details)
 - Provide a cryptographically random signing key (minimum 32 characters) via `SIGNING_KEY_PATH` — never commit it to version control (see [Signing key](#signing-key-required-for-docker-compose))
 - For Kubernetes deployments, use the Helm chart and mount secrets from Vault or equivalent — see `helm/README.md`
 

@@ -115,6 +115,10 @@ All signing and generation requests use:
 - [deployment.md](./deployment.md) - Helm, Docker and deployment configuration
 - [testing.md](./testing.md) - Testing strategies and patterns
 
+## Implementation Plans
+
+- [postgresql-mtls.md](../plans/postgresql-mtls.md) - PostgreSQL mTLS rollout (Helm, Docker Compose, code, cert generation)
+
 ## Quick Start Commands
 
 ```bash

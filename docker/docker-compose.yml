@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: key-service-postgres
+    entrypoint: ["/bin/sh", "/etc/postgresql/entrypoint.sh"]
     environment:
       POSTGRES_DB: key_service
       POSTGRES_USER: postgres
@@ -12,6 +13,9 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./certs/postgres:/var/lib/postgresql/certs:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./postgres/entrypoint.sh:/etc/postgresql/entrypoint.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -34,7 +38,11 @@ services:
       - DB_NAME=key_service
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
-      - DB_SSL=false
+      - DB_SSL=true
+      - DB_SSL_MODE=verify-full
+      - DB_SSL_CA=/run/secrets/db-tls/ca.crt
+      - DB_SSL_CERT=/run/secrets/db-tls/client.crt
+      - DB_SSL_KEY=/run/secrets/db-tls/client.key
       # CORS Configuration (optional)
       # - CORS_ENABLED=true
       # - CORS_ORIGINS=https://example.com,https://app.example.com
@@ -43,9 +51,11 @@ services:
       # - CORS_MAX_AGE=86400
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./signing-key:/run/secrets/signing-key:ro
+      - ./certs/postgres:/run/secrets/db-tls:ro
     healthcheck:
       test:
         [

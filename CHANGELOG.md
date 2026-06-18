@@ -8,13 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- PostgreSQL TLS/mTLS client configuration via `DB_SSL_MODE`, `DB_SSL_CA`, `DB_SSL_CERT`, and `DB_SSL_KEY` environment variables
+- `scripts/generate-postgres-tls-certs.sh` and `npm run docker:certs` for local PKI generation
+- Docker Compose PostgreSQL mTLS: TLS-enabled postgres service, client cert mounts for key-service, `pg_hba.conf` with `clientcert=verify-full`
+- Unit tests for the database SSL config builder
+
 ### Security
 - Removed committed `docker/signing-key` from the repository; local Docker Compose setups generate a random key via `npm run docker:signing-key` (gitignored)
 - Removed hardcoded development fallback signing key from `SecretService`; service now fails startup when the signing key file is missing or shorter than 32 characters
+- Replaced insecure `rejectUnauthorized: false` database SSL default with validated TLS modes (`verify-full` default); production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` (remediates audit finding R7-001)
 
 ### Changed
 - README Docker Compose docs: signing key section for local dev vs production secret mounting; fixed outdated `docker-compose` commands
 - `npm run dev` and `npm run start` generate `docker/signing-key` locally and set `SIGNING_KEY_PATH` automatically
+- E2E Jest config (`jest-e2e.json`) aligned with unit-test ESM preset so integration tests can load `@digitalbazaar/*` modules
 
 ## [2.4.1] - 2026-06-17
 

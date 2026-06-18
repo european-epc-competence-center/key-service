@@ -1,4 +1,5 @@
 services:
+  # Plain TCP only — unit/e2e tests do not use TLS (see .cursor/plans/postgresql-mtls.md).
   postgres-test:
     image: postgres:17-alpine
     container_name: key-service-postgres-test-1

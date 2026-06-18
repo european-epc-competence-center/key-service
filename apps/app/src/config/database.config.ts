@@ -1,6 +1,13 @@
 import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { DataSourceOptions } from "typeorm";
+import {
+  buildDatabaseSslConfig,
+  logDatabaseSslConfig,
+} from "./database-ssl.config";
 import { EncryptedKey } from "../key-services/entities/encrypted-key.entity";
+
+const ssl = buildDatabaseSslConfig();
+logDatabaseSslConfig();
 
 // Shared base configuration for both NestJS and TypeORM CLI
 export const baseDbConfig: DataSourceOptions = {
@@ -12,7 +19,7 @@ export const baseDbConfig: DataSourceOptions = {
   database: process.env.DB_NAME || "key_service",
   entities: [EncryptedKey],
   logging: process.env.NODE_ENV !== "production",
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
+  ssl,
 };
 
 // NestJS runtime configuration
