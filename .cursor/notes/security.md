@@ -85,7 +85,7 @@
 **In transit (today):**
 
 - Database wire: plain TCP by default in Helm/Docker (`DB_SSL=false`); TLS/mTLS supported via env vars when enabled
-- `DB_SSL=true` uses validated TLS modes (`verify-full` default) with optional client certificates; production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` (R7-001 remediated in application code)
+- `DB_SSL=true` uses validated TLS modes (`verify-full` default) with optional client certificates; production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` and `DB_SSL_MODE=require` (R7-001 remediated in application code)
 - Wallet ↔ key-service: optional AES-256-GCM request encryption (`REQUEST_ENCRYPTION_ENABLED`)
 
 **Planned (infra):** PostgreSQL server-side TLS and Helm/Docker wiring — see `.cursor/plans/postgresql-mtls.md` (cert generation, Helm, Docker Compose).

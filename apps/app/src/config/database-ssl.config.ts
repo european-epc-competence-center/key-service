@@ -56,6 +56,20 @@ function parseSslMode(env: NodeJS.ProcessEnv): DatabaseSslMode {
   return mode;
 }
 
+function assertProductionSslMode(
+  env: NodeJS.ProcessEnv,
+  mode: DatabaseSslMode
+): void {
+  if (env.NODE_ENV !== "production") {
+    return;
+  }
+  if (mode === "require") {
+    throw new ConfigurationException(
+      "DB_SSL_MODE=require is not allowed when NODE_ENV=production — use verify-full with DB_SSL_CA"
+    );
+  }
+}
+
 function resolveRejectUnauthorized(
   env: NodeJS.ProcessEnv,
   mode: DatabaseSslMode
@@ -79,6 +93,16 @@ function resolveRejectUnauthorized(
   return true;
 }
 
+function effectiveRejectUnauthorized(
+  env: NodeJS.ProcessEnv,
+  mode: DatabaseSslMode
+): boolean {
+  if (mode === "verify-ca" || mode === "verify-full") {
+    return true;
+  }
+  return resolveRejectUnauthorized(env, mode);
+}
+
 export function buildDatabaseSslConfig(
   env: NodeJS.ProcessEnv = process.env
 ): boolean | DatabaseSslOptions {
@@ -93,6 +117,8 @@ export function buildDatabaseSslConfig(
     );
     return false;
   }
+
+  assertProductionSslMode(env, mode);
 
   const rejectUnauthorized = resolveRejectUnauthorized(env, mode);
   const sslConfig: DatabaseSslOptions = { rejectUnauthorized };
@@ -153,7 +179,7 @@ export function describeDatabaseSslConfig(
     enabled: true,
     mode,
     mtls: Boolean(env.DB_SSL_CERT && env.DB_SSL_KEY),
-    rejectUnauthorized: resolveRejectUnauthorized(env, mode),
+    rejectUnauthorized: effectiveRejectUnauthorized(env, mode),
   };
 }
 
@@ -163,10 +189,7 @@ export function logDatabaseSslConfig(env: NodeJS.ProcessEnv = process.env): void
     return;
   }
 
-  const message = `Database TLS enabled (mode=${summary.mode}, mTLS=${summary.mtls}, rejectUnauthorized=${summary.rejectUnauthorized})`;
-  if (env.NODE_ENV === "production") {
-    logWarn(message);
-  } else {
-    logInfo(message);
-  }
+  logInfo(
+    `Database TLS enabled (mode=${summary.mode}, mTLS=${summary.mtls}, rejectUnauthorized=${summary.rejectUnauthorized})`
+  );
 }

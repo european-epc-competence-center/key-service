@@ -72,6 +72,16 @@ describe("buildDatabaseSslConfig", () => {
     ).toThrow(ConfigurationException);
   });
 
+  it("rejects require mode in production", () => {
+    expect(() =>
+      buildDatabaseSslConfig({
+        DB_SSL: "true",
+        DB_SSL_MODE: "require",
+        NODE_ENV: "production",
+      })
+    ).toThrow(ConfigurationException);
+  });
+
   it("requires DB_SSL_CA for verify-full", () => {
     expect(() =>
       buildDatabaseSslConfig({
