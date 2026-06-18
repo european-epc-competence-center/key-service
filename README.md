@@ -25,10 +25,10 @@ A secure NestJS-based cryptographic signing service for W3C Verifiable Credentia
 # Install dependencies
 npm install
 
-# Run in development mode
+# Run in development mode (generates docker/signing-key if missing)
 npm run dev
 
-# Run in production mode
+# Run in production mode locally (same signing key setup)
 npm start
 ```
 
@@ -121,7 +121,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 docker compose -f docker/docker-compose.yml logs -f postgres
 ```
 
-When running the app with `npm run dev` against this database, set `DB_*` variables accordingly (see [Environment Variables](#environment-variables)). No signing key file is required in that mode — the service uses a development-only fallback when `NODE_ENV=development` and no key is mounted.
+When running the app with `npm run dev` against this database, set `DB_*` variables accordingly (see [Environment Variables](#environment-variables)). `npm run dev` generates a local signing key at `docker/signing-key` (gitignored) automatically.
 
 ## Environment Variables
 

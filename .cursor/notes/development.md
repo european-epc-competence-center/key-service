@@ -109,6 +109,7 @@ npm run migration:revert   # Rollback last migration
 - Application config (NODE_ENV, SIGNING_KEY_PATH)
 - CORS settings (optional, with defaults)
 - Docker Compose: run `npm run docker:signing-key` before first `docker compose up` (creates gitignored `docker/signing-key`)
+- Local `npm run dev` / `npm run start`: same script auto-generates `docker/signing-key` and sets `SIGNING_KEY_PATH`
 
 ### Development vs Production
 - Development: Hot reload, detailed logging, permissive CORS

@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Removed committed `docker/signing-key` from the repository; local Docker Compose setups generate a random key via `npm run docker:signing-key` (gitignored)
+- Removed hardcoded development fallback signing key from `SecretService`; service now fails startup when the signing key file is missing or shorter than 32 characters
 
 ### Changed
 - README Docker Compose docs: signing key section for local dev vs production secret mounting; fixed outdated `docker-compose` commands
+- `npm run dev` and `npm run start` generate `docker/signing-key` locally and set `SIGNING_KEY_PATH` automatically
 
 ## [2.4.1] - 2026-06-17
 

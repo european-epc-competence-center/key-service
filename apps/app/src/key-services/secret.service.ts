@@ -17,26 +17,25 @@ export class SecretService {
     if (this.iterations < 100000) {
       logWarn("PBKDF2_ITERATIONS is less than 100000, which is not recommended");
     }
-    
+
     const keyPath = process.env.SIGNING_KEY_PATH || "/run/secrets/signing-key";
+    let secretContent: string;
     try {
-      this.secret = fs.readFileSync(path.resolve(keyPath), "utf8").trim();
-      if (!this.secret || this.secret.length < 32) {
-        throw new ConfigurationException(
-          "Signing key must be at least 32 characters long"
-        );
-      }
+      secretContent = fs.readFileSync(path.resolve(keyPath), "utf8").trim();
     } catch (err) {
       logError(`Failed to read signing key from ${keyPath}: ${err}`);
-      if (process.env.NODE_ENV != "development") {
-        throw new ConfigurationException(
-          "Cannot start service without proper signing key in production"
-        );
-      }
-      // Only allow fallback in development
-      this.secret =
-        "development-only-dummy-secret-not-for-production-use-minimum-length";
+      throw new ConfigurationException(
+        "Cannot start service without a valid signing key"
+      );
     }
+
+    if (!secretContent || secretContent.length < 32) {
+      throw new ConfigurationException(
+        "Signing key must be at least 32 characters long"
+      );
+    }
+
+    this.secret = secretContent;
   }
 
   private deriveKey(

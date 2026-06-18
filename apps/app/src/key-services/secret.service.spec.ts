@@ -83,101 +83,93 @@ describe("SecretService", () => {
     });
 
     it("should throw error if secret is too short", () => {
-      process.env.NODE_ENV = "production";
       (fs.readFileSync as jest.Mock).mockReturnValue(shortSecret);
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Signing key must be at least 32 characters long"
       );
     });
 
     it("should throw error if secret is empty", () => {
-      process.env.NODE_ENV = "production";
       (fs.readFileSync as jest.Mock).mockReturnValue("");
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Signing key must be at least 32 characters long"
       );
     });
 
     it("should throw error if secret becomes too short after trimming", () => {
-      process.env.NODE_ENV = "production";
       // Secret with lots of whitespace but short actual content
       (fs.readFileSync as jest.Mock).mockReturnValue("   short   ");
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Signing key must be at least 32 characters long"
       );
     });
 
-    it("should log error and throw in production when file read fails", () => {
-      process.env.NODE_ENV = "production";
+    it("should log error and throw when file read fails", () => {
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Cannot start service without a valid signing key"
       );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")
       );
     });
 
-    it("should use fallback secret in development when file read fails", () => {
+    it("should throw in development when file read fails", () => {
       process.env.NODE_ENV = "development";
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
-      const newService = new SecretService();
-
+      expect(() => new SecretService()).toThrow(
+        "Cannot start service without a valid signing key"
+      );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")
       );
-
-      // Test that the service still works with fallback secret
-      const encrypted = newService.encrypt("test-data", mockSecrets);
-      const decrypted = newService.decrypt(encrypted, mockSecrets);
-      expect(decrypted).toBe("test-data");
     });
 
-    it("should throw error when NODE_ENV is not set and file read fails (secure by default)", () => {
+    it("should throw when NODE_ENV is not set and file read fails", () => {
       delete process.env.NODE_ENV;
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Cannot start service without a valid signing key"
       );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")
       );
     });
 
-    it("should throw error in test environment when file read fails", () => {
+    it("should throw in test environment when file read fails", () => {
       process.env.NODE_ENV = "test";
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Cannot start service without a valid signing key"
       );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")
       );
     });
 
-    it("should throw error in staging environment when file read fails", () => {
+    it("should throw in staging environment when file read fails", () => {
       process.env.NODE_ENV = "staging";
       (fs.readFileSync as jest.Mock).mockImplementation(() => {
         throw new Error("File not found");
       });
 
       expect(() => new SecretService()).toThrow(
-        "Cannot start service without proper signing key in production"
+        "Cannot start service without a valid signing key"
       );
       expect(logError).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read signing key")

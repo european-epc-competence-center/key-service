@@ -110,9 +110,8 @@ npm run test:coverage         # Combined coverage
 - Encryption/decryption workflows
 - Database security (no plaintext secrets)
 - Secure-by-default configuration validation
-  - SecretService enforces strict security: only allows fallback secrets in explicit development mode
-  - Tests verify service throws errors in production, test, staging, and undefined NODE_ENV when signing key is unavailable
-  - Ensures fail-fast behavior for misconfigured production deployments
+  - `SecretService` requires a signing key file (minimum 32 characters) in all environments; no in-code fallback
+  - E2E tests use a temporary signing key via `test-setup.ts`; unit tests mock `fs.readFileSync`
 
 ### Database Integration
 - Entity persistence
