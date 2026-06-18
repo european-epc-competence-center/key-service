@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Security
+- Removed committed `docker/signing-key` from the repository; local Docker Compose setups generate a random key via `npm run docker:signing-key` (gitignored)
+
+### Changed
+- README Docker Compose docs: signing key section for local dev vs production secret mounting; fixed outdated `docker-compose` commands
+
 ## [2.4.1] - 2026-06-17
 
 ### Security

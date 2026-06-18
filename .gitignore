@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+docker/signing-key
 *.log
 npm-debug.log 
 

@@ -111,15 +111,17 @@ The test suite includes:
 
 ## Database Setup
 
-This service uses PostgreSQL to store encrypted keys. You can set up the database using Docker Compose:
+This service uses PostgreSQL to store encrypted keys. You can run PostgreSQL alone or as part of the full Docker Compose stack (see [Docker](#docker)).
 
 ```bash
-# Start PostgreSQL database
-docker-compose up -d postgres
+# PostgreSQL only (from project root)
+docker compose -f docker/docker-compose.yml up -d postgres
 
 # Wait for database to be ready
-docker-compose logs -f postgres
+docker compose -f docker/docker-compose.yml logs -f postgres
 ```
+
+When running the app with `npm run dev` against this database, set `DB_*` variables accordingly (see [Environment Variables](#environment-variables)). No signing key file is required in that mode — the service uses a development-only fallback when `NODE_ENV=development` and no key is mounted.
 
 ## Environment Variables
 
@@ -162,7 +164,8 @@ PBKDF2_ITERATIONS=100000     # PBKDF2 iterations for key derivation (default: 10
 - Always configure `CORS_ORIGINS` with specific trusted domains in production
 - Use strong database passwords
 - Enable `DB_SSL=true` for production database connections
-- Store `SIGNING_KEY_PATH` secret in a secure location (e.g., Docker secrets, Kubernetes secrets)
+- Provide a cryptographically random signing key (minimum 32 characters) via `SIGNING_KEY_PATH` — never commit it to version control (see [Signing key](#signing-key-required-for-docker-compose))
+- For Kubernetes deployments, use the Helm chart and mount secrets from Vault or equivalent — see `helm/README.md`
 
 ### Manual Database Setup
 
@@ -199,12 +202,68 @@ Migrations are stored in the `migrations/` directory and are automatically run o
 
 The service includes production-ready Docker containers with PostgreSQL integration.
 
-### Using Docker Compose (Recommended)
+### Signing key (required for Docker Compose)
 
-The easiest way to run the service with all dependencies:
+The service reads a **service signing key** from a file (default path: `/run/secrets/signing-key`, overridable via `SIGNING_KEY_PATH`). This key is combined with user-provided secrets to derive encryption keys for stored key material. The file is **not** stored in this repository.
+
+Docker Compose mounts a host file into the container:
+
+```yaml
+# docker/docker-compose.yml
+volumes:
+  - ./signing-key:/run/secrets/signing-key:ro
+```
+
+Choose one of the following:
+
+#### Local development / testing
+
+Generate a random key locally (creates gitignored `docker/signing-key`):
 
 ```bash
-# Start all services (PostgreSQL + Key Service)
+npm run docker:signing-key
+```
+
+Or let the convenience script create it on first start:
+
+```bash
+npm run docker:up
+```
+
+If you change or regenerate the signing key, existing encrypted keys in the local database will no longer decrypt. Reset local data with:
+
+```bash
+docker compose -f docker/docker-compose.yml down -v
+```
+
+#### Production or staging (Docker Compose)
+
+Create a production-grade secret outside the repository and mount it read-only:
+
+```bash
+openssl rand -base64 64 > /secure/path/signing-key
+chmod 600 /secure/path/signing-key
+```
+
+Point the Compose volume at that file (edit `docker/docker-compose.yml` or use an override file):
+
+```yaml
+volumes:
+  - /secure/path/signing-key:/run/secrets/signing-key:ro
+```
+
+Store and rotate this key using your organization's secret management process. For Kubernetes, prefer the Helm chart with Vault or Kubernetes secrets rather than a host file — see `helm/README.md`.
+
+### Using Docker Compose (Recommended)
+
+The easiest way to run the full stack locally:
+
+```bash
+# Start PostgreSQL + Key Service (generates a local signing key if missing)
+npm run docker:up
+
+# Or manually: create signing key first, then start
+npm run docker:signing-key
 docker compose -f docker/docker-compose.yml up -d
 
 # View logs
@@ -220,9 +279,9 @@ docker compose -f docker/docker-compose.yml down -v
 The Docker Compose setup includes:
 
 - PostgreSQL 17 database with persistent storage
-- Key Service with health checks
+- Key Service with health checks (`NODE_ENV=production`)
 - Network isolation
-- Volume mounting for signing keys
+- Read-only volume mount for the signing key (see [Signing key](#signing-key-required-for-docker-compose))
 
 ### Building Docker Image Manually
 
@@ -230,14 +289,18 @@ The Docker Compose setup includes:
 # Build production image (--pull recommended: refreshes distroless base, including OpenSSL)
 docker build --pull -t key-service:latest -f docker/Dockerfile .
 
-# Run with environment variables
+# Run with environment variables and signing key mounted
 docker run -p 3000:3000 \
+  -v /secure/path/signing-key:/run/secrets/signing-key:ro \
+  -e NODE_ENV=production \
   -e DB_HOST=postgres \
   -e DB_NAME=key_service \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
   key-service:latest
 ```
+
+For local testing, use `/path/to/docker/signing-key` after running `npm run docker:signing-key`.
 
 ### Docker Health Checks
 
@@ -624,6 +687,8 @@ This is a security-critical component. Please open [issues](https://github.com/e
 
 ## Further Documentation
 
+- [Docker setup](docker/README.md) — image build, Compose, signing key
+- [Helm chart](helm/README.md) — Kubernetes deployment and production secret management
 - [Security and Key Management Concept](docs/security_and_key_management_concept.md)
 - [Changelog](CHANGELOG.md)
 - [Security Report](SECURITY_REPORT.md)

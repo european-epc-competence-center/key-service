@@ -108,6 +108,7 @@ npm run migration:revert   # Rollback last migration
 - Database connection (DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 - Application config (NODE_ENV, SIGNING_KEY_PATH)
 - CORS settings (optional, with defaults)
+- Docker Compose: run `npm run docker:signing-key` before first `docker compose up` (creates gitignored `docker/signing-key`)
 
 ### Development vs Production
 - Development: Hot reload, detailed logging, permissive CORS

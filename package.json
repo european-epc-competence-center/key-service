@@ -7,6 +7,8 @@
   },
   "scripts": {
     "build": "nest build && tsc migrations/*.ts --outDir dist --target es2020 --module commonjs --esModuleInterop --experimentalDecorators --emitDecoratorMetadata --skipLibCheck",
+    "docker:signing-key": "bash scripts/ensure-signing-key.sh",
+    "docker:up": "npm run docker:signing-key && docker compose -f docker/docker-compose.yml up -d",
     "test:db:start": "docker compose -f docker/docker-compose.test.yml up -d postgres-test",
     "test:db:stop": "docker compose -f docker/docker-compose.test.yml down",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d migrations/data-source.ts",

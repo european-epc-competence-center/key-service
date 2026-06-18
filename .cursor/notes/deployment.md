@@ -147,7 +147,9 @@ docker build --pull -t key-service:latest -f docker/Dockerfile .
 docker run -p 3000:3000 key-service:latest
 
 # Use Docker Compose
-docker-compose -f docker/docker-compose.yml up -d
+npm run docker:signing-key   # generate docker/signing-key (local only, gitignored)
+docker compose -f docker/docker-compose.yml up -d
+# or: npm run docker:up
 ```
 
 ## Environment Configuration
@@ -262,7 +264,7 @@ GITHUB_REPO          # Format: username/repository (e.g., "yourorg/key-service")
 - Recommended exclusions:
   - `security_audit/` - Internal security audit files
   - `security_crew/` - Internal security tooling
-  - `docker/signing-key` - Sensitive signing keys
+  - `docker/signing-key` - Local-only signing key (gitignored; generated via `npm run docker:signing-key`)
 
 #### Creating GitHub Access Token
 1. Go to GitHub → Settings → Developer settings → Personal access tokens
