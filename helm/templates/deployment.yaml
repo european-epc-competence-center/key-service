@@ -49,7 +49,19 @@ spec:
                   name: {{ include "key-service.postgresql.secretName" . }}
                   key: postgres-password
             - name: DB_SSL
-              value: "false"
+              value: {{ .Values.database.ssl.enabled | quote }}
+            {{- if .Values.database.ssl.enabled }}
+            - name: DB_SSL_MODE
+              value: {{ .Values.database.ssl.mode | quote }}
+            - name: DB_SSL_CA
+              value: {{ .Values.database.ssl.caPath | quote }}
+            {{- if .Values.database.ssl.mtls.enabled }}
+            - name: DB_SSL_CERT
+              value: {{ .Values.database.ssl.mtls.certPath | quote }}
+            - name: DB_SSL_KEY
+              value: {{ .Values.database.ssl.mtls.keyPath | quote }}
+            {{- end }}
+            {{- end }}
             - name: PBKDF2_ITERATIONS
               valueFrom:
                 secretKeyRef:
@@ -72,6 +84,11 @@ spec:
               mountPath: /run/secrets/signing-key
               subPath: key
               readOnly: true
+            {{- if .Values.database.ssl.enabled }}
+            - name: db-tls
+              mountPath: /run/secrets/db-tls
+              readOnly: true
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -94,6 +111,12 @@ spec:
         - name: signing-key
           secret:
             secretName: {{ .Values.keyService.signingKey.secretName }}
+        {{- if .Values.database.ssl.enabled }}
+        - name: db-tls
+          secret:
+            secretName: {{ .Values.database.ssl.clientTlsSecretName }}
+            defaultMode: 0444
+        {{- end }}
       {{- if .Values.postgresql.enabled }}
       initContainers:
         - name: wait-for-postgres

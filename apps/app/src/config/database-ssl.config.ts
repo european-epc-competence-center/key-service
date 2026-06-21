@@ -74,11 +74,10 @@ function resolveRejectUnauthorized(
   env: NodeJS.ProcessEnv,
   mode: DatabaseSslMode
 ): boolean {
-  const isProduction = env.NODE_ENV === "production";
   const explicitReject = env.DB_SSL_REJECT_UNAUTHORIZED;
 
   if (explicitReject === "false") {
-    if (isProduction) {
+    if (env.NODE_ENV === "production") {
       throw new ConfigurationException(
         "DB_SSL_REJECT_UNAUTHORIZED=false is not allowed when NODE_ENV=production"
       );
@@ -120,8 +119,9 @@ export function buildDatabaseSslConfig(
 
   assertProductionSslMode(env, mode);
 
-  const rejectUnauthorized = resolveRejectUnauthorized(env, mode);
-  const sslConfig: DatabaseSslOptions = { rejectUnauthorized };
+  const sslConfig: DatabaseSslOptions = {
+    rejectUnauthorized: effectiveRejectUnauthorized(env, mode),
+  };
 
   if (mode === "verify-ca" || mode === "verify-full") {
     if (!env.DB_SSL_CA) {
@@ -130,7 +130,6 @@ export function buildDatabaseSslConfig(
       );
     }
     sslConfig.ca = readPemFile(env.DB_SSL_CA, "DB_SSL_CA");
-    sslConfig.rejectUnauthorized = true;
 
     if (mode === "verify-ca") {
       sslConfig.checkServerIdentity = (_hostname, _cert) => undefined;
@@ -186,6 +185,7 @@ export function describeDatabaseSslConfig(
 export function logDatabaseSslConfig(env: NodeJS.ProcessEnv = process.env): void {
   const summary = describeDatabaseSslConfig(env);
   if (!summary.enabled) {
+    logInfo("Database connection uses plain TCP (DB_SSL is not true)");
     return;
   }
 

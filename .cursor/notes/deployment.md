@@ -179,7 +179,7 @@ CORS_MAX_AGE=86400
 ### Security Considerations
 - **Production**: Always set specific `CORS_ORIGINS`
 - **Secrets**: Use proper secret management for `SIGNING_KEY_PATH`
-- **Database transport**: Plain TCP by default; enable TLS/mTLS with `DB_SSL=true` and certificate env vars (see `apps/app/src/config/database-ssl.config.ts`). Helm/Docker server-side TLS wiring is tracked in `.cursor/plans/postgresql-mtls.md`
+- **Database transport**: Plain TCP by default (`DB_SSL=false`); TLS and mTLS are separate opt-in flags via `DB_SSL=true`, `DB_SSL_MODE`, optional `DB_SSL_CERT`/`DB_SSL_KEY`, or Helm `database.ssl.enabled` / `database.ssl.mtls.enabled` (see `helm/values.yaml` and `.cursor/plans/postgresql-mtls.md`)
 
 ## Database Setup
 

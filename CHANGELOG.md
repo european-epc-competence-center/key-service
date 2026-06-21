@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- PostgreSQL TLS/mTLS client configuration via `DB_SSL_MODE`, `DB_SSL_CA`, `DB_SSL_CERT`, and `DB_SSL_KEY` environment variables
+- PostgreSQL TLS/mTLS client configuration via `DB_SSL_MODE`, `DB_SSL_CA`, `DB_SSL_CERT`, and `DB_SSL_KEY` environment variables (opt-in: `DB_SSL=false` by default — existing plain-TCP installs unchanged)
+- Helm `database.ssl` feature flags: `database.ssl.enabled`, `database.ssl.mode`, and `database.ssl.mtls.enabled` wire `DB_SSL*` env vars and optional cert volume mounts (all default off)
 - `scripts/generate-postgres-tls-certs.sh` and `npm run docker:certs` for local PKI generation
 - Docker Compose PostgreSQL mTLS: TLS-enabled postgres service, client cert mounts for key-service, `pg_hba.conf` with `clientcert=verify-full`
 - Unit tests for the database SSL config builder
@@ -17,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Removed committed `docker/signing-key` from the repository; local Docker Compose setups generate a random key via `npm run docker:signing-key` (gitignored)
 - Removed hardcoded development fallback signing key from `SecretService`; service now fails startup when the signing key file is missing or shorter than 32 characters
-- Replaced insecure `rejectUnauthorized: false` database SSL default with validated TLS modes (`verify-full` default); production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` and `DB_SSL_MODE=require` (remediates audit finding R7-001)
+- When `DB_SSL=true`, replaced insecure `rejectUnauthorized: false` default with validated TLS modes (`verify-full` default); production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` and `DB_SSL_MODE=require` (remediates audit finding R7-001). TLS/mTLS remain opt-in — `DB_SSL=false` preserves legacy plain-TCP behavior
 
 ### Changed
 - README Docker Compose docs: signing key section for local dev vs production secret mounting; fixed outdated `docker-compose` commands

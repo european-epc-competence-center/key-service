@@ -193,6 +193,21 @@ describe("describeDatabaseSslConfig", () => {
     });
   });
 
+  it("reports TLS without mTLS when client credentials are omitted", () => {
+    expect(
+      describeDatabaseSslConfig({
+        DB_SSL: "true",
+        DB_SSL_MODE: "verify-full",
+        DB_SSL_CA: "/ca.crt",
+      })
+    ).toEqual({
+      enabled: true,
+      mode: "verify-full",
+      mtls: false,
+      rejectUnauthorized: true,
+    });
+  });
+
   it("reports mTLS when client credentials are configured", () => {
     expect(
       describeDatabaseSslConfig({

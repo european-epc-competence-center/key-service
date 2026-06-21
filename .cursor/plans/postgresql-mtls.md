@@ -1,6 +1,6 @@
 # Implementation Plan: PostgreSQL mTLS for Key Service
 
-> **Status:** Phases 1, 2.1, and 4 **done** in this repo. Phases 3 (Helm), 2.2 (K8s secrets / cert-manager), and 5–7 rollout items **pending**.  
+> **Status:** Phases 1, 2.1, 3 (standalone Helm client flags), and 4 **done** in this repo. Phases 2.2 (K8s secrets / cert-manager), umbrella Helm, and 5–7 rollout items **pending**.  
 > **Audit driver:** R7-001 — DB SSL with `rejectUnauthorized: false` → **remediated in application code**  
 > **Last updated:** 2026-06-18
 
@@ -18,9 +18,9 @@ mTLS adds defense-in-depth on the database wire. It does **not** replace AES-256
 | **Cert script** | ✅ Done | `scripts/generate-postgres-tls-certs.sh`, `npm run docker:certs` |
 | **Docker Compose** | ✅ Done | mTLS enabled; postgres + key-service verified (`/health` DB up) |
 | **Local `npm run dev`** | ✅ Documented | Host connects to Docker postgres on 5432 with TLS env vars (see README) |
-| **Standalone Helm** | ⏳ Pending | `DB_SSL=false` hardcoded; no TLS values/volumes yet |
-| **Umbrella Helm** (`company-wallet`) | ⏳ Pending | Out of this workspace — separate track |
-| **Bitnami PostgreSQL subchart** | ⏳ Pending | No `tls.enabled` in Helm values yet |
+| **Standalone Helm** | ✅ Client flags | `database.ssl.enabled=false` default; optional `mtls.enabled`; env + volume wiring in `deployment.yaml` |
+| **Umbrella Helm** (`company-wallet`) | ⏳ Pending | Mirror `database.ssl` values in umbrella subchart — separate track |
+| **Bitnami PostgreSQL subchart** | ⏳ Pending | `postgresql.tls.enabled=false` in values; wire server certs at rollout |
 | **K8s secrets / cert-manager** | ⏳ Pending | Script prints `kubectl create secret` example |
 | **CI** (`.github/workflows/ci-cd.yml`) | ✅ Exception | Plain postgres service — keep for speed |
 | **Test DB** (`docker-compose.test.yml`) | ✅ Exception | Plain postgres on 5433 — unit/e2e default path |
@@ -142,19 +142,21 @@ client.crt, client.key  # key-service client (CN defaults to postgres)
 
 ---
 
-## Phase 3 — Helm charts ⏳
+## Phase 3 — Helm charts ✅ (client-side flags)
 
-Not started in this repo. Target values (unchanged from original plan):
+Standalone chart wires opt-in TLS/mTLS via `database.ssl` values (defaults preserve plain TCP):
 
 ```yaml
 database:
   ssl:
-    enabled: false          # flip to true at rollout
+    enabled: false          # DB_SSL — flip to true at rollout
     mode: verify-full
     caPath: /run/secrets/db-tls/ca.crt
-    certPath: /run/secrets/db-tls/client.crt
-    keyPath: /run/secrets/db-tls/client.key
-  clientTlsSecretName: key-service-db-tls
+    mtls:
+      enabled: false        # DB_SSL_CERT/KEY — separate from TLS
+      certPath: /run/secrets/db-tls/client.crt
+      keyPath: /run/secrets/db-tls/client.key
+    clientTlsSecretName: key-service-db-tls
 
 postgresql:
   tls:
@@ -162,7 +164,7 @@ postgresql:
     certificatesSecret: ""
 ```
 
-Wire `DB_SSL*` env vars and volume mounts in `helm/templates/deployment.yaml`. Mirror in company-wallet umbrella subchart separately.
+`helm/templates/deployment.yaml` sets `DB_SSL*` env vars and mounts `clientTlsSecretName` when `database.ssl.enabled=true`. Mirror in company-wallet umbrella subchart separately. Server-side Bitnami TLS + cert-manager wiring remains pending.
 
 ---
 
@@ -236,7 +238,7 @@ Rollback: set `database.ssl.enabled=false` and `postgresql.tls.enabled=false`; r
 - [x] Integration: migration CLI over mTLS (via `npx tsx ./node_modules/typeorm/cli.js migration:run -d migrations/data-source.ts`)
 - [x] Integration: E2E suite connects over mTLS (TLS log confirmed; DB queries succeed). 6/24 tests pass — remaining failures are pre-existing (stale `/` route test, validation pipe not applied in e2e bootstrap, DTO field mismatches). Fixed `jest-e2e.json` ESM config so e2e runs at all.
 - [x] Integration: `npm run dev` + TLS env vars → `/health` DB up, `/generate` persists key
-- [ ] Helm: template render with `database.ssl.enabled=true`
+- [x] Helm: template render with `database.ssl.enabled=true`
 - [ ] Helm: fresh install dev cluster
 - [ ] Negative: wrong client cert → auth failure
 - [ ] Negative: untrusted CA → connection fails
@@ -253,7 +255,7 @@ Rollback: set `database.ssl.enabled=false` and `postgresql.tls.enabled=false`; r
 | `.cursor/notes/deployment.md` | ✅ updated (Helm TLS details pending) |
 | `.cursor/notes/security.md` | ✅ R7-001 remediated in code |
 | `CHANGELOG.md` | ✅ |
-| `helm/README.md` | ⏳ PostgreSQL TLS subsection |
+| `helm/README.md` | ✅ PostgreSQL TLS subsection (opt-in feature flags) |
 | `docs/SECURITY_REPORT.md` | ⏳ Mark R7-001 remediated |
 | `company-wallet/*` | ⏳ separate repo |
 

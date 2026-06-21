@@ -10,3 +10,6 @@ __pycache__/
 mermaid-filter.err
 /security_crew/
 docs/mermaid-images/
+
+
+helm/charts/*.tgz

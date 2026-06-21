@@ -83,19 +83,52 @@ postgresql:
     username: postgres
     postgresPassword: ""  # Auto-generated
   
+  # Server-side TLS (opt-in — enable when rolling out database.ssl)
+  tls:
+    enabled: false
+    certificatesSecret: key-service-postgresql-tls
+  
   primary:
     persistence:
       enabled: true
       size: 10Gi
-    
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: 125m
-      limits:
-        memory: "512Mi"
-        cpu: 250m
 ```
+
+#### Database TLS/mTLS (opt-in)
+
+Transport security defaults to **plain TCP** (`database.ssl.enabled: false`) so existing Helm installs keep working without certificate migration.
+
+```yaml
+database:
+  ssl:
+    enabled: false          # DB_SSL — set true to enable TLS on the wire
+    mode: verify-full       # verify-ca | verify-full | require (require blocked in production)
+    caPath: /run/secrets/db-tls/ca.crt
+    mtls:
+      enabled: false        # DB_SSL_CERT/KEY — optional client certificate auth
+      certPath: /run/secrets/db-tls/client.crt
+      keyPath: /run/secrets/db-tls/client.key
+    clientTlsSecretName: key-service-db-tls
+```
+
+**TLS only** (encrypted wire, server cert verified):
+
+```bash
+kubectl create secret generic key-service-db-tls \
+  --from-file=ca.crt=./ca.crt \
+  --namespace key-service
+
+helm upgrade key-service ./ \
+  --namespace key-service \
+  --set database.ssl.enabled=true \
+  --set database.ssl.mode=verify-full \
+  --set postgresql.tls.enabled=true \
+  --set postgresql.tls.certificatesSecret=key-service-postgresql-tls
+```
+
+**Full mTLS** (also enable `database.ssl.mtls.enabled=true` and include client cert/key in the secret).
+
+See `.cursor/plans/postgresql-mtls.md` for cert generation and rollout steps.
 
 
 ## Deployment Scenarios
