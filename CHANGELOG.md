@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [2.4.2] - 2026-06-22
 
 ### Fixed
 - Data Integrity signing (`signCredential`, `signPresentation`): surface jsonld/`@digitalbazaar` error details in `SigningException` messages instead of `undefined - [object Object]`
@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README Docker Compose docs: signing key section for local dev vs production secret mounting; fixed outdated `docker-compose` commands
 - `npm run dev` and `npm run start` generate `docker/signing-key` locally and set `SIGNING_KEY_PATH` automatically
 - E2E Jest config (`jest-e2e.json`) aligned with unit-test ESM preset so integration tests can load `@digitalbazaar/*` modules
+
 
 ## [2.4.1] - 2026-06-17
 
