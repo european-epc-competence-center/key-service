@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Data Integrity signing (`signCredential`, `signPresentation`): surface jsonld/`@digitalbazaar` error details in `SigningException` messages instead of `undefined - [object Object]`
+- JWT signing (`signCredential`, `signPresentation`, `signProofOfPossession`): wrap failures in `SigningException` via `formatSigningError` so jose `ERR_J*` errors expose `message`, `code`, `claim`, and `reason` instead of opaque objects
+
 ### Added
 - PostgreSQL TLS/mTLS client configuration via `DB_SSL_MODE`, `DB_SSL_CA`, `DB_SSL_CERT`, and `DB_SSL_KEY` environment variables (opt-in: `DB_SSL=false` by default — existing plain-TCP installs unchanged)
 - Helm `database.ssl` feature flags: `database.ssl.enabled`, `database.ssl.mode`, and `database.ssl.mtls.enabled` wire `DB_SSL*` env vars and optional cert volume mounts (all default off)

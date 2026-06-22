@@ -128,6 +128,10 @@ Tests are located in `data-integrity-signing.service.spec.ts`:
 
 **Note**: ES256 tests pass in isolation but may have test ordering issues when run together. This is a test infrastructure issue, not an implementation problem.
 
+## Error Handling
+
+Signing failures from `@digitalbazaar/vc` / jsonld attach structured `error.details` (not always with a top-level `message`). jose throws `JOSEError` subclasses with `code`, and optionally `claim` / `reason` / `cause`. Use `apps/app/src/utils/format-signing-error.ts` (`formatSigningError`, `logSigningError`) when throwing `SigningException` from signing services so API responses include readable text plus stringified details instead of `undefined - [object Object]`.
+
 ## Security Considerations
 
 1. **Private Key Protection**: Private keys never leave the key service, stored encrypted

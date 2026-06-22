@@ -22,7 +22,7 @@ key-service/
 │   │   ├── key-services/       # Core key management services
 │   │   ├── signing-services/   # Credential signing services
 │   │   ├── types/              # TypeScript type definitions
-│   │   └── utils/              # Utility functions and logging
+│   │   └── utils/              # Utility functions and logging (incl. `format-signing-error.ts`)
 │   └── test/                   # Test configuration and E2E tests
 ├── docker/                     # Docker configuration
 ├── docs/                       # Security and architecture documentation

@@ -6,6 +6,8 @@ import {
   VerifiablePresentation,
 } from "../types/verifiable-credential.types";
 import * as jose from "jose";
+import { formatSigningError, logSigningError } from "../utils/format-signing-error";
+import { SigningException } from "../types/custom-exceptions";
 
 /**
  * OpenID4VCI 1.0 — `jwt` proof type (Appendix F.1): JOSE `typ` for key proof JWTs sent in
@@ -48,7 +50,7 @@ export class JwtSigningService {
       secrets,
       setIssuer,
       undefined,
-      credential.validUntil
+      credential.validUntil,
     );
   }
 
@@ -86,46 +88,51 @@ export class JwtSigningService {
     challenge?: string,
     validUntil?: string,
   ): Promise<string> {
-    const keyPair = await this.keyService.getKeyPair(
-      verificationMethod,
-      secrets,
-    );
-    const signer = await keyPair.signer();
-    const iat = Math.floor(Date.now() / 1000);
-    const iss = keyPair.id
-      ? keyPair.id.includes("#")
-        ? keyPair.id.split("#")[0]
-        : keyPair.id
-      : undefined;
+    try {
+      const keyPair = await this.keyService.getKeyPair(
+        verificationMethod,
+        secrets,
+      );
+      const signer = await keyPair.signer();
+      const iat = Math.floor(Date.now() / 1000);
+      const iss = keyPair.id
+        ? keyPair.id.includes("#")
+          ? keyPair.id.split("#")[0]
+          : keyPair.id
+        : undefined;
 
-    const exp = validUntil
-      ? Math.floor(new Date(validUntil).getTime() / 1000)
-      : undefined;
+      const exp = validUntil
+        ? Math.floor(new Date(validUntil).getTime() / 1000)
+        : undefined;
 
-    const jwtPayload: Record<string, unknown> = {
-      aud: credentialIssuerIdentifier,
-      iat,
-      ...(iss !== undefined && iss !== "" && { iss }),
-      ...(challenge !== undefined &&
-        challenge !== "" && { nonce: challenge }),
-      ...(exp !== undefined && { exp }),
-    };
+      const jwtPayload: Record<string, unknown> = {
+        aud: credentialIssuerIdentifier,
+        iat,
+        ...(iss !== undefined && iss !== "" && { iss }),
+        ...(challenge !== undefined &&
+          challenge !== "" && { nonce: challenge }),
+        ...(exp !== undefined && { exp }),
+      };
 
-    const header: Record<string, unknown> = {
-      typ: OPENID4VCI_PROOF_JWT_TYP,
-      kid: keyPair.id,
-      alg: keyPair.signatureType,
-    };
+      const header: Record<string, unknown> = {
+        typ: OPENID4VCI_PROOF_JWT_TYP,
+        kid: keyPair.id,
+        alg: keyPair.signatureType,
+      };
 
-    const signingInput: string = [
-      jose.base64url.encode(JSON.stringify(header)),
-      jose.base64url.encode(JSON.stringify(jwtPayload)),
-    ].join(".");
+      const signingInput: string = [
+        jose.base64url.encode(JSON.stringify(header)),
+        jose.base64url.encode(JSON.stringify(jwtPayload)),
+      ].join(".");
 
-    const signature = jose.base64url.encode(
-      await signer.sign({ data: new TextEncoder().encode(signingInput) }),
-    );
-    return [signingInput, signature].join(".");
+      const signature = jose.base64url.encode(
+        await signer.sign({ data: new TextEncoder().encode(signingInput) }),
+      );
+      return [signingInput, signature].join(".");
+    } catch (error: unknown) {
+      logSigningError(error);
+      throw new SigningException(formatSigningError(error));
+    }
   }
 
   /**
@@ -142,58 +149,63 @@ export class JwtSigningService {
     aud?: string,
     validUntil?: string,
   ): Promise<string> {
-    const keyPair = await this.keyService.getKeyPair(
-      verificationMethod,
-      secrets
-    );
-    const signer = await keyPair.signer();
-    const iat = Math.floor(Date.now() / 1000);
-    const iss = keyPair.id
-      ? keyPair.id.includes("#")
-        ? keyPair.id.split("#")[0]
-        : keyPair.id
-      : undefined;
+    try {
+      const keyPair = await this.keyService.getKeyPair(
+        verificationMethod,
+        secrets
+      );
+      const signer = await keyPair.signer();
+      const iat = Math.floor(Date.now() / 1000);
+      const iss = keyPair.id
+        ? keyPair.id.includes("#")
+          ? keyPair.id.split("#")[0]
+          : keyPair.id
+        : undefined;
 
-    if (preSignHook && keyPair.id) {
-      preSignHook(keyPair.id);
+      if (preSignHook && keyPair.id) {
+        preSignHook(keyPair.id);
+      }
+
+      const basePayload =
+        typeof payload === "object" && payload !== null
+          ? { ...(payload as unknown as Record<string, unknown>) }
+          : {};
+
+      // When `validUntil` is provided, replace the VC/VP-level `validUntil` in the payload
+      // with the request parameter value, and also set a JWT `exp` claim derived from it.
+      if (validUntil) {
+        basePayload.validUntil = validUntil;
+      }
+
+      const jwtPayload: Record<string, unknown> = { ...basePayload };
+
+      Object.assign(jwtPayload, {
+        iat,
+        ...(nonce !== undefined && nonce !== "" && { nonce }),
+        ...(aud !== undefined && aud !== "" && { aud }),
+        ...(validUntil && {
+          exp: Math.floor(new Date(validUntil).getTime() / 1000),
+        }),
+      });
+
+      const header: Record<string, unknown> = {
+        kid: keyPair.id,
+        alg: keyPair.signatureType,
+        ...(iss !== undefined && iss !== "" && { iss }),
+      };
+
+      const signingInput: string = [
+        jose.base64url.encode(JSON.stringify(header)),
+        jose.base64url.encode(JSON.stringify(jwtPayload)),
+      ].join(".");
+
+      const signature = jose.base64url.encode(
+        await signer.sign({ data: new TextEncoder().encode(signingInput) })
+      );
+      return [signingInput, signature].join(".");
+    } catch (error: unknown) {
+      logSigningError(error);
+      throw new SigningException(formatSigningError(error));
     }
-
-    const basePayload =
-      typeof payload === "object" && payload !== null
-        ? { ...(payload as unknown as Record<string, unknown>) }
-        : {};
-
-    // When `validUntil` is provided, replace the VC/VP-level `validUntil` in the payload
-    // with the request parameter value, and also set a JWT `exp` claim derived from it.
-    if (validUntil) {
-      basePayload.validUntil = validUntil;
-    }
-
-    const jwtPayload: Record<string, unknown> = { ...basePayload };
-
-    Object.assign(jwtPayload, {
-      iat,
-      ...(nonce !== undefined && nonce !== "" && { nonce }),
-      ...(aud !== undefined && aud !== "" && { aud }),
-      ...(validUntil && {
-        exp: Math.floor(new Date(validUntil).getTime() / 1000),
-      }),
-    });
-
-    const header: Record<string, unknown> = {
-      kid: keyPair.id,
-      alg: keyPair.signatureType,
-      ...(iss !== undefined && iss !== "" && { iss }),
-    };
-
-    const signingInput: string = [
-      jose.base64url.encode(JSON.stringify(header)),
-      jose.base64url.encode(JSON.stringify(jwtPayload)),
-    ].join(".");
-
-    const signature = jose.base64url.encode(
-      await signer.sign({ data: new TextEncoder().encode(signingInput) })
-    );
-    return [signingInput, signature].join(".");
   }
 }

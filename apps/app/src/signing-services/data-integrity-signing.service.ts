@@ -15,7 +15,7 @@ import {cryptosuite as ecdsaRdfc2019CryptoSuite} from "@digitalbazaar/ecdsa-rdfc
 // @ts-ignore
 import { issue, signPresentation as vcSignPresentation } from "@digitalbazaar/vc";
 
-import { logDebug, logError } from "../utils/log/logger";
+import { formatSigningError, logSigningError } from "../utils/format-signing-error";
 import { SignatureType } from "../types/key-types.enum";
 import {
   ValidationException,
@@ -78,14 +78,9 @@ export class DataIntegritySigningService {
     const documentLoader = await DocumentLoaderService.getDocumentLoader();
     try {
       return await issue({ credential, suite, documentLoader });
-    } catch (error: any) {
-      if (error.details) {
-        logError("Error details:\n" + JSON.stringify(error.details, null, 2));
-        throw new SigningException(
-          `Failed to sign: ${error.details.message} - ${error.details}`
-        );
-      }
-      throw new SigningException(`Failed to sign: ${error.message}`);
+    } catch (error: unknown) {
+      logSigningError(error);
+      throw new SigningException(formatSigningError(error));
     }
   }
 
@@ -144,14 +139,9 @@ export class DataIntegritySigningService {
     const documentLoader = await DocumentLoaderService.getDocumentLoader();
     try {
         return await vcSignPresentation({ presentation, suite, documentLoader, challenge, domain });
-    } catch (error: any) {
-      if (error.details) {
-        logError("Error details:\n" + JSON.stringify(error.details, null, 2));
-        throw new SigningException(
-          `Failed to sign: ${error.details.message} - ${error.details}`
-        );
-      }
-      throw new SigningException(`Failed to sign: ${error.message}`);
+    } catch (error: unknown) {
+      logSigningError(error);
+      throw new SigningException(formatSigningError(error));
     }
   }
 }
