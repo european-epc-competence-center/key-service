@@ -85,6 +85,7 @@
 **In transit (today):**
 
 - Database wire: plain TCP by default in Helm/Docker (`DB_SSL=false`); TLS and mTLS are opt-in feature flags — enable via env vars or Helm `database.ssl.enabled` / `database.ssl.mtls.enabled`
+- Internal HTTPS (company-wallet → key-service): opt-in via `TLS_ENABLED`, `TLS_CERT`, `TLS_KEY`, `TLS_CA`, `TLS_MTLS`; mTLS enforced on API routes in application middleware (health probes exempt)
 - `DB_SSL=true` uses validated TLS modes (`verify-full` default) with optional client certificates; production rejects `DB_SSL_REJECT_UNAUTHORIZED=false` and `DB_SSL_MODE=require` (R7-001 remediated in application code)
 - Wallet ↔ key-service: optional AES-256-GCM request encryption (`REQUEST_ENCRYPTION_ENABLED`)
 

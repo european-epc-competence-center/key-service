@@ -1,16 +1,60 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
+import type { IncomingMessage, ServerResponse } from "http";
+import type { TLSSocket } from "tls";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./filters/global-exception.filter";
 import { getAppVersion } from "./utils/version.util";
 import { corsConfig } from "./config/cors.config";
+import { buildHttpTlsConfig, describeHttpTlsConfig } from "./config/http-tls.config";
+
+const HEALTH_PATHS = new Set(["/health", "/health/liveness", "/health/readiness"]);
+
+function isHealthPath(url: string | undefined): boolean {
+  if (!url) {
+    return false;
+  }
+  return HEALTH_PATHS.has(url.split("?")[0] ?? "");
+}
+
+function configureInternalMtlsGate(
+  app: Awaited<ReturnType<typeof NestFactory.create>>,
+  mtlsEnabled: boolean
+): void {
+  if (!mtlsEnabled) {
+    return;
+  }
+
+  app.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    if (isHealthPath(req.url)) {
+      next();
+      return;
+    }
+
+    const socket = req.socket as TLSSocket;
+    if (!socket.authorized) {
+      res.statusCode = 401;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ message: "Client certificate required" }));
+      return;
+    }
+
+    next();
+  });
+}
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const httpTls = buildHttpTlsConfig();
+  const app = await NestFactory.create(
+    AppModule,
+    httpTls.enabled ? { httpsOptions: httpTls.httpsOptions } : {}
+  );
+  configureInternalMtlsGate(app, httpTls.mtls);
   const version = getAppVersion();
   const port = process.env.port ?? 3000;
 
   console.log(`🚀 Starting key-service v${version}`);
+  console.log(`🔐 Internal HTTP transport: ${describeHttpTlsConfig(httpTls)}`);
 
   // Configure CORS based on environment settings
   if (corsConfig.enabled) {
