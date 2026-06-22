@@ -130,7 +130,7 @@ Tests are located in `data-integrity-signing.service.spec.ts`:
 
 ## Error Handling
 
-Signing failures from `@digitalbazaar/vc` / jsonld attach structured `error.details` (not always with a top-level `message`). jose throws `JOSEError` subclasses with `code`, and optionally `claim` / `reason` / `cause`. Use `apps/app/src/utils/format-signing-error.ts` (`formatSigningError`, `logSigningError`) when throwing `SigningException` from signing services so API responses include readable text plus stringified details instead of `undefined - [object Object]`.
+Signing failures from `@digitalbazaar/vc` / jsonld attach structured `error.details` (not always with a top-level `message`). jose throws `JOSEError` subclasses with `code`, and optionally `claim` / `reason` / `cause`. Use `apps/app/src/utils/format-signing-error.ts` (`formatSigningError`, `logSigningError`) when throwing `SigningException`: `formatSigningError` builds a short API message; `logSigningError` records full `details`, stack, and cause for operators.
 
 ## Security Considerations
 

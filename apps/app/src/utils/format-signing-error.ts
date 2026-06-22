@@ -25,30 +25,22 @@ export function formatSigningError(error: unknown): string {
   }
 
   const { summaryMessage, structuredDetails } = analyzeSigningError(error);
+  const conciseDetail =
+    structuredDetails !== undefined
+      ? formatConciseDetails(structuredDetails)
+      : undefined;
 
-  if (structuredDetails === undefined) {
-    return summaryMessage
-      ? `Failed to sign: ${summaryMessage}`
+  if (!summaryMessage) {
+    return conciseDetail
+      ? `Failed to sign: ${conciseDetail}`
       : "Failed to sign: Unknown error";
   }
 
-  const detailsText = formatErrorDetails(structuredDetails);
-
-  if (summaryMessage) {
-    return `Failed to sign: ${summaryMessage}\nDetails: ${detailsText}`;
+  if (!conciseDetail || isDetailRedundant(summaryMessage, conciseDetail)) {
+    return `Failed to sign: ${summaryMessage}`;
   }
 
-  const nestedEventMessage = extractNestedEventMessage(structuredDetails);
-  if (nestedEventMessage) {
-    return `Failed to sign: ${nestedEventMessage}\nDetails: ${detailsText}`;
-  }
-
-  const joseCode = extractJoseCode(structuredDetails);
-  if (joseCode) {
-    return `Failed to sign: ${joseCode}\nDetails: ${detailsText}`;
-  }
-
-  return `Failed to sign: ${detailsText}`;
+  return `Failed to sign: ${joinSigningMessageParts(summaryMessage, conciseDetail)}`;
 }
 
 /** Logs full signing error context for operators (richer than the API exception message). */
@@ -134,30 +126,128 @@ function formatCauseForLog(cause: unknown): unknown {
   return cause;
 }
 
-function formatErrorDetails(details: unknown): string {
+type JsonLdEventShape = {
+  message?: string;
+  details?: { property?: string; expandedProperty?: string };
+};
+
+function formatConciseDetails(details: unknown): string | undefined {
   if (typeof details === "string") {
     return details;
   }
-  return JSON.stringify(details, null, 2);
-}
 
-function extractNestedEventMessage(details: unknown): string | undefined {
   if (typeof details !== "object" || details === null) {
     return undefined;
   }
 
-  const event = (details as { event?: { message?: string } }).event;
+  const record = details as Record<string, unknown>;
+
+  const jsonLdEvent = formatJsonLdEventConcise(
+    record.event as JsonLdEventShape | undefined,
+  );
+  if (jsonLdEvent) {
+    return jsonLdEvent;
+  }
+
+  const joseDetail = formatJoseConcise(record);
+  if (joseDetail) {
+    return joseDetail;
+  }
+
+  return formatLoadingDocumentConcise(record);
+}
+
+function formatJsonLdEventConcise(
+  event: JsonLdEventShape | undefined,
+): string | undefined {
   const message = event?.message?.trim();
-  return message || undefined;
-}
-
-function extractJoseCode(details: unknown): string | undefined {
-  if (typeof details !== "object" || details === null) {
+  if (!message) {
     return undefined;
   }
 
-  const code = (details as { code?: string }).code;
-  return typeof code === "string" && code.startsWith("ERR_J")
-    ? code
-    : undefined;
+  const property = event?.details?.property ?? event?.details?.expandedProperty;
+  if (
+    property &&
+    message ===
+      "Dropping property that did not expand into an absolute IRI or keyword."
+  ) {
+    return `Dropping property '${property}' that did not expand into an absolute IRI or keyword.`;
+  }
+
+  return message;
+}
+
+function formatJoseConcise(
+  details: Record<string, unknown>,
+): string | undefined {
+  const code = details.code;
+  if (typeof code !== "string" || !code.startsWith("ERR_J")) {
+    return undefined;
+  }
+
+  const parts = [code];
+  if (typeof details.claim === "string") {
+    parts.push(`claim: ${details.claim}`);
+  }
+  if (typeof details.reason === "string") {
+    parts.push(`reason: ${details.reason}`);
+  }
+  if (typeof details.cause === "string") {
+    parts.push(details.cause);
+  }
+
+  return parts.join(", ");
+}
+
+function formatLoadingDocumentConcise(
+  details: Record<string, unknown>,
+): string | undefined {
+  if (details.code !== "loading document failed") {
+    return undefined;
+  }
+
+  const url = typeof details.url === "string" ? details.url : undefined;
+  const status = details.httpStatusCode;
+
+  if (url && status !== undefined) {
+    return `loading document failed for ${url} (${status})`;
+  }
+  if (url) {
+    return `loading document failed for ${url}`;
+  }
+
+  return "loading document failed";
+}
+
+function joinSigningMessageParts(
+  summaryMessage: string,
+  conciseDetail: string,
+): string {
+  const summary = summaryMessage.trim();
+  const detail = conciseDetail.trim();
+
+  if (summary.endsWith(".")) {
+    return `${summary} ${detail}`;
+  }
+
+  return `${summary}. ${detail}`;
+}
+
+function isDetailRedundant(
+  summaryMessage: string,
+  conciseDetail: string,
+): boolean {
+  const summary = summaryMessage.toLowerCase();
+  const detail = conciseDetail.toLowerCase();
+
+  if (summary.includes(detail)) {
+    return true;
+  }
+
+  const urlMatch = detail.match(/for (https?:\/\/\S+)/);
+  if (urlMatch && summary.includes(urlMatch[1].toLowerCase())) {
+    return true;
+  }
+
+  return false;
 }

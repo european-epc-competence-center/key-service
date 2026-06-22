@@ -3,25 +3,24 @@ import { errors as joseErrors } from "jose";
 
 describe("formatSigningError", () => {
   it("formats jsonld JsonLdEvent-style details", () => {
-    const error = Object.assign(new Error("The property is not supported."), {
+    const error = Object.assign(new Error("Safe mode validation error."), {
       details: {
         event: {
+          type: ["JsonLdEvent"],
           code: "invalid property",
+          level: "warning",
           message:
             "Dropping property that did not expand into an absolute IRI or keyword.",
-          details: { property: "keyAuthorization" },
+          details: {
+            property: "keyAuthorization",
+            expandedProperty: "keyAuthorization",
+          },
         },
       },
     });
 
-    const message = formatSigningError(error);
-
-    expect(message).toContain("Failed to sign:");
-    expect(message).not.toContain("undefined");
-    expect(message).not.toContain("[object Object]");
-    expect(message).toContain("keyAuthorization");
-    expect(message).toContain(
-      "Dropping property that did not expand into an absolute IRI or keyword."
+    expect(formatSigningError(error)).toBe(
+      "Failed to sign: Safe mode validation error. Dropping property 'keyAuthorization' that did not expand into an absolute IRI or keyword.",
     );
   });
 
