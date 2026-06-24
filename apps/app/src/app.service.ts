@@ -8,10 +8,16 @@ import {
   GenerateRequestDto,
   KeyRequestDto,
   SignRequestDto,
+  RawSignRequestDto,
 } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
 import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
+import { SignatureType } from "./types/key-types.enum";
+import { UnsupportedException } from "./types/custom-exceptions";
+
+/** did:webvh signing input: SHA-256(proofOptions) ‖ SHA-256(document) = 32 + 32 bytes. */
+const RAW_SIGN_INPUT_BYTES = 64;
 
 @Injectable()
 export class AppService {
@@ -155,6 +161,49 @@ export class AppService {
         ...(validUntil?.trim() && { validUntil: validUntil.trim() }),
       } satisfies VerifiablePresentation,
     });
+  }
+
+  /**
+   * Raw Ed25519 signing for the did:webvh Java library (`POST /sign/raw`).
+   *
+   * The library pre-hashes everything and hands its Signer a finished 64-byte input
+   * (`SHA-256(JCS(proofOptions)) ‖ SHA-256(JCS(document))`), expecting the raw Ed25519
+   * signature back — it does the multibase/proofValue encoding itself. So we sign the bytes
+   * with plain Ed25519 and do no extra hashing and no multibase encoding here.
+   *
+   * `data`/`signature` are base64 only because JSON can't carry raw bytes; we use standard
+   * base64 (Java's `java.util.Base64`), not url-safe.
+   */
+  async signRaw(
+    body: RawSignRequestDto | EncryptedPayloadDto
+  ): Promise<{ signature: string }> {
+    // Same encrypted-payload envelope as every other /sign endpoint.
+    const { identifier, secrets, data } =
+      this.decryptPayloadIfNeeded<RawSignRequestDto>(body);
+
+    // getKeyPair decrypts the private key via `secrets` and applies failed-attempt protection.
+    const keyPair = await this.keyService.getKeyPair(identifier, secrets);
+
+    // did:webvh update keys are Ed25519; other algorithms can't be verified by the library.
+    if (keyPair.signatureType !== SignatureType.ED25519_2020) {
+      throw new UnsupportedException(
+        `Raw signing supports Ed25519 keys only, but the stored key is ${keyPair.signatureType}`
+      );
+    }
+
+    // Decode to bytes and reject anything that isn't exactly the 64-byte webvh input.
+    const dataBytes = Buffer.from(data, "base64");
+    if (dataBytes.length !== RAW_SIGN_INPUT_BYTES) {
+      throw new BadRequestException(
+        `Raw signing input must be exactly ${RAW_SIGN_INPUT_BYTES} bytes, but got ${dataBytes.length} after base64-decoding`
+      );
+    }
+
+    // Plain Ed25519 over the bytes as-is; signer returns the raw signature.
+    const signer = await keyPair.signer();
+    const signatureBytes = await signer.sign({ data: dataBytes });
+
+    return { signature: Buffer.from(signatureBytes).toString("base64") };
   }
 
   async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<VerificationMethod> {
