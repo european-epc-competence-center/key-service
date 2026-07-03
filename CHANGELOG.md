@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+- `POST /sign/raw` endpoint: signs arbitrary raw bytes (base64-encoded) with any stored key
+
+
 ## [2.4.3] - 2026-06-22
 
 ### Changed
