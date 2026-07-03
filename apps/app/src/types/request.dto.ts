@@ -131,15 +131,12 @@ export class SignRequestDto extends KeyRequestDto {
 /**
  * DTO for raw-byte signing operations (`POST /sign/raw`).
  *
- * Used by the did:webvh Java library as a backing `Signer` (`byte[] sign(byte[] data)`):
- * the library hands over a fixed 64-byte input (`SHA-256(JCS(proofOptions)) ‖ SHA-256(JCS(document))`)
- * and expects the raw Ed25519 signature back. The key-service signs the bytes with plain
- * Ed25519 (no extra pre-hash) and does no multibase/proofValue encoding.
+ * Signs arbitrary bytes with any stored key, using the key's native algorithm; no multibase/proofValue
+ * encoding. The did:webvh Java library is one consumer, but no key type or input length is required.
  */
 export class RawSignRequestDto extends KeyRequestDto {
   /**
-   * The raw bytes to sign, base64-encoded (standard base64, e.g. Java `java.util.Base64`).
-   * For did:webvh this is the 64-byte signing input; the exact-length check is enforced in the service.
+   * The raw bytes to sign, standard base64 (e.g. Java `java.util.Base64`); any non-empty byte string.
    */
   @IsNotEmpty({ message: "Data is required" })
   @IsString({ message: "Data must be a string" })
