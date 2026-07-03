@@ -11,6 +11,7 @@ import {
   MaxLength,
   MinLength,
   Matches,
+  IsBase64,
 } from "class-validator";
 import { Type, Transform } from "class-transformer";
 import {
@@ -29,6 +30,7 @@ const MAX_SECRET_LENGTH = 1000; // Max length for individual secrets
 const MAX_IDENTIFIER_LENGTH = 500; // Max length for identifiers
 const MAX_SECRETS_ARRAY_SIZE = 10; // Max number of secrets allowed
 const MIN_SECRETS_ARRAY_SIZE = 1; // Min number of secrets required
+const MAX_RAW_DATA_LENGTH = 10000; // Max length for base64-encoded raw signing input
 
 export class KeyRequestDto {
   /**
@@ -127,6 +129,25 @@ export class SignRequestDto extends KeyRequestDto {
 }
 
 /**
+ * DTO for raw-byte signing operations (`POST /sign/raw`).
+ *
+ * Signs arbitrary bytes with any stored key, using the key's native algorithm; no multibase/proofValue
+ * encoding. Any key type and input length are accepted.
+ */
+export class RawSignRequestDto extends KeyRequestDto {
+  /**
+   * The raw bytes to sign, standard base64 (e.g. Java `java.util.Base64`); any non-empty byte string.
+   */
+  @IsNotEmpty({ message: "Data is required" })
+  @IsString({ message: "Data must be a string" })
+  @IsBase64({}, { message: "Data must be a base64-encoded string" })
+  @MaxLength(MAX_RAW_DATA_LENGTH, {
+    message: `Data must not exceed ${MAX_RAW_DATA_LENGTH} characters`,
+  })
+  data!: string;
+}
+
+/**
  * DTO for key generation operations
  * Implements comprehensive input validation for key generation requests
  */
@@ -162,4 +183,5 @@ export const VALIDATION_CONSTANTS = {
   MAX_IDENTIFIER_LENGTH,
   MAX_SECRETS_ARRAY_SIZE,
   MIN_SECRETS_ARRAY_SIZE,
+  MAX_RAW_DATA_LENGTH,
 } as const;

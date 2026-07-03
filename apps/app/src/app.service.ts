@@ -8,6 +8,7 @@ import {
   GenerateRequestDto,
   KeyRequestDto,
   SignRequestDto,
+  RawSignRequestDto,
 } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
@@ -155,6 +156,35 @@ export class AppService {
         ...(validUntil?.trim() && { validUntil: validUntil.trim() }),
       } satisfies VerifiablePresentation,
     });
+  }
+
+  /**
+   * Raw-byte signing with any stored key (`POST /sign/raw`).
+   *
+   * Signs arbitrary bytes with the key's native algorithm (EdDSA / ECDSA-SHA256 / RSA-PSS-SHA256);
+   * no multibase/proofValue encoding. `data`/`signature` are standard base64 (not url-safe).
+   */
+  async signRaw(
+    body: RawSignRequestDto | EncryptedPayloadDto
+  ): Promise<{ signature: string }> {
+    const { identifier, secrets, data } =
+      this.decryptPayloadIfNeeded<RawSignRequestDto>(body);
+
+    // Decrypts the private key, applies failed-attempt protection, rejects unsupported key types.
+    const keyPair = await this.keyService.getKeyPair(identifier, secrets);
+
+    // A non-empty base64 string can still decode to zero bytes.
+    const dataBytes = Buffer.from(data, "base64");
+    if (dataBytes.length === 0) {
+      throw new BadRequestException(
+        "Raw signing input must decode to at least one byte"
+      );
+    }
+
+    const signer = await keyPair.signer();
+    const signatureBytes = await signer.sign({ data: dataBytes });
+
+    return { signature: Buffer.from(signatureBytes).toString("base64") };
   }
 
   async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<VerificationMethod> {
