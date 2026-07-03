@@ -132,7 +132,7 @@ export class SignRequestDto extends KeyRequestDto {
  * DTO for raw-byte signing operations (`POST /sign/raw`).
  *
  * Signs arbitrary bytes with any stored key, using the key's native algorithm; no multibase/proofValue
- * encoding. The did:webvh Java library is one consumer, but no key type or input length is required.
+ * encoding. Any key type and input length are accepted.
  */
 export class RawSignRequestDto extends KeyRequestDto {
   /**

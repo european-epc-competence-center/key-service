@@ -163,7 +163,6 @@ export class AppService {
    *
    * Signs arbitrary bytes with the key's native algorithm (EdDSA / ECDSA-SHA256 / RSA-PSS-SHA256);
    * no multibase/proofValue encoding. `data`/`signature` are standard base64 (not url-safe).
-   * The did:webvh Java library is one consumer, but no key type or input length is required.
    */
   async signRaw(
     body: RawSignRequestDto | EncryptedPayloadDto
