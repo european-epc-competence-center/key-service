@@ -18,23 +18,23 @@ export class EncryptedKey {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: "text", name: "identifier" })
   @Index("IDX_keys_identifier")
   identifier!: string;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ type: "text", name: "keytype" })
   keyType!: string;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ type: "text", name: "signaturetype" })
   signatureType!: string;
 
-  @Column({ type: "text" })
+  @Column({ type: "text", name: "encryptedprivatekey" })
   encryptedPrivateKey!: string;
 
-  @Column({ type: "text" })
+  @Column({ type: "text", name: "encryptedpublickey" })
   encryptedPublicKey!: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: "createdat" })
   @Index("IDX_keys_created_at")
   createdAt!: Date;
 }
