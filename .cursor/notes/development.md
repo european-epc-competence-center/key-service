@@ -97,9 +97,9 @@ npx tsx ./node_modules/typeorm/cli.js migration:run -d migrations/data-source.ts
 ```
 
 ### Schema Conventions
-- `keys` table columns use **lowercase** names (`keytype`, `signaturetype`, `encryptedprivatekey`, `encryptedpublickey`, `createdat`) for PostgreSQL compatibility across versions/settings
+- `keys` table columns use **snake_case** names (`key_type`, `signature_type`, `encrypted_private_key`, `encrypted_public_key`, `created_at`) for PostgreSQL compatibility across versions/settings
 - String columns use `text` (not `varchar`)
-- `EncryptedKey` entity maps camelCase TypeScript properties to lowercase DB columns via `@Column({ name: "..." })`
+- `EncryptedKey` entity maps camelCase TypeScript properties to snake_case DB columns via `@Column({ name: "..." })`
 - Production runs migrations on startup (`migrationsRun`); dev/tests use `synchronize`
 
 ### Entity Management

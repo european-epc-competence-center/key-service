@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Database migration renames `keys` table columns to lowercase for PostgreSQL version/settings compatibility
-- `varchar` columns on `keys` table replaced with `text` (`identifier`, `keytype`, `signaturetype`)
-- `EncryptedKey` entity maps TypeScript properties to lowercase database column names
+- Database migration renames `keys` table columns to snake_case for PostgreSQL version/settings compatibility
+- `varchar` columns on `keys` table replaced with `text` (`identifier`, `key_type`, `signature_type`)
+- `EncryptedKey` entity maps TypeScript properties to snake_case database column names
 
 ## [2.5.0] - 2026-07-03
 

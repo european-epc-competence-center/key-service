@@ -14,42 +14,42 @@ export class LowercaseColumnNamesAndTextTypes1751904000000
     );
 
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "keyType" TO "keytype"`
+      `ALTER TABLE "keys" RENAME COLUMN "keyType" TO "key_type"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "signatureType" TO "signaturetype"`
+      `ALTER TABLE "keys" RENAME COLUMN "signatureType" TO "signature_type"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "encryptedPrivateKey" TO "encryptedprivatekey"`
+      `ALTER TABLE "keys" RENAME COLUMN "encryptedPrivateKey" TO "encrypted_private_key"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "encryptedPublicKey" TO "encryptedpublickey"`
+      `ALTER TABLE "keys" RENAME COLUMN "encryptedPublicKey" TO "encrypted_public_key"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "createdAt" TO "createdat"`
+      `ALTER TABLE "keys" RENAME COLUMN "createdAt" TO "created_at"`
     );
 
     await queryRunner.query(
       `ALTER TABLE "keys" ALTER COLUMN "identifier" TYPE text`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" ALTER COLUMN "keytype" TYPE text`
+      `ALTER TABLE "keys" ALTER COLUMN "key_type" TYPE text`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" ALTER COLUMN "signaturetype" TYPE text`
+      `ALTER TABLE "keys" ALTER COLUMN "signature_type" TYPE text`
     );
 
     await queryRunner.query(
       `CREATE INDEX "IDX_keys_identifier" ON "keys" ("identifier")`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_keys_created_at" ON "keys" ("createdat")`
+      `CREATE INDEX "IDX_keys_created_at" ON "keys" ("created_at")`
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_keys_type_signature" ON "keys" ("keytype", "signaturetype")`
+      `CREATE INDEX "IDX_keys_type_signature" ON "keys" ("key_type", "signature_type")`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" ADD CONSTRAINT "UQ_keys_identifier_type_signature" UNIQUE ("identifier", "keytype", "signaturetype")`
+      `ALTER TABLE "keys" ADD CONSTRAINT "UQ_keys_identifier_type_signature" UNIQUE ("identifier", "key_type", "signature_type")`
     );
   }
 
@@ -65,26 +65,26 @@ export class LowercaseColumnNamesAndTextTypes1751904000000
       `ALTER TABLE "keys" ALTER COLUMN "identifier" TYPE character varying(255)`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" ALTER COLUMN "keytype" TYPE character varying(50)`
+      `ALTER TABLE "keys" ALTER COLUMN "key_type" TYPE character varying(50)`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" ALTER COLUMN "signaturetype" TYPE character varying(50)`
+      `ALTER TABLE "keys" ALTER COLUMN "signature_type" TYPE character varying(50)`
     );
 
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "keytype" TO "keyType"`
+      `ALTER TABLE "keys" RENAME COLUMN "key_type" TO "keyType"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "signaturetype" TO "signatureType"`
+      `ALTER TABLE "keys" RENAME COLUMN "signature_type" TO "signatureType"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "encryptedprivatekey" TO "encryptedPrivateKey"`
+      `ALTER TABLE "keys" RENAME COLUMN "encrypted_private_key" TO "encryptedPrivateKey"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "encryptedpublickey" TO "encryptedPublicKey"`
+      `ALTER TABLE "keys" RENAME COLUMN "encrypted_public_key" TO "encryptedPublicKey"`
     );
     await queryRunner.query(
-      `ALTER TABLE "keys" RENAME COLUMN "createdat" TO "createdAt"`
+      `ALTER TABLE "keys" RENAME COLUMN "created_at" TO "createdAt"`
     );
 
     await queryRunner.query(

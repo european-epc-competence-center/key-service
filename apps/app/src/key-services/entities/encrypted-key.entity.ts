@@ -22,19 +22,19 @@ export class EncryptedKey {
   @Index("IDX_keys_identifier")
   identifier!: string;
 
-  @Column({ type: "text", name: "keytype" })
+  @Column({ type: "text", name: "key_type" })
   keyType!: string;
 
-  @Column({ type: "text", name: "signaturetype" })
+  @Column({ type: "text", name: "signature_type" })
   signatureType!: string;
 
-  @Column({ type: "text", name: "encryptedprivatekey" })
+  @Column({ type: "text", name: "encrypted_private_key" })
   encryptedPrivateKey!: string;
 
-  @Column({ type: "text", name: "encryptedpublickey" })
+  @Column({ type: "text", name: "encrypted_public_key" })
   encryptedPublicKey!: string;
 
-  @CreateDateColumn({ name: "createdat" })
+  @CreateDateColumn({ name: "created_at" })
   @Index("IDX_keys_created_at")
   createdAt!: Date;
 }
