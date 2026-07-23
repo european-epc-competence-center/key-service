@@ -10,6 +10,18 @@ import { formatSigningError, logSigningError } from "../utils/format-signing-err
 import { SigningException } from "../types/custom-exceptions";
 
 /**
+ * W3C VC-JOSE-COSE: JOSE `typ` for secured verifiable credentials as JWTs
+ * ([Securing VCs](https://www.w3.org/TR/vc-jose-cose/#vc-jose)).
+ */
+const VC_JWT_TYP = "vc+jwt";
+
+/**
+ * W3C VC-JOSE-COSE: JOSE `typ` for secured verifiable presentations as JWTs
+ * ([Securing VPs](https://www.w3.org/TR/vc-jose-cose/#vp-jose)).
+ */
+const VP_JWT_TYP = "vp+jwt";
+
+/**
  * OpenID4VCI 1.0 — `jwt` proof type (Appendix F.1): JOSE `typ` for key proof JWTs sent in
  * `proofs.jwt` on the [Credential Request](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request) (Section 8.2).
  * Used by `signProofOfPossession` / `POST /sign/pop/jwt`.
@@ -48,9 +60,9 @@ export class JwtSigningService {
       credential,
       verificationMethod,
       secrets,
-      setIssuer,
-      undefined,
+      VC_JWT_TYP,
       credential.validUntil,
+      setIssuer,
     );
   }
 
@@ -67,10 +79,11 @@ export class JwtSigningService {
       presentation,
       verificationMethod,
       secrets,
+      VP_JWT_TYP,
+      validUntil || presentation.validUntil,
       () => {},
       challenge,
       domain,
-      validUntil || presentation.validUntil,
     );
   }
 
@@ -136,18 +149,21 @@ export class JwtSigningService {
   }
 
   /**
-   * W3C JWT-VC / JWT-VP: JWS protected header carries `alg`, `kid`, and `iss` (signing key controller:
-   * `kid` without the fragment), per [VC-JOSE-COSE key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery).
-   * VP path may pass `validUntil` (ISO 8601) → `exp` claim.
+   * W3C JWT-VC / JWT-VP: JWS protected header carries `typ` (`vc+jwt` / `vp+jwt`), `alg`, `kid`,
+   * and `iss` (signing key controller: `kid` without the fragment), per
+   * [VC-JOSE-COSE](https://www.w3.org/TR/vc-jose-cose/) and
+   * [key discovery](https://w3c.github.io/vc-jose-cose/#using-header-params-claims-key-discovery).
+   * Both VC and VP may pass `validUntil` (ISO 8601) → `exp`; VP may also pass `nonce` / `aud`.
    */
   private async signJwtVerifiable(
     payload: VerifiableCredential | VerifiablePresentation,
     verificationMethod: string,
     secrets: string[],
+    typ: typeof VC_JWT_TYP | typeof VP_JWT_TYP,
+    validUntil?: string,
     preSignHook?: (keyPairId: string) => void,
     nonce?: string,
     aud?: string,
-    validUntil?: string,
   ): Promise<string> {
     try {
       const keyPair = await this.keyService.getKeyPair(
@@ -189,6 +205,7 @@ export class JwtSigningService {
       });
 
       const header: Record<string, unknown> = {
+        typ,
         kid: keyPair.id,
         alg: keyPair.signatureType,
         ...(iss !== undefined && iss !== "" && { iss }),
