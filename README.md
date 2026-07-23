@@ -32,68 +32,65 @@ npm run dev
 npm start
 ```
 
-The service includes comprehensive test coverage with both unit tests (using mocks) and end-to-end (E2E) tests (using a real PostgreSQL database).
+Unit and E2E tests both need the **test PostgreSQL** (many `.spec.ts` suites use a real TypeORM connection, not only mocks). Start it before running tests, or use a `*:with-db` script that starts and stops it for you.
+
+### Test database (required)
+
+```bash
+# Start PostgreSQL 17 on localhost:5433 (database: key_service_test)
+npm run test:db:start
+
+# Stop and remove the test database container
+npm run test:db:stop
+```
+
+Compose file: `docker/docker-compose.test.yml`. Defaults match CI (`TEST_DB_HOST` / `TEST_DB_PORT` / etc.).
 
 ### Quick Test Commands
 
 ```bash
-# Run all tests (E2E + unit)
-npm test
+# Start DB once, then run suites as needed
+npm run test:db:start
+npm test                 # unit + e2e
+npm run test:coverage    # unit + e2e with coverage
 
-# Run all tests with coverage
-npm run test:coverage
+# Or one-shot (start DB → run → stop DB)
+npm run test:with-db
+npm run test:unit:with-db
+npm run test:e2e:with-db
 ```
 
 ### Unit Tests
 
-Run unit tests with mocked dependencies (no database required):
+Located next to source as `*.spec.ts`. Several suites (e.g. key, JWT, Data Integrity, app service) talk to the test database via TypeORM.
 
 ```bash
-# Run all unit tests
+npm run test:db:start          # if not already running
 npm run test:unit
-
-# Run unit tests in watch mode
 npm run test:unit:watch
-
-# Run unit tests with coverage
 npm run test:unit:coverage
+# one-shot:
+npm run test:unit:with-db
 ```
 
 ### End-to-End (E2E) Tests
 
-Run E2E tests with a real PostgreSQL database. These tests validate the full application stack including database operations, API endpoints, and integrations.
+Full NestJS HTTP stack (`apps/app/test/*.e2e-spec.ts`). Jest setup points `DB_*` at the same test PostgreSQL as unit tests.
 
 ```bash
-# Run E2E tests (requires database)
+npm run test:db:start          # if not already running
 npm run test:e2e
-
-# Run E2E tests in watch mode
 npm run test:e2e:watch
-
-# Run E2E tests with coverage
 npm run test:e2e:coverage
+# one-shot:
+npm run test:e2e:with-db
 ```
-
-### Test Database Management
-
-```bash
-# Start PostgreSQL test database
-npm run test:db:start
-
-# Stop and remove test database
-npm run test:db:stop
-
-# Run unit tests with database (start + test + stop)
-npm run test:unit:with-db
-```
-
-The test database runs PostgreSQL 17 in Docker and is automatically configured with test credentials.
 
 ### Test Configuration
 
-- **E2E Tests**: `apps/app/test/jest-e2e.json`
 - **Unit Tests**: `apps/app/test/jest-unit.json`
-- **Test Setup**: `apps/app/test/test-setup.ts`
+- **E2E Tests**: `apps/app/test/jest-e2e.json`
+- **Test Setup**: `apps/app/test/test-setup.ts` (signing key + DB env for Jest)
 - **Test Database**: `docker/docker-compose.test.yml`
 
 ### Test Coverage

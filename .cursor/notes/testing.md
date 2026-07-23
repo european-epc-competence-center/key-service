@@ -1,140 +1,64 @@
 # Testing Strategy & Patterns
 
+## Prerequisites
+
+**PostgreSQL is required for unit and E2E tests.** Many `*.spec.ts` suites use a real TypeORM connection (key, JWT, Data Integrity, app service), not only mocks.
+
+```bash
+npm run test:db:start   # postgres:17 on localhost:5433 / key_service_test
+npm run test:db:stop
+```
+
+- Compose: `docker/docker-compose.test.yml`
+- Jest setup (`apps/app/test/test-setup.ts`) aligns `TEST_DB_*` and `DB_*` (plain TCP, SSL off)
+- One-shot wrappers: `test:with-db`, `test:unit:with-db`, `test:e2e:with-db`
+
 ## Test Architecture
 
-### Two-Tier Testing Approach
+### Unit Tests
+- **Location**: Alongside source (`*.spec.ts`)
+- **Command**: `npm run test:unit` (DB must be up)
+- **Config**: `apps/app/test/jest-unit.json`
+- Mix of mocked suites and DB-backed integration-style specs
 
-#### Unit Tests (Mocked Dependencies)
-- **Location**: Alongside source files (`.spec.ts`)
-- **Command**: `npm run test:unit`
-- **Purpose**: Business logic validation with mocked external dependencies
-- **Configuration**: `apps/app/test/jest-unit.json`
+### E2E Tests
+- **Location**: `apps/app/test/*.e2e-spec.ts`
+- **Command**: `npm run test:e2e` (same test DB via `DB_*` from test-setup)
+- **Config**: `apps/app/test/jest-e2e.json`
+- Full HTTP stack via `AppModule`
 
-#### Integration Tests (Real Database)
-- **Location**: `apps/app/test/app.e2e-spec.ts`
-- **Command**: `npm run test:e2e`
-- **Purpose**: Full HTTP request/response cycle with real PostgreSQL
-- **Configuration**: `apps/app/test/jest-e2e.json`
+## Commands
 
-## Test Database Management
-
-### Automated Test Database
 ```bash
-# Start test database (automatically managed)
 npm run test:db:start
-
-# Stop test database
-npm run test:db:stop
-
-# Run tests with automatic database lifecycle
-npm run test:unit:with-db
-```
-
-### Test Database Configuration
-- **Container**: PostgreSQL 17 in Docker
-- **Config File**: `apps/app/test/test-database.config.ts`
-- **Compose File**: `docker/docker-compose.test.yml`
-- **Isolation**: Separate database for testing
-
-## Testing Patterns
-
-### Service Testing
-- Mock external dependencies (database, external APIs)
-- Focus on business logic validation
-- Test error conditions and edge cases
-- Verify proper async/await handling
-
-### Environment Variable Configuration in Tests
-**Critical Pattern**: When testing services that use configuration modules evaluated at import time:
-- Set environment variables **before** any imports (at module top level)
-- Config modules like `payload-encryption.config.ts` evaluate `process.env` at import time
-- Setting env vars in `beforeAll()` or `beforeEach()` is too late
-- Example pattern:
-```typescript
-// Set env vars FIRST (before imports)
-process.env.MY_CONFIG = "value";
-
-// Then import modules
-import { MyService } from "./my.service";
-```
-- See `payload-encryption.service.spec.ts` for reference implementation
-
-### E2E Testing Strategy  
-- Full HTTP request/response testing
-- Real database interactions
-- Credential signing workflow validation
-- API endpoint contract verification
-
-### Test Utilities
-- **Setup File**: `apps/app/test/test-setup.ts`
-- Common test fixtures and helpers
-- Database seeding utilities
-- Mock service factories
-
-## Coverage & Quality
-
-### Test Coverage
-```bash
-npm run test:unit:coverage    # Unit test coverage
-npm run test:e2e:coverage     # E2E test coverage  
-npm run test:coverage         # Combined coverage
-```
-
-### Quality Gates
-- TypeScript strict mode enforcement
-- Comprehensive error scenario testing
-- Security-focused test cases
-- Performance validation for crypto operations
-
-## Key Test Areas
-
-### Cryptographic Operations
-- Key generation validation
-- Signature verification
-- Multi-algorithm support (Ed25519, ES256, PS256)
-- Error handling for invalid keys/secrets
-- Verifiable Credential (VC) signing with JWT and Data Integrity
-- Verifiable Presentation (VP) signing:
-  - JWT: Enveloped credentials with multiple algorithms (Ed25519, ES256, PS256); `jwt-signing.service.spec.ts` expects VC/VP `iss` on the JWS protected header (`kid` fragment stripped), `iat` (and VP `nonce`/`aud` when used) in the JWT payload; OpenID4VCI PoP keeps `iss` in the body (F.1)
-  - Data Integrity: Embedded credentials with Ed25519 proofs, challenge/domain support
-
-### API Contract Testing
-- Request/response validation
-- Error response formatting
-- HTTP status code correctness
-- Parameter validation (enums, types)
-
-### Security Testing
-- Failed attempt rate limiting
-- Secret validation requirements
-- Encryption/decryption workflows
-- Database security (no plaintext secrets)
-- Secure-by-default configuration validation
-  - `SecretService` requires a signing key file (minimum 32 characters) in all environments; no in-code fallback
-  - E2E tests use a temporary signing key via `test-setup.ts`; unit tests mock `fs.readFileSync`
-
-### Database Integration
-- Entity persistence
-- Migration testing
-- Connection handling
-- Transaction rollback scenarios
-
-## Test Commands Reference
-
-```bash
-# Run all tests
-npm test
-
-# Individual test suites
-npm run test:unit         # Unit tests only
-npm run test:e2e          # Integration tests only
-
-# Watch mode
-npm run test:unit:watch   # Unit tests with file watching
-npm run test:e2e:watch    # E2E tests with file watching
-
-# Coverage reports
-npm run test:unit:coverage
-npm run test:e2e:coverage
+npm test                      # unit then e2e
+npm run test:unit
+npm run test:e2e
+npm run test:unit:watch
 npm run test:coverage
+npm run test:with-db          # start → test → stop
+npm run test:unit:with-db
+npm run test:e2e:with-db
 ```
+
+CI (`.github/workflows/ci-cd.yml`) runs `test:unit` with a Postgres 17 service on port 5433.
+
+## Patterns
+
+### Env vars before imports
+Config modules that read `process.env` at import time need vars set at module top level (before imports), not in `beforeAll`. See `payload-encryption.service.spec.ts`.
+
+### Signing key
+`SecretService` requires a signing key file (≥32 chars). E2E uses a temp key from `test-setup.ts`; some unit tests mock `fs.readFileSync`.
+
+### Service / crypto coverage
+- Key generation, multi-algorithm signing (Ed25519, ES256, PS256)
+- JWT: VC/VP `iss` on JWS protected header; OID4VCI PoP keeps `iss` in body
+- Data Integrity: proofs, challenge/domain
+- Failed attempts, encryption, validation e2e
+
+## Related files
+
+- `apps/app/test/test-database.config.ts` — shared TypeORM test options
+- `apps/app/test/test-setup.ts` — global Jest setup
+- README “Local Testing” section

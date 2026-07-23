@@ -28,22 +28,21 @@ npm run test:db:start # Start test PostgreSQL database
 
 ## Testing Strategy
 
+### Prerequisite: test database
+```bash
+npm run test:db:start   # localhost:5433 / key_service_test
+```
+Unit and E2E both need this DB. One-shot: `npm run test:with-db` / `test:unit:with-db` / `test:e2e:with-db`.
+
 ### Unit Tests
-- Run with `npm run test:unit`
-- Mock external dependencies
-- Focus on business logic validation
-- Located alongside source files (`.spec.ts`)
+- `npm run test:unit` (DB required — several suites use real TypeORM)
+- Located alongside source (`.spec.ts`)
 
 ### Integration Tests (E2E)
-- Run with `npm run test:e2e`
-- Uses real PostgreSQL database
-- Full HTTP request/response cycle testing
-- Automatic database setup/teardown
+- `npm run test:e2e` — same test DB (`DB_*` set in `test-setup.ts`)
+- Full HTTP request/response cycle
 
-### Test Database
-- Separate test database configuration
-- Docker Compose for isolated testing
-- Clean slate for each test run
+See [testing.md](./testing.md) for commands and patterns.
 
 ## Build & Release
 

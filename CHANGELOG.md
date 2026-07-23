@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Local testing docs and scripts: unit and E2E both require the test PostgreSQL (`npm run test:db:start`); added `test:with-db` / `test:e2e:with-db`; `npm test` runs unit then e2e; Jest `test-setup` aligns `DB_*` with the test database
+- Bumped direct dependencies to latest compatible versions (NestJS 11.1.28, TypeORM 0.3.31, jose 6.2.4, pg 8.22.0, Jest tooling, and others); held majors that break peers (`typescript` 5.x, `@types/node` 24.x, `@noble/curves` 1.x, `uint8arrays` 3.x)
+
 ### Security
 - npm dependency refresh and `overrides` for transitive CVEs: `brace-expansion` (1.1.16 / 2.1.2 / 5.0.7, CVE-2026-13149), `body-parser` (>=2.3.0, CVE-2026-12590), `js-yaml` (>=4.3.0, CVE-2026-59869), `fast-uri` (>=3.1.4, CVE-2026-16221)
-
-### Changed
-- Bumped direct dependencies to latest compatible versions (NestJS 11.1.28, TypeORM 0.3.31, jose 6.2.4, pg 8.22.0, Jest tooling, and others); held majors that break peers (`typescript` 5.x, `@types/node` 24.x, `@noble/curves` 1.x, `uint8arrays` 3.x)
 
 
 ## [2.5.1] - 2026-07-23

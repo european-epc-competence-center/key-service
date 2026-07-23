@@ -4,11 +4,11 @@
 
 The Key Service is a NestJS-based API for signing verifiable credentials using multiple signature formats (JWT, Data Integrity, SD-JWT). It provides secure key management, credential signing, and public key retrieval capabilities.
 
-**Current Version**: v2.3.2  
+**Current Version**: v2.5.1  
 **License**: AGPL-3.0 (GNU Affero General Public License v3.0)  
 **Author**: Christian Fries  
 **Technology Stack**: NestJS, TypeScript, PostgreSQL, Docker  
-**Node.js**: ≥22.0.0
+**Node.js**: ≥24.0.0
 
 ## Project Structure
 
@@ -75,15 +75,16 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 ### Scripts
 
 - `npm run dev` - Development with hot reload
-- `npm test` - Run all tests (unit + e2e)
-- `npm run test:unit` - Unit tests only
-- `npm run test:e2e` - Integration tests with real database
+- `npm run test:db:start` - Start test PostgreSQL (required for unit + e2e)
+- `npm test` / `npm run test:with-db` - All tests (unit then e2e); `with-db` manages container lifecycle
+- `npm run test:unit` / `test:unit:with-db` - Unit tests (DB required)
+- `npm run test:e2e` / `test:e2e:with-db` - E2E tests (same test DB)
 - `npm run build` - Production build
 
 ### Environment
 
-- Node.js >=22.0.0
-- PostgreSQL database required
+- Node.js >=24.0.0
+- PostgreSQL test DB required for tests (`docker/docker-compose.test.yml`)
 - Docker support for containerized deployment
 
 ## API Endpoints
@@ -128,11 +129,12 @@ npm install
 # Start development server
 npm run dev
 
-# Start test database
+# Start test database (required for unit + e2e)
 npm run test:db:start
 
 # Run all tests
 npm test
+# or: npm run test:with-db
 
 # Build for production
 npm run build
@@ -140,7 +142,7 @@ npm run build
 
 ## Important Files to Reference
 
-- `README.md` - **Updated 2025-10-29** - Comprehensive project documentation with accurate API endpoints, testing instructions, and deployment guides
+- `README.md` - Project documentation (API, local testing with test DB, deployment)
 - `apps/app/src/app.module.ts` - Main application module
 - `apps/app/src/main.ts` - Application bootstrap with input validation
 - `apps/app/src/app.controller.ts` - API endpoints (VC/VP signing, key generation)
@@ -150,7 +152,7 @@ npm run build
 - `docs/security_and_key_management_concept.md` - Security architecture concept
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
 - `SECURITY_REPORT.md` - External security analysis report; reformatted for pandoc PDF compilation (no emojis, correct heading hierarchy, list spacing, `lang: en`, fancyhdr)
-- `CHANGELOG.md` - Version history and changes (current: v2.3.2)
+- `CHANGELOG.md` - Version history and changes (current: v2.5.1)
 - `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
 - `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide
 - `docs/REQUEST_ENCRYPTION_USAGE.md` - **NEW** Multi-language client examples (Java, Node.js, Python)
