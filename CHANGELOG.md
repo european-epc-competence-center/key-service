@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Mitigate `brace-expansion` CVE-2026-14257 (OOM DoS): override non-1.x to `5.0.8` (1.x stays `1.1.16`). TypeORM’s `glob@10` pulled `minimatch@9` → `brace-expansion@2` (no 2.x patch for this CVE; 5.x is not API-compatible with minimatch 9), so also override `minimatch@9` → `10.2.5` (uses brace-expansion 5 natively). No app code depended on brace-expansion 2.x directly.
+
 ## [2.5.2] - 2026-07-23
 
 ### Changed
