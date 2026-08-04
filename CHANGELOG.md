@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Mitigate `brace-expansion` CVE-2026-69152 (DoS via unbounded intermediate arrays, bypass of CVE-2026-14257): bump overrides to `1.1.18` (1.x) and `5.0.9` (non-1.x). Prior pins `1.1.16` / `5.0.8` remain affected.
+
 ## [2.5.3] - 2026-07-28
 
 ### Security
