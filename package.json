@@ -50,7 +50,7 @@
     "@digitalbazaar/ed25519-multikey": "^1.3.1",
     "@digitalbazaar/eddsa-rdfc-2022-cryptosuite": "^1.3.0",
     "@digitalbazaar/vc": "^7.3.0",
-    "@eecc/rsa-multikey": "^1.0.2",
+    "@eecc/rsa-multikey": "^1.0.3",
     "@eecc/rsa-rdfc-2025-cryptosuite": "^1.0.1",
     "@nestjs/common": "^11.1.28",
     "@nestjs/core": "^11.1.28",

@@ -165,7 +165,7 @@ Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (Type
 
 ### Highest practical install-time risk
 
-`@eecc/rsa-multikey` declares `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`). npm auto-installs the unrelated npm package `node` (~116MB binary via `preinstall`). Never `require`d by rsa-multikey. Fix upstream to `engines`. npm `overrides` to a local stub currently breaks install (`Cannot read properties of null`); prefer fixing `@eecc/rsa-multikey` and omitting the binary package from production images.
+`@eecc/rsa-multikey` ≤1.0.2 declared `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`), causing npm to auto-install the unrelated npm package `node` (~116MB binary via `preinstall`). Fixed upstream in local `../rsa-multikey` (`engines` instead); pending patch publish + bump in this repo. Until then, omit the binary package from production images if auto-installed.
 
 ### Malware / key-theft scan (direct crypto stack)
 
