@@ -1,0 +1,7 @@
+{
+  "https://ref.gs1.org/gs1/vc/license-context": "license-context.jsonld",
+  "https://ref.gs1.org/gs1/vc/declaration-context": "declaration-context.jsonld",
+  "https://ref.gs1.org/gs1/vc/product-context": "product-context.jsonld",
+  "https://raw.githubusercontent.com/european-epc-competence-center/jsonld-context/refs/heads/main/context/render-method": "render-method.jsonld",
+  "https://raw.githubusercontent.com/european-epc-competence-center/jsonld-context/refs/heads/main/context/epcis/epcis-credential-context.json-ld": "epcis-credential-context.jsonld"
+}

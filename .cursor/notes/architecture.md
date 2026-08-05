@@ -19,7 +19,7 @@ AppModule
 
 ### JSON-LD context cache
 
-- Bundled: `contexts/` → `/app/contexts` in image (`manifest.json` URL→file)
+- Bundled: `contexts/` → `/app/contexts` in image (`manifest.json` URL→file); nested packs with their own manifest (e.g. `contexts/gs1/`) load automatically
 - Inject: mount at `/contexts` or set `JSONLD_CONTEXT_DIRS`; later dirs override same URL
 - Loader order: FS cache → in-memory TTL → HTTP/IPFS fetch
 - Code: `jsonld-context-cache.ts`, `document-loader.service.ts`; ops: `contexts/README.md`

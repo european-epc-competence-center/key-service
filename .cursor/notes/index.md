@@ -25,7 +25,7 @@ key-service/
 │   │   ├── types/              # TypeScript type definitions
 │   │   └── utils/              # Utilities (logging, DocumentLoader, JsonLdContextCache, format-signing-error)
 │   └── test/                   # Test configuration and E2E tests
-├── contexts/                   # Bundled JSON-LD @context cache (shipped in image; inject extras at /contexts)
+├── contexts/                   # Bundled JSON-LD @context cache (incl. `gs1/`; inject extras at /contexts)
 ├── docker/                     # Docker configuration
 ├── docs/                       # Security and architecture documentation
 ├── helm/                       # Kubernetes Helm chart

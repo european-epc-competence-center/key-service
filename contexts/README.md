@@ -9,11 +9,20 @@ Each cache directory contains:
 - `manifest.json` — map of context URL → relative filename
 - `*.jsonld` — context document files
 
+Immediate child directories that also contain a `manifest.json` are loaded automatically (e.g. `contexts/gs1/`).
+
+### Bundled packs
+
+| Directory | Source |
+|-----------|--------|
+| `contexts/` | Core W3C / W3ID contexts |
+| `contexts/gs1/` | GS1 VC contexts used by company-wallet GS1 plugin (`license`, `declaration`, `product`, EECC `render-method`, EECC `epcis-credential`) |
+
 ## Default directories
 
 Loaded in order (later entries override earlier ones for the same URL):
 
-1. `<workdir>/contexts` — shipped with the image / repo (`/app/contexts` in Docker)
+1. `<workdir>/contexts` — shipped with the image / repo (`/app/contexts` in Docker), including nested packs such as `gs1/`
 2. `/contexts` — conventional mount point for deploy-time injection (loaded only if present)
 
 Override with `JSONLD_CONTEXT_DIRS` (colon-separated on Linux):

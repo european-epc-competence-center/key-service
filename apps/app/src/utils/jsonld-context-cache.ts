@@ -66,6 +66,7 @@ export class JsonLdContextCache {
 
     for (const dir of targetDirs) {
       this.loadDirectory(dir);
+      this.loadChildManifestDirs(dir);
     }
 
     this.loaded = true;
@@ -95,6 +96,34 @@ export class JsonLdContextCache {
       this.load();
     }
     return this.documents.size;
+  }
+
+  /** Load immediate child directories that contain their own manifest.json (e.g. contexts/gs1). */
+  private static loadChildManifestDirs(dir: string): void {
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+      return;
+    }
+
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (error) {
+      logger.error(
+        `JSON-LD context cache: failed to read directory ${dir}`,
+        error
+      );
+      return;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) {
+        continue;
+      }
+      const childDir = path.join(dir, entry.name);
+      if (fs.existsSync(path.join(childDir, MANIFEST_FILENAME))) {
+        this.loadDirectory(childDir);
+      }
+    }
   }
 
   private static loadDirectory(dir: string): void {

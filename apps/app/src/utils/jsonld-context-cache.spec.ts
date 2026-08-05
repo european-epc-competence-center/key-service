@@ -127,6 +127,25 @@ describe("JsonLdContextCache", () => {
     expect(JsonLdContextCache.has("https://example.com/evil")).toBe(false);
   });
 
+  it("loads nested subdirectory manifests (e.g. gs1)", () => {
+    const root = path.join(tempRoot, "contexts");
+    fs.mkdirSync(root, { recursive: true });
+    fs.writeFileSync(path.join(root, "manifest.json"), JSON.stringify({}));
+
+    const gs1 = writeCacheDir(
+      "contexts/gs1",
+      { "https://ref.gs1.org/gs1/vc/license-context": "license.jsonld" },
+      { "license.jsonld": { "@context": { GS1PrefixLicenseCredential: "gs1:x" } } }
+    );
+    expect(gs1).toBe(path.join(root, "gs1"));
+
+    JsonLdContextCache.load([root]);
+
+    expect(
+      JsonLdContextCache.has("https://ref.gs1.org/gs1/vc/license-context")
+    ).toBe(true);
+  });
+
   it("loads the repo bundled contexts directory", () => {
     const bundled = path.resolve(process.cwd(), "contexts");
     if (!fs.existsSync(path.join(bundled, "manifest.json"))) {
@@ -135,12 +154,31 @@ describe("JsonLdContextCache", () => {
 
     JsonLdContextCache.load([bundled]);
 
-    expect(JsonLdContextCache.size()).toBeGreaterThanOrEqual(9);
+    expect(JsonLdContextCache.size()).toBeGreaterThanOrEqual(14);
     expect(
       JsonLdContextCache.has("https://www.w3.org/ns/credentials/v2")
     ).toBe(true);
     expect(
       JsonLdContextCache.has("https://w3id.org/security/data-integrity/v2")
+    ).toBe(true);
+    expect(
+      JsonLdContextCache.has("https://ref.gs1.org/gs1/vc/license-context")
+    ).toBe(true);
+    expect(
+      JsonLdContextCache.has("https://ref.gs1.org/gs1/vc/declaration-context")
+    ).toBe(true);
+    expect(
+      JsonLdContextCache.has("https://ref.gs1.org/gs1/vc/product-context")
+    ).toBe(true);
+    expect(
+      JsonLdContextCache.has(
+        "https://raw.githubusercontent.com/european-epc-competence-center/jsonld-context/refs/heads/main/context/render-method"
+      )
+    ).toBe(true);
+    expect(
+      JsonLdContextCache.has(
+        "https://raw.githubusercontent.com/european-epc-competence-center/jsonld-context/refs/heads/main/context/epcis/epcis-credential-context.json-ld"
+      )
     ).toBe(true);
   });
 });
