@@ -2,7 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { SignatureType } from "../types/key-types.enum";
 import {
   KeyPair,
-  RawKeypair,
   ECJsonWebKey,
   RSAJsonWebKey,
 } from "../types/keypair.types";

@@ -9,9 +9,6 @@ import { EncryptedKey } from "./entities/encrypted-key.entity";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
 import * as fs from "fs";
-import * as crypto from "crypto";
-// @ts-ignore
-import * as Ed25519Multikey from "@digitalbazaar/ed25519-multikey";
 
 // Mock fs module for this test file only
 jest.mock("fs");
@@ -52,16 +49,7 @@ describe("KeyService", () => {
   const mockSecrets = ["test-secret-key-12345"];
   const mockIdentifier = "did:web:example.com#licenses";
 
-  // Generate real keys for use in tests
-  let testEd25519KeyPair: any;
-
   beforeAll(async () => {
-    // Generate real Ed25519 keys for use in tests
-    testEd25519KeyPair = await Ed25519Multikey.generate({
-      controller: "did:web:example.com",
-      id: "did:web:example.com#test-key",
-    });
-
     // Store original environment variable
     originalSigningKeyPath = process.env.SIGNING_KEY_PATH;
 

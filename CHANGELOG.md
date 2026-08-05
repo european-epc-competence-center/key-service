@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `RequestBodyValidationPipe` so DTO validation works for endpoints that accept plain DTOs or `EncryptedPayloadDto` (TypeScript unions made Nest’s global `ValidationPipe` skip validation)
+
+### Fixed
+- Mark optional `challenge` / `domain` on `SignRequestDto` with `@IsOptional()` so valid requests without those fields are not rejected once body validation runs
+- `signCredential` / `signPresentation` return 400 when `verifiable` is missing
+
+### Removed
+- Unused direct dependencies: `@digitalbazaar/ed25519-signature-2020`, `@digitalbazaar/ed25519-verification-key-2020`, `@noble/curves`, `uint8arrays`
+- Unused imports and unused Nest constructor injection of `DocumentLoaderService` in `DataIntegritySigningService` (loader is used statically)
+
+### Changed
+- `app.e2e-spec` now asserts `GET /health` instead of obsolete Nest scaffold `GET /` “Hello World”
+- Test setup imports `reflect-metadata` for decorator metadata under Jest
+
+### Security
+- Documented accidental npm peer `node` from `@eecc/rsa-multikey` (should be `engines`); fix upstream — do not leave the binary npm `node` package in production images if auto-installed
+
 ## [2.5.4] - 2026-08-04
 
 ### Security

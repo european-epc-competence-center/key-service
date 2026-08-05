@@ -58,6 +58,7 @@ describe("SecretService", () => {
         path.resolve("/run/secrets/signing-key"),
         "utf8"
       );
+      expect(newService).toBeDefined();
     });
 
     it("should read secret from custom path when SIGNING_KEY_PATH is set", () => {
@@ -69,6 +70,7 @@ describe("SecretService", () => {
         path.resolve("/custom/path/key"),
         "utf8"
       );
+      expect(newService).toBeDefined();
     });
 
     it("should trim whitespace from the secret", () => {

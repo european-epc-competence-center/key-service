@@ -5,8 +5,7 @@ import { EncryptedKey } from "./entities/encrypted-key.entity";
 import { SignatureType } from "../types/key-types.enum";
 import { SecretService } from "./secret.service";
 import { FailedAttemptsCacheService } from "./failed-attempts-cache.service";
-import { KeyType, KeyPair, RawKeypair } from "../types";
-import { logError } from "../utils/log/logger";
+import { KeyType, RawKeypair } from "../types";
 import {
   KeyException,
   TooManyFailedAttemptsException,

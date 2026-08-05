@@ -78,6 +78,11 @@ export class AppService {
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
     const { verifiable, identifier, secrets } = decryptedBody;
+    if (!verifiable) {
+      throw new BadRequestException(
+        "Verifiable credential is required for credential signing"
+      );
+    }
     const service = this.getSigningService(type);
     return service.signCredential(
       verifiable as VerifiableCredential,
@@ -92,6 +97,11 @@ export class AppService {
   ): Promise<VerifiablePresentation | string> {
     const { verifiable, identifier, secrets, challenge, domain, validUntil } =
       this.decryptPayloadIfNeeded<SignRequestDto>(body);
+    if (!verifiable) {
+      throw new BadRequestException(
+        "Verifiable presentation is required for presentation signing"
+      );
+    }
     const service = this.getSigningService(type);
     return service.signPresentation(
       verifiable as VerifiablePresentation,

@@ -638,10 +638,9 @@ Keys are encrypted using multiple secrets to ensure security even if one secret 
 ### Cryptography & Verifiable Credentials
 
 - **@digitalbazaar/vc**: W3C Verifiable Credentials implementation
-- **@digitalbazaar/ed25519-signature-2020**: Ed25519 signature suite for Data Integrity proofs
-- **@digitalbazaar/ed25519-verification-key-2020**: Ed25519 key handling
+- **@digitalbazaar/data-integrity** / **eddsa-rdfc-2022** / **ecdsa-rdfc-2019** / **@eecc/rsa-rdfc-2025-cryptosuite**: Data Integrity proofs
+- **@digitalbazaar/ed25519-multikey** / **ecdsa-multikey** / **@eecc/rsa-multikey**: Key material
 - **jose**: JWT operations (JWT-VC signing)
-- **@noble/curves**: Cryptographic curve operations
 - **jsonld-signatures**: JSON-LD signature support
 
 ### Validation & Security

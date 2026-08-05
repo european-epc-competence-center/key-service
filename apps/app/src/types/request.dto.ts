@@ -93,6 +93,7 @@ export class SignRequestDto extends KeyRequestDto {
    * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).
    * Also accepts property name `nonce`.
    */
+  @IsOptional()
   @Transform(({ value, obj }) => value ?? obj.nonce)
   @IsString({ message: "Challenge must be a string" })
   @MaxLength(MAX_STRING_LENGTH, {
@@ -104,6 +105,7 @@ export class SignRequestDto extends KeyRequestDto {
    * Domain / audience (VP Data Integrity proof `domain`; OpenID4VCI Credential Issuer Identifier on PoP — F.1 JWT `aud`, F.2 `di_vp` proof `domain`).
    * Also accepts property name `audience`.
    */
+  @IsOptional()
   @Transform(({ value, obj }) => value ?? obj.audience)
   @IsString({ message: "Domain must be a string" })
   @MaxLength(MAX_STRING_LENGTH, {

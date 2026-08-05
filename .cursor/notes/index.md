@@ -109,7 +109,7 @@ All signing and generation requests use:
 ## Notes Files Reference
 
 - [architecture.md](./architecture.md) - Detailed technical architecture
-- [security.md](./security.md) - Security implementation details and audit framework
+- [security.md](./security.md) - Security implementation, audit framework, dependency/supply-chain notes (unused deps, accidental npm `node` peer)
 - [data-integrity-signatures.md](./data-integrity-signatures.md) - Data Integrity proof implementation (Ed25519, ES256)
 - [input-validation-implementation.md](./input-validation-implementation.md) - Input validation security implementation (2025-10-07)
 - [development.md](./development.md) - Development workflows and patterns

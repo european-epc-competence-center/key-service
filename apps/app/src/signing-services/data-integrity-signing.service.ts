@@ -18,7 +18,6 @@ import { issue, signPresentation as vcSignPresentation } from "@digitalbazaar/vc
 import { formatSigningError, logSigningError } from "../utils/format-signing-error";
 import { SignatureType } from "../types/key-types.enum";
 import {
-  ValidationException,
   SigningException,
   UnsupportedException,
 } from "../types/custom-exceptions";
@@ -27,10 +26,7 @@ import {cryptosuite as rsaRdfc2025CryptoSuite} from "@eecc/rsa-rdfc-2025-cryptos
 
 @Injectable()
 export class DataIntegritySigningService {
-  constructor(
-    private readonly keyService: KeyService,
-    private readonly documentLoaderService: DocumentLoaderService
-  ) {}
+  constructor(private readonly keyService: KeyService) {}
 
   /**
    * Sign a verifiable credential using Data Integrity proof

@@ -303,9 +303,6 @@ async function verifyDataIntegrityPresentation(
 describe("DataIntegritySigningService", () => {
   let service: DataIntegritySigningService;
   let keyService: KeyService;
-  let keyStorageService: KeyStorageService;
-  let secretService: SecretService;
-  let documentLoaderService: DocumentLoaderService;
   let dataSource: DataSource;
   let module: TestingModule;
   let originalSigningKeyPath: string | undefined;
@@ -470,11 +467,6 @@ describe("DataIntegritySigningService", () => {
       DataIntegritySigningService
     );
     keyService = module.get<KeyService>(KeyService);
-    keyStorageService = module.get<KeyStorageService>(KeyStorageService);
-    secretService = module.get<SecretService>(SecretService);
-    documentLoaderService = module.get<DocumentLoaderService>(
-      DocumentLoaderService
-    );
   });
 
   afterAll(async () => {

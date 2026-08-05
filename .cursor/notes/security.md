@@ -154,3 +154,28 @@
 - Consolidated final report in `security_audit/audit.md`
 - SBOM in CycloneDX format for dependency tracking
 - Risk-prioritized findings with remediation recommendations
+
+## Dependency / supply-chain notes (2026-08-05)
+
+### Unused direct deps (removed 2026-08-05)
+
+Removed from `package.json`: `@digitalbazaar/ed25519-signature-2020`, `@digitalbazaar/ed25519-verification-key-2020`, `@noble/curves`, `uint8arrays`. DI signing uses `eddsa-rdfc-2022` / `ecdsa-rdfc-2019` / `@eecc/rsa-rdfc-2025-cryptosuite`.
+
+Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (TypeORM driver), `ts-loader` (Nest webpack via `nest-cli.json` `webpack: true`).
+
+### Highest practical install-time risk
+
+`@eecc/rsa-multikey` declares `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`). npm auto-installs the unrelated npm package `node` (~116MB binary via `preinstall`). Never `require`d by rsa-multikey. Fix upstream to `engines`. npm `overrides` to a local stub currently breaks install (`Cannot read properties of null`); prefer fixing `@eecc/rsa-multikey` and omitting the binary package from production images.
+
+### Malware / key-theft scan (direct crypto stack)
+
+No install scripts on Digital Bazaar / jose / noble direct packages; pattern scan of those trees showed no SSH/credential exfil (false positives only: W3C “credentials” URLs, FFT method named `eval`). `npm audit` issues are undici desync/DoS and js-yaml/fast-uri DoS — not key exfiltration. Overrides for `undici` / `js-yaml` / `fast-uri` are partially ineffective (still resolving vulnerable patch versions).
+
+### Runtime network in signing path
+
+`DocumentLoaderService` (`apps/app/src/utils/document-loader.service.ts`) `fetch`es arbitrary `@context` / IPFS URLs during Data Integrity signing — SSRF / context-injection surface; prefer allowlisted contexts over open fetch if hardening further.
+
+### Request body validation
+
+`@Body() x: PlainDto | EncryptedPayloadDto` makes Nest’s global `ValidationPipe` skip validation (union → runtime `Object`). Use `RequestBodyValidationPipe` on those endpoints (`apps/app/src/pipes/request-body-validation.pipe.ts`). See `input-validation-implementation.md`.
+

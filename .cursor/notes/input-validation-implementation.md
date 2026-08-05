@@ -38,25 +38,14 @@ Comprehensive E2E test suite with 20+ validation test cases:
 ### 2. Modified Files
 
 #### `apps/app/src/main.ts`
-Added global ValidationPipe with security configuration:
-```typescript
-app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,              // Strip undeclared properties
-    forbidNonWhitelisted: true,   // Reject extra properties
-    transform: true,              // Auto-transform to DTOs
-    validationError: {
-      target: false,              // Don't expose target in errors
-      value: false,               // Don't expose values in errors
-    },
-  })
-);
-```
+Added global ValidationPipe with security configuration (still used for non-union params).
+
+#### `apps/app/src/pipes/request-body-validation.pipe.ts`
+**Required for encrypted-payload unions:** `@Body() x: PlainDto | EncryptedPayloadDto` erases to `Object` at runtime, so the global ValidationPipe skips validation. Parameter pipe validates `EncryptedPayloadDto` when `encryptedData` is present, otherwise the plain DTO.
 
 #### `apps/app/src/app.controller.ts`
 - Updated imports to use DTOs instead of interfaces
-- Changed `SignRequestBody` → `SignRequestDto`
-- Changed `GenerateRequestBody` → `GenerateRequestDto`
+- `@Body(new RequestBodyValidationPipe(...Dto))` on all POST bodies that accept encrypted or plain payloads
 
 #### `apps/app/src/app.service.ts`
 - Updated method signatures to use DTOs

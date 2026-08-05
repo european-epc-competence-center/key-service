@@ -6,12 +6,11 @@ The Key Service supports W3C Data Integrity proofs for Verifiable Credentials an
 
 ## Supported Signature Algorithms
 
-### Ed25519Signature2020
+### EdDSA RDFC 2022 (Ed25519)
 - **Algorithm**: EdDSA with Ed25519 curve
-- **Library**: `@digitalbazaar/ed25519-signature-2020`
-- **Proof Type**: `Ed25519Signature2020`
-- **Key Type**: `Ed25519VerificationKey2020`
-- **Context**: `https://w3id.org/security/suites/ed25519-2020/v1`
+- **Library**: `@digitalbazaar/eddsa-rdfc-2022-cryptosuite` + `@digitalbazaar/data-integrity`
+- **Key library**: `@digitalbazaar/ed25519-multikey`
+- Implementation: `apps/app/src/signing-services/data-integrity-signing.service.ts`
 
 ### ES256Signature2020 (EcdsaSecp256r1Signature2019)
 - **Algorithm**: ECDSA with P-256 curve (ES256)

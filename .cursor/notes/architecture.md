@@ -20,12 +20,12 @@ AppModule
 ### Key Dependencies
 
 - **@nestjs/typeorm** - Database ORM integration
-- **@digitalbazaar/vc** - W3C Verifiable Credentials
-- **@digitalbazaar/ed25519-signature-2020** - Ed25519 signatures for Data Integrity proofs
-- **jsonld-signatures** - Base library for Data Integrity signatures
-- **base58-universal** - Multibase encoding for signature proofs
-- **jose** - JWT operations and ES256 signing
-- **@noble/curves** - Cryptographic curve operations
+- **@digitalbazaar/vc** / **@digitalbazaar/data-integrity** - VC issue + Data Integrity proofs
+- **@digitalbazaar/eddsa-rdfc-2022-cryptosuite** / **ecdsa-rdfc-2019-cryptosuite** / **@eecc/rsa-rdfc-2025-cryptosuite** - DI cryptosuites
+- **@digitalbazaar/ed25519-multikey** / **ecdsa-multikey** / **@eecc/rsa-multikey** - key material
+- **jsonld-signatures** - document loader / Linked Data signatures base
+- **jose** - JWT operations and ES256/PS256 signing
+- See `security.md` → Dependency notes for unused direct deps and the accidental npm `node` peer from `@eecc/rsa-multikey`
 
 ## Database Architecture
 

@@ -162,8 +162,6 @@ async function verifyJwtSignature(
 describe("JwtSigningService", () => {
   let service: JwtSigningService;
   let keyService: KeyService;
-  let keyStorageService: KeyStorageService;
-  let secretService: SecretService;
   let dataSource: DataSource;
   let module: TestingModule;
   let originalSigningKeyPath: string | undefined;
@@ -273,8 +271,6 @@ describe("JwtSigningService", () => {
 
     service = module.get<JwtSigningService>(JwtSigningService);
     keyService = module.get<KeyService>(KeyService);
-    keyStorageService = module.get<KeyStorageService>(KeyStorageService);
-    secretService = module.get<SecretService>(SecretService);
   });
 
   afterAll(async () => {
