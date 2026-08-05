@@ -71,7 +71,31 @@ keyService:
     limits:
       memory: "512Mi"
       cpu: 250m
+
+  # Extra JSON-LD contexts (optional ConfigMap mount at /contexts)
+  extraContexts:
+    enabled: false
+    mountPath: /contexts
+    existingConfigMap: ""
 ```
+
+#### Injecting extra JSON-LD contexts
+
+The image ships common W3C / W3ID contexts under `/app/contexts`. To add organization-specific contexts without rebuilding:
+
+```bash
+kubectl create configmap key-service-contexts \
+  --from-file=manifest.json \
+  --from-file=my-vocab-v1.jsonld \
+  -n key-service
+
+helm upgrade --install key-service ./ \
+  --namespace key-service \
+  --set keyService.extraContexts.enabled=true \
+  --set keyService.extraContexts.existingConfigMap=key-service-contexts
+```
+
+`manifest.json` maps context URLs to filenames in the ConfigMap (see `contexts/README.md`).
 
 #### PostgreSQL Configuration
 

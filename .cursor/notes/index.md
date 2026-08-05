@@ -20,12 +20,15 @@ key-service/
 │   │   ├── filters/            # Global exception handling
 │   │   ├── health/             # Health check endpoints
 │   │   ├── key-services/       # Core key management services
+│   │   ├── pipes/              # Request body validation pipe
 │   │   ├── signing-services/   # Credential signing services
 │   │   ├── types/              # TypeScript type definitions
-│   │   └── utils/              # Utility functions and logging (incl. `format-signing-error.ts`)
+│   │   └── utils/              # Utilities (logging, DocumentLoader, JsonLdContextCache, format-signing-error)
 │   └── test/                   # Test configuration and E2E tests
+├── contexts/                   # Bundled JSON-LD @context cache (shipped in image; inject extras at /contexts)
 ├── docker/                     # Docker configuration
 ├── docs/                       # Security and architecture documentation
+├── helm/                       # Kubernetes Helm chart
 ├── migrations/                 # Database migrations
 ├── scripts/                    # Build and release scripts
 ├── security_audit/             # Multi-agent security audit framework and outputs
@@ -53,6 +56,7 @@ key-service/
 5. **JwtSigningService** - JWT-VC signing implementation
 6. **DataIntegritySigningService** - Data Integrity proof signing
 7. **FailedAttemptsCacheService** - Security rate limiting
+8. **JsonLdContextCache** / **DocumentLoaderService** - Filesystem-backed JSON-LD contexts (+ network fallback)
 
 ### Database
 

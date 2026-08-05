@@ -173,7 +173,7 @@ No install scripts on Digital Bazaar / jose / noble direct packages; pattern sca
 
 ### Runtime network in signing path
 
-`DocumentLoaderService` (`apps/app/src/utils/document-loader.service.ts`) `fetch`es arbitrary `@context` / IPFS URLs during Data Integrity signing — SSRF / context-injection surface; prefer allowlisted contexts over open fetch if hardening further.
+`DocumentLoaderService` resolves `@context` URLs via `JsonLdContextCache` (bundled + injected filesystem dirs) before any fetch. Unknown URLs still `fetch` over HTTP/IPFS — residual SSRF / context-injection surface; prefer shipping or mounting contexts under `contexts/` / `/contexts` rather than open fetch.
 
 ### Request body validation
 

@@ -125,6 +125,7 @@ Full Helm deployment documentation: `helm/README.md`
 - Helm: `securityContext` uses `runAsUser` / `runAsGroup` **65532** (distroless `nonroot`)
 - `tsx` is dev-only so production images omit `esbuild` (Go stdlib scanner findings)
 - Production dependencies only in final image (PostgreSQL via `pg`; no `sqlite3`)
+- Bundled JSON-LD contexts at `/app/contexts`; optional inject mount `/contexts` (`JSONLD_CONTEXT_DIRS`, Helm `keyService.extraContexts`)
 
 ### Runtime base trade-offs (distroless vs bookworm-slim)
 

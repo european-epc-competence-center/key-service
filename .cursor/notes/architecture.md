@@ -14,8 +14,15 @@ AppModule
 ├── JwtSigningService (JWT-VC signing)
 ├── DataIntegritySigningService (DI proofs - Ed25519 & ES256)
 │   └── Uses ES256Signature2020 custom suite
-└── DocumentLoaderService (JSON-LD)
+└── DocumentLoaderService (JSON-LD) → JsonLdContextCache (filesystem)
 ```
+
+### JSON-LD context cache
+
+- Bundled: `contexts/` → `/app/contexts` in image (`manifest.json` URL→file)
+- Inject: mount at `/contexts` or set `JSONLD_CONTEXT_DIRS`; later dirs override same URL
+- Loader order: FS cache → in-memory TTL → HTTP/IPFS fetch
+- Code: `jsonld-context-cache.ts`, `document-loader.service.ts`; ops: `contexts/README.md`
 
 ### Key Dependencies
 
@@ -60,6 +67,7 @@ AppModule
 - Node environment (NODE_ENV)
 - Signing key path (SIGNING_KEY_PATH)
 - Inter-service request decryption (INTER_SERVICE_ENCRYPTION_ENABLED, INTER_SERVICE_SHARED_SECRET)
+- JSON-LD context dirs (`JSONLD_CONTEXT_DIRS`; default cwd `contexts/` + `/contexts` if present)
 
 ## Signing Service Architecture
 

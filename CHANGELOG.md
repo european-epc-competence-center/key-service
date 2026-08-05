@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Persistent filesystem JSON-LD context cache shipped with the image (`contexts/`); Data Integrity signing resolves bundled contexts without network fetch
+- Deploy-time context injection via mount at `/contexts` or `JSONLD_CONTEXT_DIRS` (Helm `keyService.extraContexts`)
 - `RequestBodyValidationPipe` so DTO validation works for endpoints that accept plain DTOs or `EncryptedPayloadDto` (TypeScript unions made Nest’s global `ValidationPipe` skip validation)
 
 ### Fixed

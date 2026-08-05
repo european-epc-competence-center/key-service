@@ -28,11 +28,14 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Bundled contexts + conventional mount for deploy-time injection (see contexts/README.md)
+ENV JSONLD_CONTEXT_DIRS=/app/contexts:/contexts
 
 # Copy the built application
 COPY --from=builder --chown=nonroot:nonroot /app/dist ./dist
 COPY --from=deps --chown=nonroot:nonroot /app/node_modules ./node_modules
 COPY --from=builder --chown=nonroot:nonroot /app/package.json ./package.json
+COPY --from=builder --chown=nonroot:nonroot /app/contexts ./contexts
 
 # Expose the port the app runs on
 EXPOSE 3000

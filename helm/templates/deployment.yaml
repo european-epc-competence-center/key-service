@@ -89,6 +89,11 @@ spec:
               mountPath: /run/secrets/db-tls
               readOnly: true
             {{- end }}
+            {{- if .Values.keyService.extraContexts.enabled }}
+            - name: extra-contexts
+              mountPath: {{ .Values.keyService.extraContexts.mountPath | quote }}
+              readOnly: true
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -116,6 +121,11 @@ spec:
           secret:
             secretName: {{ .Values.database.ssl.clientTlsSecretName }}
             defaultMode: 0444
+        {{- end }}
+        {{- if .Values.keyService.extraContexts.enabled }}
+        - name: extra-contexts
+          configMap:
+            name: {{ required "keyService.extraContexts.existingConfigMap is required when extraContexts.enabled" .Values.keyService.extraContexts.existingConfigMap }}
         {{- end }}
       {{- if .Values.postgresql.enabled }}
       initContainers:

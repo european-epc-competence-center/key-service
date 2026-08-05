@@ -72,6 +72,14 @@ keyService:
     type: ClusterIP
     port: 3000
   
+  # Extra JSON-LD contexts mounted at /contexts (merged with image-bundled /app/contexts).
+  # Create a ConfigMap with manifest.json + *.jsonld files, then set existingConfigMap.
+  # See contexts/README.md
+  extraContexts:
+    enabled: false
+    mountPath: /contexts
+    existingConfigMap: ""
+
   # Signing key configuration
   # ⚠️ WARNING: Auto-generated signing key is ONLY for dev/test!
   # For PRODUCTION: Use HashiCorp Vault to mount the signing key

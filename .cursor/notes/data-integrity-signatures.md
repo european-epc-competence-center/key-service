@@ -22,6 +22,10 @@ The Key Service supports W3C Data Integrity proofs for Verifiable Credentials an
 
 ## Implementation Details
 
+### JSON-LD document loading
+
+`DocumentLoaderService` uses `JsonLdContextCache` for filesystem-backed contexts (`contexts/` in the image, optional `/contexts` mount). Bundled URLs are not fetched; unknown URLs still use HTTP/IPFS with an in-memory TTL cache. See `contexts/README.md`.
+
 ### ES256Signature2020 Custom Suite
 
 The ES256Signature2020 suite is a custom implementation following the Digital Bazaar signature suite pattern:

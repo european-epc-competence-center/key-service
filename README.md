@@ -170,7 +170,16 @@ CORS_MAX_AGE=86400           # Preflight cache duration in seconds (default: 864
 
 # Security Configuration
 PBKDF2_ITERATIONS=100000     # PBKDF2 iterations for key derivation (default: 100000)
+
+# JSON-LD context cache (Data Integrity signing)
+# Colon-separated dirs with manifest.json + *.jsonld (see contexts/README.md).
+# Image default: /app/contexts:/contexts — bundled contexts never need network fetch.
+# JSONLD_CONTEXT_DIRS=/app/contexts:/contexts
 ```
+
+### JSON-LD context cache
+
+Data Integrity signing resolves `@context` URLs via a filesystem cache shipped in the image (`contexts/`). Mount additional contexts at `/contexts` (or set `JSONLD_CONTEXT_DIRS`) so custom vocabularies do not require outbound fetches. See [`contexts/README.md`](contexts/README.md).
 
 ### Production Recommendations
 
@@ -673,6 +682,7 @@ key-service/
 │   ├── types/               # TypeScript type definitions
 │   ├── utils/               # Utility functions and logging
 │   └── main.ts              # Application entry point
+├── contexts/                # Bundled JSON-LD @context cache (inject extras at /contexts)
 ├── docker/                  # Docker configuration
 ├── migrations/              # Database migrations
 ├── docs/                    # Documentation
