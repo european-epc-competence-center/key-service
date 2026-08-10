@@ -61,6 +61,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JWT-VC / JWT-VP signing: JOSE protected header now includes `typ` `vc+jwt` / `vp+jwt` per [VC-JOSE-COSE](https://www.w3.org/TR/vc-jose-cose/)
 
 
+## [Unreleased]
+
+### Changed
+- Database migration renames `keys` table columns to snake_case for PostgreSQL version/settings compatibility
+- `varchar` columns on `keys` table replaced with `text` (`identifier`, `key_type`, `signature_type`)
+- `EncryptedKey` entity maps TypeScript properties to snake_case database column names
+
 ## [2.5.0] - 2026-07-03
 
 ### Added

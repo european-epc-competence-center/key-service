@@ -86,9 +86,20 @@ npm run release:major  # Breaking changes
 ### Migration Workflow
 ```bash
 npm run migration:generate  # Generate migration from entity changes
-npm run migration:run      # Apply pending migrations
+npm run migration:run      # Apply pending migrations (may need tsx CLI — see below)
 npm run migration:revert   # Rollback last migration
 ```
+
+If `npm run migration:run` fails with module resolution errors, use:
+```bash
+npx tsx ./node_modules/typeorm/cli.js migration:run -d migrations/data-source.ts
+```
+
+### Schema Conventions
+- `keys` table columns use **snake_case** names (`key_type`, `signature_type`, `encrypted_private_key`, `encrypted_public_key`, `created_at`) for PostgreSQL compatibility across versions/settings
+- String columns use `text` (not `varchar`)
+- `EncryptedKey` entity maps camelCase TypeScript properties to snake_case DB columns via `@Column({ name: "..." })`
+- Production runs migrations on startup (`migrationsRun`); dev/tests use `synchronize`
 
 ### Entity Management
 - TypeORM entities in `apps/app/src/key-services/entities/`
