@@ -8,6 +8,7 @@ import { FailedAttemptsCacheService } from "./failed-attempts-cache.service";
 import { EncryptedKey } from "./entities/encrypted-key.entity";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
+import { failedAttemptsCacheConfig } from "../config/failed-attempts.config";
 import * as fs from "fs";
 
 // Mock fs module for this test file only
@@ -42,6 +43,7 @@ describe("KeyService", () => {
   let service: KeyService;
   let keyStorageService: KeyStorageService;
   let secretService: SecretService;
+  let failedAttemptsCache: FailedAttemptsCacheService;
   let dataSource: DataSource;
   let module: TestingModule;
   let originalSigningKeyPath: string | undefined;
@@ -88,6 +90,9 @@ describe("KeyService", () => {
     service = module.get<KeyService>(KeyService);
     keyStorageService = module.get<KeyStorageService>(KeyStorageService);
     secretService = module.get<SecretService>(SecretService);
+    failedAttemptsCache = module.get<FailedAttemptsCacheService>(
+      FailedAttemptsCacheService
+    );
   });
 
   afterAll(async () => {
@@ -633,6 +638,82 @@ describe("KeyService", () => {
       expect(result.publicKey).toBeDefined();
       expect(result.privateKey).toBeDefined();
       expect(typeof result.signer).toBe("function");
+    });
+
+    it("should derive id and controller from the identifier when no keyReference is given", async () => {
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(mockIdentifier, mockSecrets);
+
+      expect(result.id).toBe(mockIdentifier);
+      expect(result.controller).toBe("did:web:example.com");
+    });
+
+    it("should report the public identifier while loading the key stored under keyReference", async () => {
+      const storedId = "did:web:example.com:companies:acme#key-1";
+      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+
+      const generated = await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(publicId, mockSecrets, storedId);
+
+      // Public id is reported...
+      expect(result.id).toBe(publicId);
+      expect(result.controller).toBe(
+        "did:webvh:QmScid1:example.com:companies:acme"
+      );
+      // ...while the key material is the one stored under `storedId`
+      expect(result.publicKey).toBe(generated.publicKeyMultibase);
+      expect(typeof result.signer).toBe("function");
+    });
+
+    it("should fall back to the identifier when keyReference is empty", async () => {
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(mockIdentifier, mockSecrets, "");
+
+      expect(result.id).toBe(mockIdentifier);
+    });
+
+    it("should count failed decryption attempts against keyReference, not the public identifier", async () => {
+      const storedId = "did:web:brute-force.com#key-1";
+      const publicId = "did:webvh:QmScid2:brute-force.com#key-1";
+      const wrongSecrets = ["wrong-secret"];
+
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      for (let i = 0; i < failedAttemptsCacheConfig.maxFailedAttempts; i++) {
+        await expect(
+          service.getKeyPair(publicId, wrongSecrets, storedId)
+        ).rejects.toThrow();
+      }
+
+      expect(failedAttemptsCache.isBlocked(secretService.hash(storedId))).toBe(
+        true
+      );
+      expect(failedAttemptsCache.isBlocked(secretService.hash(publicId))).toBe(
+        false
+      );
     });
   });
 

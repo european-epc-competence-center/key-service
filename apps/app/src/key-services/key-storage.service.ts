@@ -62,9 +62,14 @@ export class KeyStorageService {
     }
   }
 
+  /**
+   * Retrieve and decrypt a stored key pair. Lookup, brute-force protection and error messages
+   * all use `identifier`; `publicIdentifier` only changes the `id` / `controller` reported back.
+   */
   async retrieveKey(
     identifier: string,
-    secrets: string[]
+    secrets: string[],
+    publicIdentifier: string = identifier
   ): Promise<RawKeypair> {
     const hashedIdentifier = this.secretService.hash(identifier);
 
@@ -99,10 +104,10 @@ export class KeyStorageService {
       );
 
       return {
-        id: identifier,
+        id: publicIdentifier,
         keyType: encryptedKey.keyType as KeyType,
         signatureType: encryptedKey.signatureType as SignatureType,
-        controller: identifier.split("#")[0],
+        controller: publicIdentifier.split("#")[0],
         privateKey: JSON.parse(decryptedPrivateKey),
         publicKey: JSON.parse(decryptedPublicKey),
       };
