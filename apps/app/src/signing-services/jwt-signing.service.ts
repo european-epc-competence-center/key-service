@@ -36,6 +36,7 @@ export class JwtSigningService {
     credential: VerifiableCredential,
     verificationMethod: string,
     secrets: string[],
+    keyReference?: string,
   ): Promise<string> {
     const setIssuer = (keyPairId: string) => {
       if (!credential.issuer || typeof credential.issuer === "string") {
@@ -61,6 +62,7 @@ export class JwtSigningService {
       verificationMethod,
       secrets,
       VC_JWT_TYP,
+      keyReference,
       credential.validUntil,
       setIssuer,
     );
@@ -74,12 +76,14 @@ export class JwtSigningService {
     challenge?: string,
     domain?: string,
     validUntil?: string,
+    keyReference?: string,
   ): Promise<string> {
     return this.signJwtVerifiable(
       presentation,
       verificationMethod,
       secrets,
       VP_JWT_TYP,
+      keyReference,
       validUntil || presentation.validUntil,
       () => {},
       challenge,
@@ -100,11 +104,13 @@ export class JwtSigningService {
     credentialIssuerIdentifier: string,
     challenge?: string,
     validUntil?: string,
+    keyReference?: string,
   ): Promise<string> {
     try {
       const keyPair = await this.keyService.getKeyPair(
         verificationMethod,
         secrets,
+        keyReference,
       );
       const signer = await keyPair.signer();
       const iat = Math.floor(Date.now() / 1000);
@@ -160,6 +166,7 @@ export class JwtSigningService {
     verificationMethod: string,
     secrets: string[],
     typ: typeof VC_JWT_TYP | typeof VP_JWT_TYP,
+    keyReference?: string,
     validUntil?: string,
     preSignHook?: (keyPairId: string) => void,
     nonce?: string,
@@ -168,7 +175,8 @@ export class JwtSigningService {
     try {
       const keyPair = await this.keyService.getKeyPair(
         verificationMethod,
-        secrets
+        secrets,
+        keyReference
       );
       const signer = await keyPair.signer();
       const iat = Math.floor(Date.now() / 1000);

@@ -31,19 +31,22 @@ export class DataIntegritySigningService {
   /**
    * Sign a verifiable credential using Data Integrity proof
    * @param credential - The verifiable credential to sign
-   * @param verificationMethod - The verification method identifier
+   * @param verificationMethod - The verification method identifier; the public id that ends up in `proof.verificationMethod`
    * @param secrets - Array of secrets for key derivation
+   * @param keyReference - Id the key is stored under, when it differs from `verificationMethod`
    * @returns Signed verifiable credential with proof
    */
   async signCredential(
     credential: VerifiableCredential,
     verificationMethod: string,
     secrets: string[],
+    keyReference?: string,
   ): Promise<VerifiableCredential> {
 
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
-      secrets
+      secrets,
+      keyReference
     );
 
     let suite;
@@ -83,11 +86,12 @@ export class DataIntegritySigningService {
   /**
    * Sign a verifiable presentation using Data Integrity proof
    * @param presentation - The verifiable presentation to sign
-   * @param verificationMethod - The verification method identifier
+   * @param verificationMethod - The verification method identifier; the public id that ends up in `proof.verificationMethod`
    * @param secrets - Array of secrets for key derivation
    * @param challenge - Challenge for the proof (e.g. OpenID4VCI `c_nonce` for `di_vp` when the issuer uses a Nonce Endpoint)
    * @param domain - Optional domain for the proof; required for OpenID4VCI `di_vp` (Credential Issuer Identifier), enforced at `AppService.signProofOfPossession`
    * @param validUntil - ISO 8601 date-time; overwrites `presentation.validUntil` when set
+   * @param keyReference - Id the key is stored under, when it differs from `verificationMethod`
    * @returns Signed verifiable presentation with proof
    */
   async signPresentation(
@@ -97,11 +101,13 @@ export class DataIntegritySigningService {
     challenge: string = "",
     domain?: string,
     validUntil?: string,
+    keyReference?: string,
   ): Promise<VerifiablePresentation> {
 
     const keyPair = await this.keyService.getKeyPair(
       verificationMethod,
-      secrets
+      secrets,
+      keyReference
     );
     
     let suite;

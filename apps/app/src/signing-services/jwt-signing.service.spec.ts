@@ -2523,4 +2523,37 @@ describe("JwtSigningService", () => {
     });
 
   });
+
+  describe("keyReference", () => {
+    it("should use the public identifier as kid / iss while signing with the referenced key", async () => {
+      const storedId = "did:web:example.com:companies:acme#key-1";
+      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const jwt = await service.signCredential(
+        exampleCredentialV2,
+        publicId,
+        mockSecrets,
+        storedId
+      );
+
+      const header = JSON.parse(
+        Buffer.from(jwt.split(".")[0], "base64url").toString()
+      );
+      const payload = JSON.parse(
+        Buffer.from(jwt.split(".")[1], "base64url").toString()
+      );
+      expect(header.kid).toBe(publicId);
+      expect(header.iss).toBe("did:webvh:QmScid1:example.com:companies:acme");
+      expect(payload.issuer).toBe(
+        "did:webvh:QmScid1:example.com:companies:acme"
+      );
+    });
+  });
 });

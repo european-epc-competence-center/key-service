@@ -90,6 +90,19 @@ export class SignRequestDto extends KeyRequestDto {
   verifiable?: VerifiableCredential | VerifiablePresentation;
 
   /**
+   * Id the key is stored under, when that differs from `identifier` — e.g. signing under a
+   * did:webvh id with a key generated under the did:web twin. `identifier` then supplies only
+   * the public id (`proof.verificationMethod`, JWT `kid` / `iss`, issuer, holder).
+   * Omitted or empty, the key is looked up by `identifier` as before.
+   */
+  @IsOptional()
+  @IsString({ message: "Key reference must be a string" })
+  @MaxLength(MAX_IDENTIFIER_LENGTH, {
+    message: `Key reference must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
+  })
+  keyReference?: string;
+
+  /**
    * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).
    * Also accepts property name `nonce`.
    */

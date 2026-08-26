@@ -3580,4 +3580,31 @@ describe("DataIntegritySigningService", () => {
 
     });
   });
+
+  describe("keyReference", () => {
+    it("should name the public identifier in proof.verificationMethod while signing with the referenced key", async () => {
+      const storedId = "did:web:example.com:companies:acme#key-1";
+      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.signCredential(
+        exampleCredentialV2,
+        publicId,
+        mockSecrets,
+        storedId
+      );
+
+      const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
+      expect(proof?.verificationMethod).toBe(publicId);
+      expect(result.issuer).toBe(
+        "did:webvh:QmScid1:example.com:companies:acme"
+      );
+    });
+  });
 });

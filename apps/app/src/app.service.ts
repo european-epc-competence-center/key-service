@@ -77,7 +77,7 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
-    const { verifiable, identifier, secrets } = decryptedBody;
+    const { verifiable, identifier, secrets, keyReference } = decryptedBody;
     if (!verifiable) {
       throw new BadRequestException(
         "Verifiable credential is required for credential signing"
@@ -88,6 +88,7 @@ export class AppService {
       verifiable as VerifiableCredential,
       identifier,
       secrets,
+      keyReference,
     );
   }
 
@@ -95,8 +96,15 @@ export class AppService {
     type: SignType,
     body: SignRequestDto | EncryptedPayloadDto
   ): Promise<VerifiablePresentation | string> {
-    const { verifiable, identifier, secrets, challenge, domain, validUntil } =
-      this.decryptPayloadIfNeeded<SignRequestDto>(body);
+    const {
+      verifiable,
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      validUntil,
+      keyReference,
+    } = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     if (!verifiable) {
       throw new BadRequestException(
         "Verifiable presentation is required for presentation signing"
@@ -110,6 +118,7 @@ export class AppService {
       challenge,
       domain,
       validUntil?.trim() || undefined,
+      keyReference,
     );
   }
 
@@ -129,7 +138,7 @@ export class AppService {
     }
 
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
-    const { identifier, secrets, challenge, domain, validUntil } =
+    const { identifier, secrets, challenge, domain, validUntil, keyReference } =
       decryptedBody;
 
     if (type === SignType.JWT) {
@@ -145,6 +154,7 @@ export class AppService {
         aud,
         challenge?.trim() || undefined,
         validUntil?.trim() || undefined,
+        keyReference,
       );
     }
 
