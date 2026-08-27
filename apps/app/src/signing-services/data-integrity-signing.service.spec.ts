@@ -3582,10 +3582,11 @@ describe("DataIntegritySigningService", () => {
   });
 
   describe("keyReference", () => {
-    it("should name the public identifier in proof.verificationMethod while signing with the referenced key", async () => {
-      const storedId = "did:web:example.com:companies:acme#key-1";
-      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+    const storedId = "did:web:example.com:companies:acme#key-1";
+    const publicId =
+      "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
 
+    it("should name the public identifier in proof.verificationMethod while signing with the referenced key", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -3603,8 +3604,37 @@ describe("DataIntegritySigningService", () => {
       const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
       expect(proof?.verificationMethod).toBe(publicId);
       expect(result.issuer).toBe(
-        "did:webvh:QmScid1:example.com:companies:acme"
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
       );
+    });
+
+    it("should name the public identifier in a presentation proof", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.signPresentation(
+        {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+          ],
+          type: ["VerifiablePresentation"],
+        },
+        publicId,
+        mockSecrets,
+        DEFAULT_CHALLENGE,
+        undefined,
+        undefined,
+        storedId
+      );
+
+      const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
+      expect(proof?.verificationMethod).toBe(publicId);
+      expect(result.holder).toBe(publicId.split("#")[0]);
     });
   });
 });

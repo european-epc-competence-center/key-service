@@ -2525,10 +2525,11 @@ describe("JwtSigningService", () => {
   });
 
   describe("keyReference", () => {
-    it("should use the public identifier as kid / iss while signing with the referenced key", async () => {
-      const storedId = "did:web:example.com:companies:acme#key-1";
-      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+    const storedId = "did:web:example.com:companies:acme#key-1";
+    const publicId =
+      "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
 
+    it("should use the public identifier as kid and iss while signing with the referenced key", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -2550,10 +2551,49 @@ describe("JwtSigningService", () => {
         Buffer.from(jwt.split(".")[1], "base64url").toString()
       );
       expect(header.kid).toBe(publicId);
-      expect(header.iss).toBe("did:webvh:QmScid1:example.com:companies:acme");
-      expect(payload.issuer).toBe(
-        "did:webvh:QmScid1:example.com:companies:acme"
+      expect(header.iss).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
       );
+      expect(payload.issuer).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
+      );
+    });
+
+    it("should use the public identifier for presentation and proof-of-possession JWTs", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const presentationJwt = await service.signPresentation(
+        {
+          "@context": ["https://www.w3.org/ns/credentials/v2"],
+          type: ["VerifiablePresentation"],
+        },
+        publicId,
+        mockSecrets,
+        undefined,
+        undefined,
+        undefined,
+        storedId
+      );
+      const proofJwt = await service.signProofOfPossession(
+        publicId,
+        mockSecrets,
+        "https://issuer.example",
+        undefined,
+        undefined,
+        storedId
+      );
+
+      for (const jwt of [presentationJwt, proofJwt]) {
+        const header = JSON.parse(
+          Buffer.from(jwt.split(".")[0], "base64url").toString()
+        );
+        expect(header.kid).toBe(publicId);
+      }
     });
   });
 });

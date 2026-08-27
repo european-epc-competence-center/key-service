@@ -90,10 +90,11 @@ export class SignRequestDto extends KeyRequestDto {
   verifiable?: VerifiableCredential | VerifiablePresentation;
 
   /**
-   * Id the key is stored under, when that differs from `identifier` — e.g. signing under a
-   * did:webvh id with a key generated under the did:web twin. `identifier` then supplies only
-   * the public id (`proof.verificationMethod`, JWT `kid` / `iss`, issuer, holder).
-   * Omitted or empty, the key is looked up by `identifier` as before.
+   * Identifier under which the key is stored when it differs from `identifier` — for example,
+   * when the same public key is published in paired `did:web` and `did:webvh` DID documents.
+   * In that case, `identifier` is the public verification-method ID used for the signature,
+   * while `keyReference` is used only to retrieve and decrypt the stored key.
+   * When omitted or empty, the key is looked up by `identifier` as before.
    */
   @IsOptional()
   @IsString({ message: "Key reference must be a string" })

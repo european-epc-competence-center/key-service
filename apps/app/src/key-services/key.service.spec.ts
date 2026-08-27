@@ -656,7 +656,8 @@ describe("KeyService", () => {
 
     it("should report the public identifier while loading the key stored under keyReference", async () => {
       const storedId = "did:web:example.com:companies:acme#key-1";
-      const publicId = "did:webvh:QmScid1:example.com:companies:acme#key-1";
+      const publicId =
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
 
       const generated = await service.generateKeyPair(
         SignatureType.ED25519_2020,
@@ -670,7 +671,7 @@ describe("KeyService", () => {
       // Public id is reported...
       expect(result.id).toBe(publicId);
       expect(result.controller).toBe(
-        "did:webvh:QmScid1:example.com:companies:acme"
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
       );
       // ...while the key material is the one stored under `storedId`
       expect(result.publicKey).toBe(generated.publicKeyMultibase);
@@ -692,7 +693,8 @@ describe("KeyService", () => {
 
     it("should count failed decryption attempts against keyReference, not the public identifier", async () => {
       const storedId = "did:web:brute-force.com#key-1";
-      const publicId = "did:webvh:QmScid2:brute-force.com#key-1";
+      const publicId =
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4q:brute-force.com#key-1";
       const wrongSecrets = ["wrong-secret"];
 
       await service.generateKeyPair(

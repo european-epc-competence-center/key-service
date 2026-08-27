@@ -1,5 +1,5 @@
 import { RequestBodyValidationPipe } from "./request-body-validation.pipe";
-import { GenerateRequestDto } from "../types/request.dto";
+import { GenerateRequestDto, SignRequestDto } from "../types/request.dto";
 import { EncryptedPayloadDto } from "../types/encrypted-payload.dto";
 
 describe("RequestBodyValidationPipe", () => {
@@ -66,5 +66,35 @@ describe("RequestBodyValidationPipe", () => {
     await expect(
       pipe.transform({ encryptedData: "" }, bodyMeta)
     ).rejects.toMatchObject({ response: { statusCode: 400 } });
+  });
+
+  describe("signing key reference", () => {
+    const signPipe = new RequestBodyValidationPipe(SignRequestDto);
+
+    it("accepts an optional string keyReference", async () => {
+      const result = await signPipe.transform(
+        {
+          secrets: ["secret1"],
+          identifier: "public-key",
+          keyReference: "stored-key",
+        },
+        bodyMeta
+      );
+
+      expect(result).toBeInstanceOf(SignRequestDto);
+    });
+
+    it("rejects a non-string keyReference", async () => {
+      await expect(
+        signPipe.transform(
+          {
+            secrets: ["secret1"],
+            identifier: "public-key",
+            keyReference: 123,
+          },
+          bodyMeta
+        )
+      ).rejects.toMatchObject({ response: { statusCode: 400 } });
+    });
   });
 });

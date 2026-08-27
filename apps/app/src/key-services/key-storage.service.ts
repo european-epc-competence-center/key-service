@@ -62,10 +62,6 @@ export class KeyStorageService {
     }
   }
 
-  /**
-   * Retrieve and decrypt a stored key pair. Lookup, brute-force protection and error messages
-   * all use `identifier`; `publicIdentifier` only changes the `id` / `controller` reported back.
-   */
   async retrieveKey(
     identifier: string,
     secrets: string[],
