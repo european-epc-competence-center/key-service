@@ -64,7 +64,8 @@ export class KeyStorageService {
 
   async retrieveKey(
     identifier: string,
-    secrets: string[]
+    secrets: string[],
+    publicIdentifier: string = identifier
   ): Promise<RawKeypair> {
     const hashedIdentifier = this.secretService.hash(identifier);
 
@@ -99,10 +100,10 @@ export class KeyStorageService {
       );
 
       return {
-        id: identifier,
+        id: publicIdentifier,
         keyType: encryptedKey.keyType as KeyType,
         signatureType: encryptedKey.signatureType as SignatureType,
-        controller: identifier.split("#")[0],
+        controller: publicIdentifier.split("#")[0],
         privateKey: JSON.parse(decryptedPrivateKey),
         publicKey: JSON.parse(decryptedPublicKey),
       };

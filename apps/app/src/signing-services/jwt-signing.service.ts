@@ -34,8 +34,9 @@ export class JwtSigningService {
 
   async signCredential(
     credential: VerifiableCredential,
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
+    publicIdentifier?: string,
   ): Promise<string> {
     const setIssuer = (keyPairId: string) => {
       if (!credential.issuer || typeof credential.issuer === "string") {
@@ -58,9 +59,10 @@ export class JwtSigningService {
 
     return this.signJwtVerifiable(
       credential,
-      verificationMethod,
+      identifier,
       secrets,
       VC_JWT_TYP,
+      publicIdentifier,
       credential.validUntil,
       setIssuer,
     );
@@ -69,17 +71,19 @@ export class JwtSigningService {
   /** W3C JWT VP (`POST /sign/vp/jwt`). Sets `exp` from `validUntil` ISO 8601 when present. */
   async signPresentation(
     presentation: VerifiablePresentation,
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
     challenge?: string,
     domain?: string,
     validUntil?: string,
+    publicIdentifier?: string,
   ): Promise<string> {
     return this.signJwtVerifiable(
       presentation,
-      verificationMethod,
+      identifier,
       secrets,
       VP_JWT_TYP,
+      publicIdentifier,
       validUntil || presentation.validUntil,
       () => {},
       challenge,
@@ -95,16 +99,18 @@ export class JwtSigningService {
    * HTTP: `POST /sign/pop/jwt` — `domain` is required (maps to `aud`); `verifiable` is optional and ignored.
    */
   async signProofOfPossession(
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
     credentialIssuerIdentifier: string,
     challenge?: string,
     validUntil?: string,
+    publicIdentifier?: string,
   ): Promise<string> {
     try {
       const keyPair = await this.keyService.getKeyPair(
-        verificationMethod,
+        identifier,
         secrets,
+        publicIdentifier,
       );
       const signer = await keyPair.signer();
       const iat = Math.floor(Date.now() / 1000);
@@ -157,9 +163,10 @@ export class JwtSigningService {
    */
   private async signJwtVerifiable(
     payload: VerifiableCredential | VerifiablePresentation,
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
     typ: typeof VC_JWT_TYP | typeof VP_JWT_TYP,
+    publicIdentifier?: string,
     validUntil?: string,
     preSignHook?: (keyPairId: string) => void,
     nonce?: string,
@@ -167,8 +174,9 @@ export class JwtSigningService {
   ): Promise<string> {
     try {
       const keyPair = await this.keyService.getKeyPair(
-        verificationMethod,
-        secrets
+        identifier,
+        secrets,
+        publicIdentifier
       );
       const signer = await keyPair.signer();
       const iat = Math.floor(Date.now() / 1000);

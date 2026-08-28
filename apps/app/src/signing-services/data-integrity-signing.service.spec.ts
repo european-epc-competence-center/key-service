@@ -3580,4 +3580,61 @@ describe("DataIntegritySigningService", () => {
 
     });
   });
+
+  describe("publicIdentifier", () => {
+    const storedId = "did:web:example.com:companies:acme#key-1";
+    const publicId =
+      "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
+
+    it("should name the publicIdentifier in proof.verificationMethod while signing with the stored key", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.signCredential(
+        exampleCredentialV2,
+        storedId,
+        mockSecrets,
+        publicId
+      );
+
+      const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
+      expect(proof?.verificationMethod).toBe(publicId);
+      expect(result.issuer).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
+      );
+    });
+
+    it("should name the publicIdentifier in a presentation proof", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.signPresentation(
+        {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+          ],
+          type: ["VerifiablePresentation"],
+        },
+        storedId,
+        mockSecrets,
+        DEFAULT_CHALLENGE,
+        undefined,
+        undefined,
+        publicId
+      );
+
+      const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
+      expect(proof?.verificationMethod).toBe(publicId);
+      expect(result.holder).toBe(publicId.split("#")[0]);
+    });
+  });
 });

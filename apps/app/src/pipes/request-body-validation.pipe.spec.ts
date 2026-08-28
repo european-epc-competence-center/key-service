@@ -1,5 +1,5 @@
 import { RequestBodyValidationPipe } from "./request-body-validation.pipe";
-import { GenerateRequestDto } from "../types/request.dto";
+import { GenerateRequestDto, SignRequestDto } from "../types/request.dto";
 import { EncryptedPayloadDto } from "../types/encrypted-payload.dto";
 
 describe("RequestBodyValidationPipe", () => {
@@ -66,5 +66,48 @@ describe("RequestBodyValidationPipe", () => {
     await expect(
       pipe.transform({ encryptedData: "" }, bodyMeta)
     ).rejects.toMatchObject({ response: { statusCode: 400 } });
+  });
+
+  describe("signing public identifier", () => {
+    const signPipe = new RequestBodyValidationPipe(SignRequestDto);
+
+    it("accepts an optional publicIdentifier", async () => {
+      const result = await signPipe.transform(
+        {
+          secrets: ["secret1"],
+          identifier: "stored-key",
+          publicIdentifier: "did:webvh:QmYwAPJzv5:example.com#key-1",
+        },
+        bodyMeta
+      );
+
+      expect(result).toBeInstanceOf(SignRequestDto);
+    });
+
+    it("rejects an empty publicIdentifier", async () => {
+      await expect(
+        signPipe.transform(
+          {
+            secrets: ["secret1"],
+            identifier: "stored-key",
+            publicIdentifier: "",
+          },
+          bodyMeta
+        )
+      ).rejects.toMatchObject({ response: { statusCode: 400 } });
+    });
+
+    it("rejects a non-string publicIdentifier", async () => {
+      await expect(
+        signPipe.transform(
+          {
+            secrets: ["secret1"],
+            identifier: "stored-key",
+            publicIdentifier: 123,
+          },
+          bodyMeta
+        )
+      ).rejects.toMatchObject({ response: { statusCode: 400 } });
+    });
   });
 });

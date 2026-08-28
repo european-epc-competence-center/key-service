@@ -54,13 +54,18 @@ export class KeyService {
     throw new UnsupportedException(`Unsupported key type: ${keyType}`);
   }
 
-  async getKeyPair(identifier: string, secrets: string[]): Promise<KeyPair> {
+  async getKeyPair(
+    identifier: string,
+    secrets: string[],
+    publicIdentifier: string = identifier
+  ): Promise<KeyPair> {
     if (!secrets || secrets.length === 0) {
       throw new Error("At least one secret must be provided");
     }
     const storedKey = await this.keyStorageService.retrieveKey(
       identifier,
-      secrets
+      secrets,
+      publicIdentifier
     );
     if (
       storedKey.signatureType === SignatureType.ED25519_2020

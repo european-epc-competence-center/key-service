@@ -2523,4 +2523,77 @@ describe("JwtSigningService", () => {
     });
 
   });
+
+  describe("publicIdentifier", () => {
+    const storedId = "did:web:example.com:companies:acme#key-1";
+    const publicId =
+      "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
+
+    it("should use the publicIdentifier as kid and iss while signing with the stored key", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const jwt = await service.signCredential(
+        exampleCredentialV2,
+        storedId,
+        mockSecrets,
+        publicId
+      );
+
+      const header = JSON.parse(
+        Buffer.from(jwt.split(".")[0], "base64url").toString()
+      );
+      const payload = JSON.parse(
+        Buffer.from(jwt.split(".")[1], "base64url").toString()
+      );
+      expect(header.kid).toBe(publicId);
+      expect(header.iss).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
+      );
+      expect(payload.issuer).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
+      );
+    });
+
+    it("should use the publicIdentifier for presentation and proof-of-possession JWTs", async () => {
+      await keyService.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const presentationJwt = await service.signPresentation(
+        {
+          "@context": ["https://www.w3.org/ns/credentials/v2"],
+          type: ["VerifiablePresentation"],
+        },
+        storedId,
+        mockSecrets,
+        undefined,
+        undefined,
+        undefined,
+        publicId
+      );
+      const proofJwt = await service.signProofOfPossession(
+        storedId,
+        mockSecrets,
+        "https://issuer.example",
+        undefined,
+        undefined,
+        publicId
+      );
+
+      for (const jwt of [presentationJwt, proofJwt]) {
+        const header = JSON.parse(
+          Buffer.from(jwt.split(".")[0], "base64url").toString()
+        );
+        expect(header.kid).toBe(publicId);
+      }
+    });
+  });
 });

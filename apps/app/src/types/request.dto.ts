@@ -90,6 +90,20 @@ export class SignRequestDto extends KeyRequestDto {
   verifiable?: VerifiableCredential | VerifiablePresentation;
 
   /**
+   * Verification-method ID to publish in the signature when it differs from `identifier` — for
+   * example, when the same public key is published in paired `did:web` and `did:webvh` DID
+   * documents. `identifier` still locates the stored key; this only replaces the published
+   * `proof.verificationMethod` / JWT `kid` and the controller derived from it.
+   */
+  @IsOptional()
+  @IsNotEmpty({ message: "Public identifier cannot be empty" })
+  @IsString({ message: "Public identifier must be a string" })
+  @MaxLength(MAX_IDENTIFIER_LENGTH, {
+    message: `Public identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
+  })
+  publicIdentifier?: string;
+
+  /**
    * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).
    * Also accepts property name `nonce`.
    */

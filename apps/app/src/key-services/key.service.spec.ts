@@ -634,6 +634,61 @@ describe("KeyService", () => {
       expect(result.privateKey).toBeDefined();
       expect(typeof result.signer).toBe("function");
     });
+
+    it("should derive id and controller from the identifier when no publicIdentifier is given", async () => {
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(mockIdentifier, mockSecrets);
+
+      expect(result.id).toBe(mockIdentifier);
+      expect(result.controller).toBe("did:web:example.com");
+    });
+
+    it("should report the publicIdentifier while loading the key stored under identifier", async () => {
+      const storedId = "did:web:example.com:companies:acme#key-1";
+      const publicId =
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
+
+      const generated = await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        storedId,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(storedId, mockSecrets, publicId);
+
+      // Public id is reported...
+      expect(result.id).toBe(publicId);
+      expect(result.controller).toBe(
+        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme"
+      );
+      // ...while the key material is the one stored under `storedId`
+      expect(result.publicKey).toBe(generated.publicKeyMultibase);
+      expect(typeof result.signer).toBe("function");
+    });
+
+    it("should fall back to the identifier when publicIdentifier is undefined", async () => {
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        mockIdentifier,
+        mockSecrets
+      );
+
+      const result = await service.getKeyPair(
+        mockIdentifier,
+        mockSecrets,
+        undefined
+      );
+
+      expect(result.id).toBe(mockIdentifier);
+    });
   });
 
   describe("Real database behavior", () => {

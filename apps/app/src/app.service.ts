@@ -77,7 +77,7 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
-    const { verifiable, identifier, secrets } = decryptedBody;
+    const { verifiable, identifier, secrets, publicIdentifier } = decryptedBody;
     if (!verifiable) {
       throw new BadRequestException(
         "Verifiable credential is required for credential signing"
@@ -88,6 +88,7 @@ export class AppService {
       verifiable as VerifiableCredential,
       identifier,
       secrets,
+      publicIdentifier,
     );
   }
 
@@ -95,8 +96,15 @@ export class AppService {
     type: SignType,
     body: SignRequestDto | EncryptedPayloadDto
   ): Promise<VerifiablePresentation | string> {
-    const { verifiable, identifier, secrets, challenge, domain, validUntil } =
-      this.decryptPayloadIfNeeded<SignRequestDto>(body);
+    const {
+      verifiable,
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      validUntil,
+      publicIdentifier,
+    } = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     if (!verifiable) {
       throw new BadRequestException(
         "Verifiable presentation is required for presentation signing"
@@ -110,6 +118,7 @@ export class AppService {
       challenge,
       domain,
       validUntil?.trim() || undefined,
+      publicIdentifier,
     );
   }
 
@@ -129,8 +138,14 @@ export class AppService {
     }
 
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
-    const { identifier, secrets, challenge, domain, validUntil } =
-      decryptedBody;
+    const {
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      validUntil,
+      publicIdentifier,
+    } = decryptedBody;
 
     if (type === SignType.JWT) {
       const aud = domain?.trim();
@@ -145,6 +160,7 @@ export class AppService {
         aud,
         challenge?.trim() || undefined,
         validUntil?.trim() || undefined,
+        publicIdentifier,
       );
     }
 
@@ -162,7 +178,7 @@ export class AppService {
           "https://www.w3.org/ns/credentials/examples/v2",
         ],
         type: ["VerifiablePresentation"],
-        holder: identifier?.split("#")[0] as string,
+        holder: (publicIdentifier || identifier)?.split("#")[0] as string,
         ...(validUntil?.trim() && { validUntil: validUntil.trim() }),
       } satisfies VerifiablePresentation,
     });
