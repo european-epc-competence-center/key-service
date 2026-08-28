@@ -57,15 +57,15 @@ export class KeyService {
   async getKeyPair(
     identifier: string,
     secrets: string[],
-    keyReference?: string
+    publicIdentifier?: string
   ): Promise<KeyPair> {
     if (!secrets || secrets.length === 0) {
       throw new Error("At least one secret must be provided");
     }
     const storedKey = await this.keyStorageService.retrieveKey(
-      keyReference || identifier,
+      identifier,
       secrets,
-      identifier
+      publicIdentifier || identifier
     );
     if (
       storedKey.signatureType === SignatureType.ED25519_2020

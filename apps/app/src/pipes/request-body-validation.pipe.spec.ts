@@ -68,15 +68,15 @@ describe("RequestBodyValidationPipe", () => {
     ).rejects.toMatchObject({ response: { statusCode: 400 } });
   });
 
-  describe("signing key reference", () => {
+  describe("signing public identifier", () => {
     const signPipe = new RequestBodyValidationPipe(SignRequestDto);
 
-    it("accepts an optional string keyReference", async () => {
+    it("accepts an optional publicIdentifier", async () => {
       const result = await signPipe.transform(
         {
           secrets: ["secret1"],
-          identifier: "public-key",
-          keyReference: "stored-key",
+          identifier: "stored-key",
+          publicIdentifier: "did:webvh:QmYwAPJzv5:example.com#key-1",
         },
         bodyMeta
       );
@@ -84,13 +84,13 @@ describe("RequestBodyValidationPipe", () => {
       expect(result).toBeInstanceOf(SignRequestDto);
     });
 
-    it("rejects a non-string keyReference", async () => {
+    it("rejects a non-string publicIdentifier", async () => {
       await expect(
         signPipe.transform(
           {
             secrets: ["secret1"],
-            identifier: "public-key",
-            keyReference: 123,
+            identifier: "stored-key",
+            publicIdentifier: 123,
           },
           bodyMeta
         )

@@ -3581,12 +3581,12 @@ describe("DataIntegritySigningService", () => {
     });
   });
 
-  describe("keyReference", () => {
+  describe("publicIdentifier", () => {
     const storedId = "did:web:example.com:companies:acme#key-1";
     const publicId =
       "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
 
-    it("should name the public identifier in proof.verificationMethod while signing with the referenced key", async () => {
+    it("should name the publicIdentifier in proof.verificationMethod while signing with the stored key", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -3596,9 +3596,9 @@ describe("DataIntegritySigningService", () => {
 
       const result = await service.signCredential(
         exampleCredentialV2,
-        publicId,
+        storedId,
         mockSecrets,
-        storedId
+        publicId
       );
 
       const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;
@@ -3608,7 +3608,7 @@ describe("DataIntegritySigningService", () => {
       );
     });
 
-    it("should name the public identifier in a presentation proof", async () => {
+    it("should name the publicIdentifier in a presentation proof", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -3624,12 +3624,12 @@ describe("DataIntegritySigningService", () => {
           ],
           type: ["VerifiablePresentation"],
         },
-        publicId,
+        storedId,
         mockSecrets,
         DEFAULT_CHALLENGE,
         undefined,
         undefined,
-        storedId
+        publicId
       );
 
       const proof = Array.isArray(result.proof) ? result.proof[0] : result.proof;

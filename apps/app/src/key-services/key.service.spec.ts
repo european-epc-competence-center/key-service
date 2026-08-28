@@ -640,7 +640,7 @@ describe("KeyService", () => {
       expect(typeof result.signer).toBe("function");
     });
 
-    it("should derive id and controller from the identifier when no keyReference is given", async () => {
+    it("should derive id and controller from the identifier when no publicIdentifier is given", async () => {
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -654,7 +654,7 @@ describe("KeyService", () => {
       expect(result.controller).toBe("did:web:example.com");
     });
 
-    it("should report the public identifier while loading the key stored under keyReference", async () => {
+    it("should report the publicIdentifier while loading the key stored under identifier", async () => {
       const storedId = "did:web:example.com:companies:acme#key-1";
       const publicId =
         "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
@@ -666,7 +666,7 @@ describe("KeyService", () => {
         mockSecrets
       );
 
-      const result = await service.getKeyPair(publicId, mockSecrets, storedId);
+      const result = await service.getKeyPair(storedId, mockSecrets, publicId);
 
       // Public id is reported...
       expect(result.id).toBe(publicId);
@@ -678,7 +678,7 @@ describe("KeyService", () => {
       expect(typeof result.signer).toBe("function");
     });
 
-    it("should fall back to the identifier when keyReference is empty", async () => {
+    it("should fall back to the identifier when publicIdentifier is empty", async () => {
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -691,7 +691,7 @@ describe("KeyService", () => {
       expect(result.id).toBe(mockIdentifier);
     });
 
-    it("should count failed decryption attempts against keyReference, not the public identifier", async () => {
+    it("should count failed decryption attempts against identifier, not the publicIdentifier", async () => {
       const storedId = "did:web:brute-force.com#key-1";
       const publicId =
         "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4q:brute-force.com#key-1";
@@ -706,7 +706,7 @@ describe("KeyService", () => {
 
       for (let i = 0; i < failedAttemptsCacheConfig.maxFailedAttempts; i++) {
         await expect(
-          service.getKeyPair(publicId, wrongSecrets, storedId)
+          service.getKeyPair(storedId, wrongSecrets, publicId)
         ).rejects.toThrow();
       }
 

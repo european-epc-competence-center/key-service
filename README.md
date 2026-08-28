@@ -342,10 +342,10 @@ The container includes health checks that verify:
 
 ## API Endpoints
 
-### Signing with a key stored under another DID
+### Publishing a signature under a different DID
 
 All supported structured signing flows—VC, VP, and proof of possession using
-JWT or Data Integrity—accept an optional `keyReference` through
+JWT or Data Integrity—accept an optional `publicIdentifier` through
 `/sign/vc/:type`, `/sign/vp/:type`, and `/sign/pop/:type`. This supports
 publishing the same public key in paired `did:web` and `did:webvh` DID
 documents without storing the private key twice.
@@ -354,22 +354,22 @@ Relevant request fields (in addition to the endpoint's other required fields):
 
 ```json
 {
-  "identifier": "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com#key-1",
-  "keyReference": "did:web:example.com#key-1",
+  "identifier": "did:web:example.com#key-1",
+  "publicIdentifier": "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com#key-1",
   "secrets": ["user-secret-key"]
 }
 ```
 
-- `identifier` is the public verification-method ID written to Data Integrity
-  proofs or JWT headers. It is also used for issuer or holder values where the
-  signing service derives those values.
-- `keyReference` is used only to find, decrypt, and rate-limit access to the
-  stored key. Omit it (or send an empty value) to look up the key by
+- `identifier` keeps its usual meaning on every endpoint: it is what the key is
+  stored under, and it is used to find and decrypt that key.
+- `publicIdentifier` is only published in the signature — the Data Integrity
+  `proof.verificationMethod` or the JWT `kid`, plus the controller derived from
+  it (credential `issuer`, presentation `holder`, JWT `iss`). Omit it to publish
   `identifier`, preserving the previous behavior.
 
-The public key published by the DID document for `identifier` must match the
-stored key material. The service cannot verify that binding itself because it
-does not resolve the public DID document while signing. `keyReference` does not
+The public key published by the DID document for `publicIdentifier` must match
+the stored key material; the service does not resolve the DID document while
+signing, so it cannot verify that binding itself. `publicIdentifier` does not
 apply to key generation, deletion, or raw-byte signing.
 
 ### Sign Verifiable Credential
@@ -452,7 +452,7 @@ POST /sign/pop/:type
 
 - `type`: Same values as `POST /sign/vp/:type` (`jwt`, `data-integrity`, `sd-jwt`). For POP, use `jwt` (OpenID4VCI Appendix F.1 proof JWT) or `data-integrity` (same as `POST /sign/vp/data-integrity`). `sd-jwt` returns 400.
 
-**Request body:** `SignRequestDto` — `secrets`, `identifier`, optional **`keyReference`**, optional **`verifiable`**, **`domain`** (required for both PoP types: Credential Issuer Identifier — OpenID4VCI F.1 JWT `aud`, F.2 `di_vp` proof `domain`), optional **`challenge`** (F.1 JWT `nonce` / F.2 proof `challenge` when the issuer uses `c_nonce`). For `POST /sign/vc` and `POST /sign/vp`, `verifiable` is required (validated in the service). For `POST /sign/pop/jwt`, `verifiable` is optional and ignored. For `POST /sign/pop/data-integrity`, the service always builds a minimal VP shell per F.2 and signs it via the same path as `POST /sign/vp/data-integrity`; request `verifiable` is ignored (use `POST /sign/vp/data-integrity` for a custom VP). JWT PoP uses JOSE `typ` `openid4vci-proof+jwt` and a minimal F.1 JWT body, not a VC.
+**Request body:** `SignRequestDto` — `secrets`, `identifier`, optional **`publicIdentifier`**, optional **`verifiable`**, **`domain`** (required for both PoP types: Credential Issuer Identifier — OpenID4VCI F.1 JWT `aud`, F.2 `di_vp` proof `domain`), optional **`challenge`** (F.1 JWT `nonce` / F.2 proof `challenge` when the issuer uses `c_nonce`). For `POST /sign/vc` and `POST /sign/vp`, `verifiable` is required (validated in the service). For `POST /sign/pop/jwt`, `verifiable` is optional and ignored. For `POST /sign/pop/data-integrity`, the service always builds a minimal VP shell per F.2 and signs it via the same path as `POST /sign/vp/data-integrity`; request `verifiable` is ignored (use `POST /sign/vp/data-integrity` for a custom VP). JWT PoP uses JOSE `typ` `openid4vci-proof+jwt` and a minimal F.1 JWT body, not a VC.
 
 ### Generate Key Pair
 

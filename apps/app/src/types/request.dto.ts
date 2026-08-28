@@ -90,18 +90,17 @@ export class SignRequestDto extends KeyRequestDto {
   verifiable?: VerifiableCredential | VerifiablePresentation;
 
   /**
-   * Identifier under which the key is stored when it differs from `identifier` — for example,
-   * when the same public key is published in paired `did:web` and `did:webvh` DID documents.
-   * In that case, `identifier` is the public verification-method ID used for the signature,
-   * while `keyReference` is used only to retrieve and decrypt the stored key.
-   * When omitted or empty, the key is looked up by `identifier` as before.
+   * Verification-method ID to publish in the signature when it differs from `identifier` — for
+   * example, when the same public key is published in paired `did:web` and `did:webvh` DID
+   * documents. `identifier` still locates the stored key; this only replaces the published
+   * `proof.verificationMethod` / JWT `kid` and the controller derived from it.
    */
   @IsOptional()
-  @IsString({ message: "Key reference must be a string" })
+  @IsString({ message: "Public identifier must be a string" })
   @MaxLength(MAX_IDENTIFIER_LENGTH, {
-    message: `Key reference must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
+    message: `Public identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
   })
-  keyReference?: string;
+  publicIdentifier?: string;
 
   /**
    * Challenge / nonce (e.g. VP proof, OpenID4VCI `c_nonce` → JWT `nonce` on PoP).

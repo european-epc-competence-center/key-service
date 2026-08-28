@@ -2524,12 +2524,12 @@ describe("JwtSigningService", () => {
 
   });
 
-  describe("keyReference", () => {
+  describe("publicIdentifier", () => {
     const storedId = "did:web:example.com:companies:acme#key-1";
     const publicId =
       "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4p:example.com:companies:acme#key-1";
 
-    it("should use the public identifier as kid and iss while signing with the referenced key", async () => {
+    it("should use the publicIdentifier as kid and iss while signing with the stored key", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -2539,9 +2539,9 @@ describe("JwtSigningService", () => {
 
       const jwt = await service.signCredential(
         exampleCredentialV2,
-        publicId,
+        storedId,
         mockSecrets,
-        storedId
+        publicId
       );
 
       const header = JSON.parse(
@@ -2559,7 +2559,7 @@ describe("JwtSigningService", () => {
       );
     });
 
-    it("should use the public identifier for presentation and proof-of-possession JWTs", async () => {
+    it("should use the publicIdentifier for presentation and proof-of-possession JWTs", async () => {
       await keyService.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -2572,20 +2572,20 @@ describe("JwtSigningService", () => {
           "@context": ["https://www.w3.org/ns/credentials/v2"],
           type: ["VerifiablePresentation"],
         },
-        publicId,
+        storedId,
         mockSecrets,
         undefined,
         undefined,
         undefined,
-        storedId
+        publicId
       );
       const proofJwt = await service.signProofOfPossession(
-        publicId,
+        storedId,
         mockSecrets,
         "https://issuer.example",
         undefined,
         undefined,
-        storedId
+        publicId
       );
 
       for (const jwt of [presentationJwt, proofJwt]) {

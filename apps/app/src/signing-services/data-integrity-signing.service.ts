@@ -31,22 +31,22 @@ export class DataIntegritySigningService {
   /**
    * Sign a verifiable credential using Data Integrity proof
    * @param credential - The verifiable credential to sign
-   * @param verificationMethod - Public verification-method ID written to `proof.verificationMethod`
+   * @param identifier - Identifier the signing key is stored under
    * @param secrets - Array of secrets for key derivation
-   * @param keyReference - Optional identifier under which the key is stored
+   * @param publicIdentifier - Optional verification-method ID to publish instead of `identifier`
    * @returns Signed verifiable credential with proof
    */
   async signCredential(
     credential: VerifiableCredential,
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
-    keyReference?: string,
+    publicIdentifier?: string,
   ): Promise<VerifiableCredential> {
 
     const keyPair = await this.keyService.getKeyPair(
-      verificationMethod,
+      identifier,
       secrets,
-      keyReference
+      publicIdentifier
     );
 
     let suite;
@@ -86,28 +86,28 @@ export class DataIntegritySigningService {
   /**
    * Sign a verifiable presentation using Data Integrity proof
    * @param presentation - The verifiable presentation to sign
-   * @param verificationMethod - Public verification-method ID written to `proof.verificationMethod`
+   * @param identifier - Identifier the signing key is stored under
    * @param secrets - Array of secrets for key derivation
    * @param challenge - Challenge for the proof (e.g. OpenID4VCI `c_nonce` for `di_vp` when the issuer uses a Nonce Endpoint)
    * @param domain - Optional domain for the proof; required for OpenID4VCI `di_vp` (Credential Issuer Identifier), enforced at `AppService.signProofOfPossession`
    * @param validUntil - ISO 8601 date-time; overwrites `presentation.validUntil` when set
-   * @param keyReference - Optional identifier under which the key is stored
+   * @param publicIdentifier - Optional verification-method ID to publish instead of `identifier`
    * @returns Signed verifiable presentation with proof
    */
   async signPresentation(
     presentation: VerifiablePresentation,
-    verificationMethod: string,
+    identifier: string,
     secrets: string[],
     challenge: string = "",
     domain?: string,
     validUntil?: string,
-    keyReference?: string,
+    publicIdentifier?: string,
   ): Promise<VerifiablePresentation> {
 
     const keyPair = await this.keyService.getKeyPair(
-      verificationMethod,
+      identifier,
       secrets,
-      keyReference
+      publicIdentifier
     );
     
     let suite;

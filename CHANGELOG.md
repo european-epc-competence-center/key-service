@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Optional `SignRequestDto.keyReference` for VC, VP, and proof-of-possession
-signing. It retrieves a key under a storage identifier while publishing
-`identifier` as the verification-method ID, enabling paired `did:web` /
-`did:webvh` DID documents to use the same key material.
+- Optional `SignRequestDto.publicIdentifier` for VC, VP, and proof-of-possession
+signing. `identifier` still locates the stored key, while `publicIdentifier` is
+published as the verification-method ID, enabling paired `did:web` / `did:webvh`
+DID documents to use the same key material.
 
 ## [2.6.1] - 2026-08-05
 

@@ -77,7 +77,7 @@ export class AppService {
     // Decrypt payload if encrypted
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     
-    const { verifiable, identifier, secrets, keyReference } = decryptedBody;
+    const { verifiable, identifier, secrets, publicIdentifier } = decryptedBody;
     if (!verifiable) {
       throw new BadRequestException(
         "Verifiable credential is required for credential signing"
@@ -88,7 +88,7 @@ export class AppService {
       verifiable as VerifiableCredential,
       identifier,
       secrets,
-      keyReference,
+      publicIdentifier,
     );
   }
 
@@ -103,7 +103,7 @@ export class AppService {
       challenge,
       domain,
       validUntil,
-      keyReference,
+      publicIdentifier,
     } = this.decryptPayloadIfNeeded<SignRequestDto>(body);
     if (!verifiable) {
       throw new BadRequestException(
@@ -118,7 +118,7 @@ export class AppService {
       challenge,
       domain,
       validUntil?.trim() || undefined,
-      keyReference,
+      publicIdentifier,
     );
   }
 
@@ -138,8 +138,14 @@ export class AppService {
     }
 
     const decryptedBody = this.decryptPayloadIfNeeded<SignRequestDto>(body);
-    const { identifier, secrets, challenge, domain, validUntil, keyReference } =
-      decryptedBody;
+    const {
+      identifier,
+      secrets,
+      challenge,
+      domain,
+      validUntil,
+      publicIdentifier,
+    } = decryptedBody;
 
     if (type === SignType.JWT) {
       const aud = domain?.trim();
@@ -154,7 +160,7 @@ export class AppService {
         aud,
         challenge?.trim() || undefined,
         validUntil?.trim() || undefined,
-        keyReference,
+        publicIdentifier,
       );
     }
 
@@ -172,7 +178,7 @@ export class AppService {
           "https://www.w3.org/ns/credentials/examples/v2",
         ],
         type: ["VerifiablePresentation"],
-        holder: identifier?.split("#")[0] as string,
+        holder: (publicIdentifier || identifier)?.split("#")[0] as string,
         ...(validUntil?.trim() && { validUntil: validUntil.trim() }),
       } satisfies VerifiablePresentation,
     });
