@@ -673,7 +673,7 @@ describe("KeyService", () => {
       expect(typeof result.signer).toBe("function");
     });
 
-    it("should fall back to the identifier when publicIdentifier is empty", async () => {
+    it("should fall back to the identifier when publicIdentifier is undefined", async () => {
       await service.generateKeyPair(
         SignatureType.ED25519_2020,
         KeyType.MULTIKEY,
@@ -681,7 +681,11 @@ describe("KeyService", () => {
         mockSecrets
       );
 
-      const result = await service.getKeyPair(mockIdentifier, mockSecrets, "");
+      const result = await service.getKeyPair(
+        mockIdentifier,
+        mockSecrets,
+        undefined
+      );
 
       expect(result.id).toBe(mockIdentifier);
     });

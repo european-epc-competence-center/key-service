@@ -96,6 +96,7 @@ export class SignRequestDto extends KeyRequestDto {
    * `proof.verificationMethod` / JWT `kid` and the controller derived from it.
    */
   @IsOptional()
+  @IsNotEmpty({ message: "Public identifier cannot be empty" })
   @IsString({ message: "Public identifier must be a string" })
   @MaxLength(MAX_IDENTIFIER_LENGTH, {
     message: `Public identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,

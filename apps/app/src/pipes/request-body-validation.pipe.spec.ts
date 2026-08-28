@@ -84,6 +84,19 @@ describe("RequestBodyValidationPipe", () => {
       expect(result).toBeInstanceOf(SignRequestDto);
     });
 
+    it("rejects an empty publicIdentifier", async () => {
+      await expect(
+        signPipe.transform(
+          {
+            secrets: ["secret1"],
+            identifier: "stored-key",
+            publicIdentifier: "",
+          },
+          bodyMeta
+        )
+      ).rejects.toMatchObject({ response: { statusCode: 400 } });
+    });
+
     it("rejects a non-string publicIdentifier", async () => {
       await expect(
         signPipe.transform(
