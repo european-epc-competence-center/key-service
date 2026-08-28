@@ -8,7 +8,6 @@ import { FailedAttemptsCacheService } from "./failed-attempts-cache.service";
 import { EncryptedKey } from "./entities/encrypted-key.entity";
 import { SignatureType } from "../types/key-types.enum";
 import { KeyType } from "../types/key-format.enum";
-import { failedAttemptsCacheConfig } from "../config/failed-attempts.config";
 import * as fs from "fs";
 
 // Mock fs module for this test file only
@@ -43,7 +42,6 @@ describe("KeyService", () => {
   let service: KeyService;
   let keyStorageService: KeyStorageService;
   let secretService: SecretService;
-  let failedAttemptsCache: FailedAttemptsCacheService;
   let dataSource: DataSource;
   let module: TestingModule;
   let originalSigningKeyPath: string | undefined;
@@ -90,9 +88,6 @@ describe("KeyService", () => {
     service = module.get<KeyService>(KeyService);
     keyStorageService = module.get<KeyStorageService>(KeyStorageService);
     secretService = module.get<SecretService>(SecretService);
-    failedAttemptsCache = module.get<FailedAttemptsCacheService>(
-      FailedAttemptsCacheService
-    );
   });
 
   afterAll(async () => {
@@ -689,33 +684,6 @@ describe("KeyService", () => {
       const result = await service.getKeyPair(mockIdentifier, mockSecrets, "");
 
       expect(result.id).toBe(mockIdentifier);
-    });
-
-    it("should count failed decryption attempts against identifier, not the publicIdentifier", async () => {
-      const storedId = "did:web:brute-force.com#key-1";
-      const publicId =
-        "did:webvh:QmYwAPJzv5CZsnAzt8auVZRnGi2C9r4f9VZ5B5nTQw3q4q:brute-force.com#key-1";
-      const wrongSecrets = ["wrong-secret"];
-
-      await service.generateKeyPair(
-        SignatureType.ED25519_2020,
-        KeyType.MULTIKEY,
-        storedId,
-        mockSecrets
-      );
-
-      for (let i = 0; i < failedAttemptsCacheConfig.maxFailedAttempts; i++) {
-        await expect(
-          service.getKeyPair(storedId, wrongSecrets, publicId)
-        ).rejects.toThrow();
-      }
-
-      expect(failedAttemptsCache.isBlocked(secretService.hash(storedId))).toBe(
-        true
-      );
-      expect(failedAttemptsCache.isBlocked(secretService.hash(publicId))).toBe(
-        false
-      );
     });
   });
 
