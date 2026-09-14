@@ -97,7 +97,7 @@ npm run migration:revert   # Rollback last migration
 
 ## Dependencies & Security
 
-- Direct versions in `package.json`; transitive CVEs via `overrides` (see `package.json`): `form-data`, `multer`, `undici` (pin `<7` — v8 breaks Jest), `js-yaml` (>=4.3.0), `brace-expansion` / `minimatch` (see below), `body-parser` (>=2.3.0), `fast-uri` (>=3.1.4)
+- Direct versions in `package.json`; transitive CVEs via `overrides` (see `package.json`): `form-data`, `multer` (>=2.3.0, CVE-2026-77078 / AIKIDO-2026-18568), `undici` (pin `<7` — v8 breaks Jest), `js-yaml` (>=4.3.0), `brace-expansion` / `minimatch` (see below), `body-parser` (>=2.3.0), `fast-uri` (>=3.1.4)
 - **`brace-expansion` majors**: not chosen by this app — pulled by different `minimatch` lines (`minimatch@3` → brace 1.x; formerly `minimatch@9` via TypeORM `glob@10` → brace 2.x; `minimatch@10` → brace 5.x). Forcing 5.x into minimatch 9 breaks (`default is not a function`). Overrides: `brace-expansion@1` → `1.1.18`, else → `5.0.9` (CVE-2026-14257 + CVE-2026-69152), and `minimatch@9` → `10.2.5` so production TypeORM glob uses brace 5 correctly. Nothing in app code imports brace-expansion directly.
 - Hold majors that break peers: `typescript` 5.x (ts-jest), `@types/node` 24.x; ignore npm `typeorm@1.x` (unrelated/yanked line — stay on `0.3.x`)
 - `@eecc/rsa-multikey` should use `engines.node`, not `peerDependencies.node` (avoids installing the npm binary `node` package)

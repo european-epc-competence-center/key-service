@@ -163,6 +163,10 @@ Removed from `package.json`: `@digitalbazaar/ed25519-signature-2020`, `@digitalb
 
 Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (TypeORM driver), `ts-loader` (Nest webpack via `nest-cli.json` `webpack: true`).
 
+### Transitive `multer` (NestJS / Express)
+
+`@nestjs/platform-express` pulls `multer` for multipart parsing. Override `multer` to `>=2.3.0` (CVE-2026-77078 / AIKIDO-2026-18568: uncaught `RangeError` on crafted bracket field names). Currently resolves to 2.4.0.
+
 ### Highest practical install-time risk
 
 `@eecc/rsa-multikey` ≤1.0.2 declared `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`), causing npm to auto-install the unrelated npm package `node` (~116MB binary via `preinstall`). Fixed upstream in local `../rsa-multikey` (`engines` instead); pending patch publish + bump in this repo. Until then, omit the binary package from production images if auto-installed.

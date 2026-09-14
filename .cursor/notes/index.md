@@ -4,7 +4,7 @@
 
 The Key Service is a NestJS-based API for signing verifiable credentials using multiple signature formats (JWT, Data Integrity, SD-JWT). It provides secure key management, credential signing, and public key retrieval capabilities.
 
-**Current Version**: v2.5.1  
+**Current Version**: v2.7.0  
 **License**: AGPL-3.0 (GNU Affero General Public License v3.0)  
 **Author**: Christian Fries  
 **Technology Stack**: NestJS, TypeScript, PostgreSQL, Docker  
@@ -113,7 +113,7 @@ All signing and generation requests use:
 ## Notes Files Reference
 
 - [architecture.md](./architecture.md) - Detailed technical architecture
-- [security.md](./security.md) - Security implementation, audit framework, dependency/supply-chain notes (unused deps; `@eecc/rsa-multikey` `node` peer→`engines` fixed upstream, pending publish)
+- [security.md](./security.md) - Security implementation, audit framework, dependency/supply-chain notes (unused deps; `@eecc/rsa-multikey` `node` peer→`engines`; `multer` override `>=2.3.0` for CVE-2026-77078)
 - [data-integrity-signatures.md](./data-integrity-signatures.md) - Data Integrity proof implementation (Ed25519, ES256)
 - [input-validation-implementation.md](./input-validation-implementation.md) - Input validation security implementation (2025-10-07)
 - [development.md](./development.md) - Development workflows and patterns
@@ -156,7 +156,7 @@ npm run build
 - `docs/security_and_key_management_concept.md` - Security architecture concept
 - `security_audit/security_review_prompt.md` - Comprehensive multi-agent security audit framework
 - `SECURITY_REPORT.md` - External security analysis report; reformatted for pandoc PDF compilation (no emojis, correct heading hierarchy, list spacing, `lang: en`, fancyhdr)
-- `CHANGELOG.md` - Version history and changes (current: v2.5.1)
+- `CHANGELOG.md` - Version history and changes (current: v2.7.0)
 - `docs/REQUEST_ENCRYPTION_QUICK_START.md` - **NEW** Quick configuration reference for request encryption
 - `docs/payload-encryption-spring-boot.md` - **NEW** Spring Boot/Java client implementation guide
 - `docs/REQUEST_ENCRYPTION_USAGE.md` - **NEW** Multi-language client examples (Java, Node.js, Python)
