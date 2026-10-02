@@ -39,6 +39,7 @@ npm run test:coverage
 npm run test:with-db          # start → test → stop
 npm run test:unit:with-db
 npm run test:e2e:with-db
+npm run test:perf              # signing timings; not part of `npm test`
 ```
 
 CI (`.github/workflows/ci-cd.yml`) runs `test:unit` with a Postgres 17 service on port 5433.
@@ -57,8 +58,15 @@ Config modules that read `process.env` at import time need vars set at module to
 - Data Integrity: proofs, challenge/domain
 - Failed attempts, encryption, validation e2e
 
+## Signing performance
+
+`apps/app/test/signing.perf.spec.ts` (`npm run test:perf`, Jest config `apps/app/test/jest-perf.json`). Excluded from unit and e2e. Needs the test DB.
+
+Each production sign pays three PBKDF2 derivations (`PBKDF2_ITERATIONS`, default 100000) unless `SecretService` still holds them: identifier hash, private-key decrypt, public-key decrypt, plus one indexed `findOne`. Hits reset a 10 second TTL. Cold samples in the perf spec call `clearDerivationCache()`. There is no decrypted-key cache. A cold sign is ~50 ms of PBKDF2; the database read is ~2 ms; a warm JWT sign is a few milliseconds; a cached-key JWT signature is ~0.2 ms. Warm Data Integrity canonicalization is a few milliseconds; the first sign after `JsonLdContextCache.reset()` is slower (~20–30 ms).
+
 ## Related files
 
 - `apps/app/test/test-database.config.ts` — shared TypeORM test options
 - `apps/app/test/test-setup.ts` — global Jest setup
+- `apps/app/test/signing.perf.spec.ts` — JWT and Data Integrity signing timings (`npm run test:perf`)
 - README “Local Testing” section

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `npm run test:perf` measures JWT and Data Integrity credential signing with a cached key and with the production path (PBKDF2 identifier hash, PostgreSQL read, and two PBKDF2 key decrypts per request)
+
+### Changed
+- `SecretService` caches PBKDF2 outputs on the service instance. Each hit resets a 10 second TTL. At 1000 entries the oldest derivation is dropped and calculated again on the next use (`PBKDF2_CACHE_MAX_KEYS`)
+
 ## [2.7.1] - 2026-09-14
 
 ### Security

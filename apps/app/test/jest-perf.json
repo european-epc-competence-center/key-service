@@ -1,0 +1,23 @@
+{
+  "preset": "ts-jest/presets/default-esm",
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": "test/signing\\.perf\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "useESM": true
+      }
+    ]
+  },
+  "transformIgnorePatterns": ["node_modules/(?!.*\\.(mjs|js)$)"],
+  "extensionsToTreatAsEsm": [".ts"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/test-setup.ts"],
+  "testTimeout": 180000,
+  "verbose": true
+}

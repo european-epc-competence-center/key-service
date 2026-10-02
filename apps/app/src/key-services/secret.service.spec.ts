@@ -12,6 +12,12 @@ jest.mock("../utils/log/logger", () => ({
 // Mock fs module
 jest.mock("fs");
 
+function elapsed(fn: () => void): number {
+  const start = performance.now();
+  fn();
+  return performance.now() - start;
+}
+
 describe("SecretService", () => {
   let service: SecretService;
   let originalSigningKeyPath: string | undefined;
@@ -321,6 +327,110 @@ describe("SecretService", () => {
       expect(parsed.metadata.roles).toEqual(["user", "admin"]);
       expect(parsed.metadata.settings.theme).toBe("dark");
       expect(parsed.nullable).toBeNull();
+    });
+  });
+
+  describe("derivation cache", () => {
+    beforeEach(async () => {
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [SecretService],
+      }).compile();
+
+      service = module.get<SecretService>(SecretService);
+    });
+
+    afterEach(() => {
+      service?.onModuleDestroy();
+      jest.restoreAllMocks();
+    });
+
+    it("reuses a derivation and extends its lifetime on each hit", () => {
+      let now = 1_700_000_000_000;
+      jest.spyOn(Date, "now").mockImplementation(() => now);
+
+      const encrypted = service.encrypt("cached-value", mockSecrets);
+      service.clearDerivationCache();
+
+      const cold = elapsed(() => service.decrypt(encrypted, mockSecrets));
+      now += 9_000;
+      const stillUsed = elapsed(() => service.decrypt(encrypted, mockSecrets));
+      now += 9_000;
+      const extended = elapsed(() => service.decrypt(encrypted, mockSecrets));
+      now += 11_000;
+      const idle = elapsed(() => service.decrypt(encrypted, mockSecrets));
+
+      expect(service.decrypt(encrypted, mockSecrets)).toBe("cached-value");
+      expect(cold).toBeGreaterThan(stillUsed * 5);
+      expect(cold).toBeGreaterThan(extended * 5);
+      expect(idle).toBeGreaterThan(extended * 5);
+    });
+
+    it("reuses the identifier hash while it is used", () => {
+      service.clearDerivationCache();
+
+      let first = "";
+      const cold = elapsed(() => {
+        first = service.hash("did:example:key");
+      });
+      let second = "";
+      const warm = elapsed(() => {
+        second = service.hash("did:example:key");
+      });
+
+      expect(second).toBe(first);
+      expect(cold).toBeGreaterThan(warm * 5);
+    });
+
+    it("does not decrypt with different secrets from a cached derivation", () => {
+      const encrypted = service.encrypt("secret-data", mockSecrets);
+
+      expect(service.decrypt(encrypted, mockSecrets)).toBe("secret-data");
+      expect(() => service.decrypt(encrypted, ["other-secret"])).toThrow();
+      expect(service.decrypt(encrypted, mockSecrets)).toBe("secret-data");
+    });
+
+    it("drops the oldest derivation and calculates it again when the cache is full", () => {
+      const previousMax = process.env.PBKDF2_CACHE_MAX_KEYS;
+      process.env.PBKDF2_CACHE_MAX_KEYS = "2";
+      const limited = new SecretService();
+      try {
+        limited.clearDerivationCache();
+        const first = limited.hash("first");
+        limited.hash("second");
+        limited.hash("third");
+
+        const reused = elapsed(() => {
+          limited.hash("third");
+        });
+        let recalculated = "";
+        const cold = elapsed(() => {
+          recalculated = limited.hash("first");
+        });
+
+        expect(recalculated).toBe(first);
+        expect(cold).toBeGreaterThan(reused * 5);
+      } finally {
+        if (previousMax === undefined) {
+          delete process.env.PBKDF2_CACHE_MAX_KEYS;
+        } else {
+          process.env.PBKDF2_CACHE_MAX_KEYS = previousMax;
+        }
+        limited.onModuleDestroy();
+      }
+    });
+
+    it("does not share derivations with another SecretService instance", () => {
+      const other = new SecretService();
+      try {
+        const encrypted = service.encrypt("cached-value", mockSecrets);
+        const cold = elapsed(() => other.decrypt(encrypted, mockSecrets));
+        const warm = elapsed(() => other.decrypt(encrypted, mockSecrets));
+
+        expect(other.decrypt(encrypted, mockSecrets)).toBe("cached-value");
+        expect(cold).toBeGreaterThan(warm * 5);
+      } finally {
+        other.onModuleDestroy();
+      }
     });
   });
 });

@@ -1,16 +1,38 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
+import NodeCache from "node-cache";
 import { logError, logWarn } from "../utils/log/logger";
 import { ConfigurationException } from "../types/custom-exceptions";
 
+/** Idle time after which an unused PBKDF2 output is dropped. A hit resets this. */
+const DERIVATION_CACHE_TTL_SECONDS = 10;
+const DERIVATION_CACHE_MAX_KEYS = 1000;
+
+function positiveInt(value: string | undefined, fallback: number): number {
+  const parsed = parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 @Injectable()
-export class SecretService {
+export class SecretService implements OnModuleDestroy {
   private readonly secret: string;
   private readonly iterations: number; // PBKDF2 iterations (OWASP recommended minimum)
+  private readonly derivationCacheMaxKeys: number;
+  private readonly derivationCache: NodeCache;
 
   constructor() {
+    this.derivationCacheMaxKeys = positiveInt(
+      process.env.PBKDF2_CACHE_MAX_KEYS,
+      DERIVATION_CACHE_MAX_KEYS
+    );
+    this.derivationCache = new NodeCache({
+      stdTTL: DERIVATION_CACHE_TTL_SECONDS,
+      checkperiod: DERIVATION_CACHE_TTL_SECONDS,
+      useClones: false,
+    });
+
     // Configure iterations from environment variable with default of 100000
     this.iterations = parseInt(process.env.PBKDF2_ITERATIONS || '100000', 10);
 
@@ -38,13 +60,66 @@ export class SecretService {
     this.secret = secretContent;
   }
 
+  onModuleDestroy(): void {
+    this.derivationCache.close();
+  }
+
+  /** Drops cached PBKDF2 outputs. Tests use this to measure a cold derivation. */
+  clearDerivationCache(): void {
+    this.derivationCache.flushAll();
+  }
+
   private deriveKey(
     password: string,
     salt: Buffer,
     length: number = 32
   ): Buffer {
-    // Use PBKDF2 with SHA-256, which is FIPS compliant and widely supported
-    return crypto.pbkdf2Sync(password, salt, this.iterations, length, "sha256");
+    const cacheKey = this.derivationCacheKey(password, salt, length);
+    const cached = this.derivationCache.get<Buffer>(cacheKey);
+    if (cached) {
+      // Sliding TTL: keep the result while callers still use it.
+      this.derivationCache.ttl(cacheKey, DERIVATION_CACHE_TTL_SECONDS);
+      return Buffer.from(cached);
+    }
+
+    const derived = crypto.pbkdf2Sync(
+      password,
+      salt,
+      this.iterations,
+      length,
+      "sha256"
+    );
+    this.storeDerivedKey(cacheKey, derived);
+    return Buffer.from(derived);
+  }
+
+  /** Evicts the oldest entry when full. A later miss calculates that entry again. */
+  private storeDerivedKey(cacheKey: string, derived: Buffer): void {
+    const keys = this.derivationCache.keys();
+    if (
+      keys.length >= this.derivationCacheMaxKeys &&
+      keys[0] !== undefined
+    ) {
+      this.derivationCache.del(keys[0]);
+    }
+    this.derivationCache.set(cacheKey, derived);
+  }
+
+  private derivationCacheKey(
+    password: string,
+    salt: Buffer,
+    length: number
+  ): string {
+    const header = Buffer.alloc(12);
+    header.writeUInt32BE(this.iterations, 0);
+    header.writeUInt32BE(length, 4);
+    header.writeUInt32BE(salt.length, 8);
+    return crypto
+      .createHash("sha256")
+      .update(header)
+      .update(salt)
+      .update(password, "utf8")
+      .digest("hex");
   }
 
   private getEncryptionKey(

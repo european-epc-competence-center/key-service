@@ -87,6 +87,16 @@ AppModule
 - JSON-LD context processing
 - Implements private `sign()` method for code reuse between VC and VP signing
 
+### Key retrieval on the signing path
+
+`KeyStorageService.retrieveKey` runs on every sign. There is no decrypted-key cache. Cost, in order:
+
+- `SecretService.hash` — PBKDF2 of the identifier (default 100000 iterations) used as the lookup key
+- one indexed `findOne` on `keys`
+- `SecretService.decrypt` of the private key and again of the public key (each is another PBKDF2)
+
+`SecretService` keeps those PBKDF2 outputs on the service instance (cap `PBKDF2_CACHE_MAX_KEYS`, default 1000). The cache key is a SHA-256 of the KDF inputs, not the secrets. A hit resets a 10 second TTL. When the cap is reached the oldest entry is dropped; the next use of that derivation calculates it again. The three derivations in one sign do not share an entry (different salts). JWT and Data Integrity share the cache because both use the singleton `SecretService`. A cold sign is still about 50 ms of PBKDF2; a warm sign pays the database read (~2 ms) plus signing. See `npm run test:perf`.
+
 ### Common Patterns
 Both signing services follow the same architectural pattern:
 - Public methods: `signCredential()` and `signPresentation()`
