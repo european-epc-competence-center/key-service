@@ -309,6 +309,8 @@ Once deployed, the Key Service exposes the following endpoints:
   - Types: `jwt`, `data-integrity`, `sd-jwt`
 - `POST /generate` - Generate new key pairs
   - Algorithms: `Ed25519`, `ES256`, `PS256`
+- `POST /export` - Export a stored key as a passphrase-encrypted compact JWE
+- `POST /import` - Import that JWE and store the key under new secrets
 
 ### Health Endpoints
 

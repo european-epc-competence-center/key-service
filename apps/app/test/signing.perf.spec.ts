@@ -4,6 +4,7 @@ import { DataSource, Repository } from "typeorm";
 import { JwtSigningService } from "../src/signing-services/jwt-signing.service";
 import { DataIntegritySigningService } from "../src/signing-services/data-integrity-signing.service";
 import { KeyService } from "../src/key-services/key.service";
+import { KeyExportService } from "../src/key-services/key-export.service";
 import { KeyStorageService } from "../src/key-services/key-storage.service";
 import { SecretService } from "../src/key-services/secret.service";
 import { FailedAttemptsCacheService } from "../src/key-services/failed-attempts-cache.service";
@@ -135,6 +136,7 @@ describe("signing performance", () => {
         JwtSigningService,
         DataIntegritySigningService,
         KeyService,
+        KeyExportService,
         KeyStorageService,
         SecretService,
         FailedAttemptsCacheService,

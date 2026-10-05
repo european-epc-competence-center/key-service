@@ -18,7 +18,7 @@ Comprehensive DTOs with class-validator decorators:
 - **SignRequestDto**: Validates signing operation requests
   - `verifiable`: Required object (VerifiableCredential or VerifiablePresentation)
   - `secrets`: Array of 1-10 strings, max 1000 chars each
-  - `identifier`: Required string, max 500 chars, alphanumeric + `-_:.` only
+  - `identifier`: Required string, max 500 chars, alphanumeric + `-_:.#`
 
 - **GenerateRequestDto**: Validates key generation requests
   - All fields from SignRequestDto plus:
@@ -67,7 +67,7 @@ Fixed path for test setup file
 - **Identifier Length**: Max 500 characters (prevents buffer overflow)
 
 ### Input Pattern Validation
-- **Identifier Format**: `/^[a-zA-Z0-9_\-:.]+$/` (prevents injection attacks)
+- **Identifier Format**: `/^[a-zA-Z0-9_\-:.#]+$/` (allows a DID fragment; defined as `IDENTIFIER_PATTERN` in `request.dto.ts`)
 - **Enum Validation**: Strict type checking for signatureType and keyType
 
 ### Request Sanitization
@@ -102,7 +102,7 @@ Fixed path for test setup file
 |-------|----------|------|-------------|
 | verifiable | Yes | Object | Must be valid VC/VP object |
 | secrets | Yes | Array[string] | 1-10 elements, each 1-1000 chars |
-| identifier | Yes | String | 1-500 chars, alphanumeric + `-_:.` |
+| identifier | Yes | String | 1-500 chars, alphanumeric + `-_:.#` |
 | signatureType | Yes (generate) | Enum | Ed25519, ES256, or PS256 |
 | keyType | Yes (generate) | Enum | JsonWebKey, Ed25519VerificationKey2020 |
 

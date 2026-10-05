@@ -309,4 +309,54 @@ describe("Input Validation (e2e)", () => {
         .expect(400);
     });
   });
+
+  describe("POST /export - Input Validation", () => {
+    it("should reject an empty body", () => {
+      return request(app.getHttpServer())
+        .post("/export")
+        .send({})
+        .expect(400);
+    });
+
+    it("should reject a missing passphrase", () => {
+      return request(app.getHttpServer())
+        .post("/export")
+        .send({
+          secrets: ["secret1"],
+          identifier: "did:web:example.com#key",
+        })
+        .expect(400);
+    });
+
+    it("should reject a passphrase shorter than 12 characters", () => {
+      return request(app.getHttpServer())
+        .post("/export")
+        .send({
+          secrets: ["secret1"],
+          identifier: "did:web:example.com#key",
+          passphrase: "short-pass",
+        })
+        .expect(400);
+    });
+  });
+
+  describe("POST /import - Input Validation", () => {
+    it("should reject an empty body", () => {
+      return request(app.getHttpServer())
+        .post("/import")
+        .send({})
+        .expect(400);
+    });
+
+    it("should reject a value that is not a compact JWE", () => {
+      return request(app.getHttpServer())
+        .post("/import")
+        .send({
+          secrets: ["secret1"],
+          passphrase: "correct-horse-battery",
+          exportedKey: "not-a-jwe",
+        })
+        .expect(400);
+    });
+  });
 });

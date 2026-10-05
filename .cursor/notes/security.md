@@ -59,7 +59,7 @@
 - **Security Constraints**:
   - Array size limits (1-10 secrets maximum)
   - String length limits (identifiers: max 500 chars, secrets: max 1000 chars)
-  - Pattern matching for identifiers (alphanumeric + `-_:.` only)
+  - Pattern matching for identifiers (alphanumeric + `-_:.#`)
   - Enum validation for signatureType and keyType
   - Required field validation with descriptive error messages
   
@@ -98,6 +98,10 @@
 - Structured error responses (no information leakage)
 - Type-safe parameter validation
 - Global exception handling
+
+### Key export
+
+`POST /export` decrypts a stored key with the caller's secrets, then `KeyExportService` returns a compact JWE (`PBES2-HS512+A256KW`, `A256GCM`, `p2c` 210000, `cty` `application/eecc-key-export+json`). The passphrase is the only secret on that blob; the vault secret is not mixed in, so another deployment can `POST /import` it. Decrypt rejects any other `alg`, `enc`, `cty`, or `p2c`. Import stores the key with the caller's new secrets. Code: `apps/app/src/key-services/key-export.service.ts`.
 
 ### Security Headers
 

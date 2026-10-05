@@ -9,6 +9,8 @@ import {
   KeyRequestDto,
   SignRequestDto,
   RawSignRequestDto,
+  ExportKeyRequestDto,
+  ImportKeyRequestDto,
 } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
 import { VerificationMethod } from "./types";
@@ -234,5 +236,31 @@ export class AppService {
     
     const { identifier, secrets } = decryptedRequest;
     return await this.keyService.deleteKey(identifier, secrets);
+  }
+
+  async exportKey(
+    request: ExportKeyRequestDto | EncryptedPayloadDto
+  ): Promise<{ exportedKey: string }> {
+    const { identifier, secrets, passphrase } =
+      this.decryptPayloadIfNeeded<ExportKeyRequestDto>(request);
+    const exportedKey = await this.keyService.exportKey(
+      identifier,
+      secrets,
+      passphrase
+    );
+    return { exportedKey };
+  }
+
+  async importKey(
+    request: ImportKeyRequestDto | EncryptedPayloadDto
+  ): Promise<VerificationMethod> {
+    const { exportedKey, passphrase, secrets, identifier } =
+      this.decryptPayloadIfNeeded<ImportKeyRequestDto>(request);
+    return await this.keyService.importKey(
+      exportedKey,
+      passphrase,
+      secrets,
+      identifier
+    );
   }
 }

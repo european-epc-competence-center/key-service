@@ -476,13 +476,90 @@ POST /generate
 **Parameters:**
 
 - `secrets`: Array of 1-10 secrets for multi-layer encryption
-- `identifier`: Unique identifier for the key (alphanumeric, `-_:.` allowed)
+- `identifier`: Unique identifier for the key (alphanumeric, `-_:.#` allowed)
 - `signatureType`: Algorithm - `Ed25519`, `ES256`, or `PS256`
 - `keyType`: Key format - `JWK` or `VerificationKey2020`
 
 **Response:**
 
 Returns success confirmation without exposing the private key.
+
+### Export Key
+
+Decrypt a stored key with its secrets and return it as a passphrase-encrypted compact JWE. The stored key is left in place. The passphrase is the only secret protecting the export, so another deployment can import it without this service's vault secret.
+
+```
+POST /export
+```
+
+**Request Body:**
+
+```json
+{
+  "secrets": ["user-secret-key"],
+  "identifier": "did:web:example.com#z6Mk...",
+  "passphrase": "correct-horse-battery"
+}
+```
+
+**Parameters:**
+
+- `secrets`: The secrets that unlock the stored key (1-10)
+- `identifier`: Stored key identifier
+- `passphrase`: 12-1000 characters. Encrypts the export with PBES2-HS512+A256KW and A256GCM (210000 PBKDF2-HMAC-SHA512 iterations)
+
+**Response:**
+
+```json
+{
+  "exportedKey": "eyJ...compact-jwe..."
+}
+```
+
+`exportedKey` is a [compact JWE](https://www.rfc-editor.org/rfc/rfc7516) (`alg` `PBES2-HS512+A256KW`, `enc` `A256GCM`, content type `application/eecc-key-export+json`). The decrypted plaintext is JSON:
+
+```json
+{
+  "version": 1,
+  "id": "did:web:example.com#z6Mk...",
+  "signatureType": "Ed25519",
+  "keyType": "Multikey",
+  "publicKey": "z6Mk...",
+  "privateKey": "z..."
+}
+```
+
+`publicKey` and `privateKey` are the multibase values stored for that key.
+
+### Import Key
+
+Decrypt an export with its passphrase and store the key under a new set of secrets.
+
+```
+POST /import
+```
+
+**Request Body:**
+
+```json
+{
+  "secrets": ["new-user-secret"],
+  "passphrase": "correct-horse-battery",
+  "exportedKey": "eyJ...compact-jwe...",
+  "identifier": "did:web:other.example#z6Mk..."
+}
+```
+
+**Parameters:**
+
+- `secrets`: Secrets that will encrypt the key in this deployment (1-10)
+- `passphrase`: The passphrase used when the key was exported
+- `exportedKey`: Compact JWE from `POST /export`
+- `identifier`: Optional storage id. Omit it to keep the id embedded in the export. That is the usual case when migrating a DID from one wallet to another: the identifier stays the same and only the storage secrets change. Set it only when this deployment must look the same key up under a different id
+
+**Response:**
+
+The public verification method, in the same shape as `POST /generate`. The private key is not returned.
 
 ### Health Check
 

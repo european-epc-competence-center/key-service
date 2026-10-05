@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { KeyService } from "./key.service";
+import { KeyExportService } from "./key-export.service";
 import { KeyStorageService } from "./key-storage.service";
 import { SecretService } from "./secret.service";
 import { FailedAttemptsCacheService } from "./failed-attempts-cache.service";
@@ -76,6 +77,7 @@ describe("KeyService", () => {
       ],
       providers: [
         KeyService,
+        KeyExportService,
         KeyStorageService,
         SecretService,
         FailedAttemptsCacheService,
@@ -1170,6 +1172,161 @@ describe("KeyService", () => {
         expect(storedKey!.createdAt).toBeDefined();
         expect(storedKey!.createdAt).toBeInstanceOf(Date);
       });
+    });
+  });
+
+  describe("exportKey and importKey", () => {
+    const passphrase = "correct-horse-battery";
+    const importedSecrets = ["imported-secret-67890"];
+
+    async function roundTrip(
+      signatureType: SignatureType,
+      keyType: KeyType,
+      identifier: string
+    ) {
+      const created = await service.generateKeyPair(
+        signatureType,
+        keyType,
+        identifier,
+        mockSecrets
+      );
+      const exportedKey = await service.exportKey(
+        identifier,
+        mockSecrets,
+        passphrase
+      );
+      const stored = await service.getKeyPair(identifier, mockSecrets);
+      expect(exportedKey).not.toContain(String(stored.privateKey));
+
+      const importedId = `${identifier}-imported`;
+      const imported = await service.importKey(
+        exportedKey,
+        passphrase,
+        importedSecrets,
+        importedId
+      );
+      expect(imported.id).toBe(importedId);
+      if (keyType === KeyType.MULTIKEY) {
+        expect(imported.publicKeyMultibase).toBe(created.publicKeyMultibase);
+      } else {
+        expect(imported.publicKeyJwk).toEqual(created.publicKeyJwk);
+      }
+
+      const importedKey = await service.getKeyPair(importedId, importedSecrets);
+      expect(importedKey.publicKey).toEqual(stored.publicKey);
+      const data = new TextEncoder().encode("export-roundtrip");
+      const signature = await (await importedKey.signer()).sign({ data });
+      const verified = await (await stored.verifier!()).verify({
+        data,
+        signature,
+      });
+      expect(verified).toBe(true);
+
+      await expect(
+        service.getKeyPair(importedId, mockSecrets)
+      ).rejects.toThrow("Failed to decrypt key");
+      const original = await service.getKeyPair(identifier, mockSecrets);
+      expect(original.publicKey).toEqual(stored.publicKey);
+    }
+
+    it("round-trips an Ed25519 Multikey under new secrets", async () => {
+      await roundTrip(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        "did:web:example.com#export-ed25519"
+      );
+    });
+
+    it("round-trips an Ed25519 JsonWebKey", async () => {
+      await roundTrip(
+        SignatureType.ED25519_2020,
+        KeyType.JWK,
+        "did:web:example.com#export-ed25519-jwk"
+      );
+    });
+
+    it("round-trips an ES256 Multikey", async () => {
+      await roundTrip(
+        SignatureType.ES256,
+        KeyType.MULTIKEY,
+        "did:web:example.com#export-es256"
+      );
+    });
+
+    it("round-trips a PS256 Multikey", async () => {
+      await roundTrip(
+        SignatureType.PS256,
+        KeyType.MULTIKEY,
+        "did:web:example.com#export-ps256"
+      );
+    });
+
+    it("rejects export when the secrets do not unlock the key", async () => {
+      const identifier = "did:web:example.com#export-wrong-secret";
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        identifier,
+        mockSecrets
+      );
+      await expect(
+        service.exportKey(identifier, ["wrong-secret-value"], passphrase)
+      ).rejects.toThrow("Failed to decrypt key");
+    });
+
+    it("does not store a key when the passphrase is wrong", async () => {
+      const identifier = "did:web:example.com#export-wrong-passphrase";
+      await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        identifier,
+        mockSecrets
+      );
+      const exportedKey = await service.exportKey(
+        identifier,
+        mockSecrets,
+        passphrase
+      );
+      await expect(
+        service.importKey(
+          exportedKey,
+          "wrong-passphrase-value",
+          importedSecrets,
+          "did:web:example.com#not-stored"
+        )
+      ).rejects.toThrow("Failed to decrypt exported key");
+      await expect(
+        service.getKeyPair("did:web:example.com#not-stored", importedSecrets)
+      ).rejects.toThrow("not found");
+    });
+
+    it("imports under the embedded identifier after the original key is removed", async () => {
+      const identifier = "did:web:example.com#export-same-id";
+      const created = await service.generateKeyPair(
+        SignatureType.ED25519_2020,
+        KeyType.MULTIKEY,
+        identifier,
+        mockSecrets
+      );
+      const exportedKey = await service.exportKey(
+        identifier,
+        mockSecrets,
+        passphrase
+      );
+      await expect(
+        service.importKey(exportedKey, passphrase, importedSecrets)
+      ).rejects.toThrow("already exists");
+
+      await service.deleteKey(identifier, mockSecrets);
+      const imported = await service.importKey(
+        exportedKey,
+        passphrase,
+        importedSecrets
+      );
+      expect(imported.id).toBe(identifier);
+      expect(imported.publicKeyMultibase).toBe(created.publicKeyMultibase);
+      const stored = await service.getKeyPair(identifier, importedSecrets);
+      expect(stored.publicKey).toBe(created.publicKeyMultibase);
     });
   });
 });
