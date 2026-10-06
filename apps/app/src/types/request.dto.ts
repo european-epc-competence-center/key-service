@@ -31,8 +31,18 @@ const MAX_IDENTIFIER_LENGTH = 500; // Max length for identifiers
 const MAX_SECRETS_ARRAY_SIZE = 10; // Max number of secrets allowed
 const MIN_SECRETS_ARRAY_SIZE = 1; // Min number of secrets required
 const MAX_RAW_DATA_LENGTH = 10000; // Max length for base64-encoded raw signing input
+const MIN_PASSPHRASE_LENGTH = 12;
+const MAX_PASSPHRASE_LENGTH = 1000;
+const MAX_EXPORTED_KEY_LENGTH = 65536;
 
-export class KeyRequestDto {
+/** Lookup ids may include a DID fragment (`#`) because generated keys are stored that way. */
+export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9_\-:.#]+$/;
+
+/** Compact JWE: five base64url segments (RFC 7516). */
+export const COMPACT_JWE_PATTERN =
+  /^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+){4}$/;
+
+export class SecretsRequestDto {
   /**
    * Secrets of the users for key pair authentication
    * Must be an array of strings with length constraints
@@ -55,7 +65,9 @@ export class KeyRequestDto {
     message: `Each secret must not exceed ${MAX_SECRET_LENGTH} characters`,
   })
   secrets!: string[];
+}
 
+export class KeyRequestDto extends SecretsRequestDto {
   /**
    * Identifier for the signing key
    * Must be a non-empty string with length constraints
@@ -66,9 +78,9 @@ export class KeyRequestDto {
   @MaxLength(MAX_IDENTIFIER_LENGTH, {
     message: `Identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
   })
-  @Matches(/^[a-zA-Z0-9_\-:.]+$/, {
+  @Matches(IDENTIFIER_PATTERN, {
     message:
-      "Identifier must contain only alphanumeric characters, hyphens, underscores, colons, and periods",
+      "Identifier must contain only alphanumeric characters, hyphens, underscores, colons, periods, and hash marks",
   })
   identifier!: string;
 }
@@ -191,6 +203,68 @@ export class GenerateRequestDto extends KeyRequestDto {
 }
 
 /**
+ * DTO for exporting a stored key (`POST /export`).
+ * `secrets` unlock the stored key. `passphrase` encrypts the returned JWE
+ * and is the only secret protecting that export.
+ */
+export class ExportKeyRequestDto extends KeyRequestDto {
+  @IsNotEmpty({ message: "Passphrase is required" })
+  @IsString({ message: "Passphrase must be a string" })
+  @MinLength(MIN_PASSPHRASE_LENGTH, {
+    message: `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters`,
+  })
+  @MaxLength(MAX_PASSPHRASE_LENGTH, {
+    message: `Passphrase must not exceed ${MAX_PASSPHRASE_LENGTH} characters`,
+  })
+  passphrase!: string;
+}
+
+/**
+ * DTO for importing a passphrase-encrypted key (`POST /import`).
+ * `passphrase` decrypts the JWE. `secrets` encrypt the key in storage.
+ */
+export class ImportKeyRequestDto extends SecretsRequestDto {
+  @IsNotEmpty({ message: "Passphrase is required" })
+  @IsString({ message: "Passphrase must be a string" })
+  @MinLength(MIN_PASSPHRASE_LENGTH, {
+    message: `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters`,
+  })
+  @MaxLength(MAX_PASSPHRASE_LENGTH, {
+    message: `Passphrase must not exceed ${MAX_PASSPHRASE_LENGTH} characters`,
+  })
+  passphrase!: string;
+
+  @IsNotEmpty({ message: "Exported key is required" })
+  @IsString({ message: "Exported key must be a string" })
+  @Matches(COMPACT_JWE_PATTERN, {
+    message: "Exported key must be a compact JWE",
+  })
+  @MaxLength(MAX_EXPORTED_KEY_LENGTH, {
+    message: `Exported key must not exceed ${MAX_EXPORTED_KEY_LENGTH} characters`,
+  })
+  exportedKey!: string;
+
+  /**
+   * Storage id for the imported key. The export already carries the id that
+   * located the key, and import uses that id when this field is omitted.
+   * That is the usual case when migrating a DID from one wallet to another:
+   * the identifier stays the same and only the storage secrets change.
+   * Set this only when this deployment must look the same key up under a different id.
+   */
+  @IsOptional()
+  @IsNotEmpty({ message: "Identifier cannot be empty" })
+  @IsString({ message: "Identifier must be a string" })
+  @MaxLength(MAX_IDENTIFIER_LENGTH, {
+    message: `Identifier must not exceed ${MAX_IDENTIFIER_LENGTH} characters`,
+  })
+  @Matches(IDENTIFIER_PATTERN, {
+    message:
+      "Identifier must contain only alphanumeric characters, hyphens, underscores, colons, periods, and hash marks",
+  })
+  identifier?: string;
+}
+
+/**
  * Export validation constants for use in tests and documentation
  */
 export const VALIDATION_CONSTANTS = {
@@ -200,4 +274,7 @@ export const VALIDATION_CONSTANTS = {
   MAX_SECRETS_ARRAY_SIZE,
   MIN_SECRETS_ARRAY_SIZE,
   MAX_RAW_DATA_LENGTH,
+  MIN_PASSPHRASE_LENGTH,
+  MAX_PASSPHRASE_LENGTH,
+  MAX_EXPORTED_KEY_LENGTH,
 } as const;

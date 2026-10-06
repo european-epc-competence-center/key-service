@@ -8,7 +8,9 @@ import {
 import { AppService } from "./app.service";
 import { SignType } from "./types/sign-types.enum";
 import {
+  ExportKeyRequestDto,
   GenerateRequestDto,
+  ImportKeyRequestDto,
   KeyRequestDto,
   RawSignRequestDto,
   SignRequestDto,
@@ -69,5 +71,21 @@ export class AppController {
     body: KeyRequestDto | EncryptedPayloadDto
   ) {
     return this.appService.deleteKey(body);
+  }
+
+  @Post("export")
+  exportKey(
+    @Body(new RequestBodyValidationPipe(ExportKeyRequestDto))
+    body: ExportKeyRequestDto | EncryptedPayloadDto
+  ) {
+    return this.appService.exportKey(body);
+  }
+
+  @Post("import")
+  importKey(
+    @Body(new RequestBodyValidationPipe(ImportKeyRequestDto))
+    body: ImportKeyRequestDto | EncryptedPayloadDto
+  ) {
+    return this.appService.importKey(body);
   }
 }

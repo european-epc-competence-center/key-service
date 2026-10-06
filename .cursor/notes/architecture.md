@@ -7,6 +7,7 @@
 ```
 AppModule
 ├── KeyService (core key operations)
+├── KeyExportService (passphrase JWE export/import; see security.md)
 ├── KeyStorageService (database layer)
 ├── SecretService (encryption/decryption)
 ├── PayloadEncryptionService (AES-256-GCM payload encryption)

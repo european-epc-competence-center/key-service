@@ -49,14 +49,15 @@ key-service/
 
 ### Main Components
 
-1. **KeyService** - Core key generation and management
-2. **KeyStorageService** - Database operations for encrypted keys
-3. **SecretService** - Encryption/decryption of key materials
-4. **PayloadEncryptionService** - AES-256-GCM request decryption (clients send encrypted, service responds plain)
-5. **JwtSigningService** - JWT-VC signing implementation
-6. **DataIntegritySigningService** - Data Integrity proof signing
-7. **FailedAttemptsCacheService** - Security rate limiting
-8. **JsonLdContextCache** / **DocumentLoaderService** - Filesystem-backed JSON-LD contexts (+ network fallback)
+1. **KeyService** - Core key generation, export, and import
+2. **KeyExportService** - Passphrase-encrypted compact JWE for key export (`PBES2-HS512+A256KW` + `A256GCM`)
+3. **KeyStorageService** - Database operations for encrypted keys
+4. **SecretService** - Encryption/decryption of key materials
+5. **PayloadEncryptionService** - AES-256-GCM request decryption (clients send encrypted, service responds plain)
+6. **JwtSigningService** - JWT-VC signing implementation
+7. **DataIntegritySigningService** - Data Integrity proof signing
+8. **FailedAttemptsCacheService** - Security rate limiting
+9. **JsonLdContextCache** / **DocumentLoaderService** - Filesystem-backed JSON-LD contexts (+ network fallback)
 
 ### Database
 
@@ -97,6 +98,8 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 - `POST /sign/vp/:type` - Sign verifiable presentations (type: jwt, data-integrity, sd-jwt)
 - `POST /sign/pop/:type` - Same `type` enum as `/sign/vp`; body `SignRequestDto` (same as `/sign/vp`)
 - `POST /generate` - Generate new key pairs (algorithms: Ed25519, ES256, PS256)
+- `POST /export` - Export a stored key as a passphrase-encrypted compact JWE (`PBES2-HS512+A256KW` + `A256GCM`). Caller sends storage `secrets` plus a `passphrase`
+- `POST /import` - Import that JWE with the `passphrase` and store it under new `secrets` (optional new `identifier`)
 - **Note**: All POST endpoints automatically support encrypted requests (decryption handled in AppService layer for enhanced security)
 - `GET /health` - General health check
 - `GET /health/liveness` - Kubernetes liveness probe
@@ -107,7 +110,7 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 All signing and generation requests use:
 - `verifiable`: Optional in DTO; required for `/sign/vc` and `/sign/vp` at service layer; VC or VP object (not `"credential"`)
 - `secrets`: Array of 1-10 secrets (not single "secret")
-- `identifier`: Key identifier (alphanumeric + `-_:.`)
+- `identifier`: Key identifier (alphanumeric + `-_:.#`)
 - `SignRequestDto`: optional `verifiable`, `secrets`, `identifier`, optional `challenge`, `domain` — used for `/sign/vc`, `/sign/vp`, `/sign/pop` (`verifiable` required for vc/vp; PoP `jwt` / `data-integrity` ignore `verifiable`; di PoP builds minimal VP then `signPresentation`; F.1/F.2 require `domain`)
 
 ## Notes Files Reference

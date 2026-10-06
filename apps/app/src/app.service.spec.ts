@@ -9,6 +9,7 @@ import { AppService } from "./app.service";
 import { JwtSigningService } from "./signing-services/jwt-signing.service";
 import { DataIntegritySigningService } from "./signing-services/data-integrity-signing.service";
 import { KeyService } from "./key-services/key.service";
+import { KeyExportService } from "./key-services/key-export.service";
 import { KeyStorageService } from "./key-services/key-storage.service";
 import { SecretService } from "./key-services/secret.service";
 import { FailedAttemptsCacheService } from "./key-services/failed-attempts-cache.service";
@@ -70,6 +71,7 @@ describe("AppService.signRaw", () => {
         JwtSigningService,
         DataIntegritySigningService,
         KeyService,
+        KeyExportService,
         KeyStorageService,
         SecretService,
         FailedAttemptsCacheService,

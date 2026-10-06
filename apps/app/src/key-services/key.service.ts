@@ -14,12 +14,16 @@ import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
 import * as RsaMultikey from "@eecc/rsa-multikey";
 import { VerificationMethod } from "../types/verification-method.types";
 import { KeyStorageService } from "./key-storage.service";
+import { KeyExportService, KEY_EXPORT_VERSION } from "./key-export.service";
 import { KeyType } from "../types";
 import { UnsupportedException } from "../types/custom-exceptions";
 
 @Injectable()
 export class KeyService {
-  constructor(private readonly keyStorageService: KeyStorageService) {}
+  constructor(
+    private readonly keyStorageService: KeyStorageService,
+    private readonly keyExportService: KeyExportService
+  ) {}
 
   async generateKeyPair(
     keyType: SignatureType,
@@ -131,20 +135,13 @@ export class KeyService {
       keyPair.publicKeyMultibase,
       secrets
     );
-    if (keyFormat === KeyType.MULTIKEY) {
-      return {
-        id: keyPair.id,
-        type: keyFormat,
-        controller: keyPair.controller,
-        publicKeyMultibase: keyPair.publicKeyMultibase,
-      };
-    }
-    return {
-      id: keyPair.id,
-      type: keyFormat,
-      controller: keyPair.controller,
-      publicKeyJwk: await Ed25519Multikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
-    };
+    return await this.toVerificationMethod(
+      keyPair.id,
+      SignatureType.ED25519_2020,
+      keyFormat,
+      keyPair.publicKeyMultibase,
+      keyPair.secretKeyMultibase
+    );
   }
 
   async generateEcdsaMultikey(
@@ -168,20 +165,13 @@ export class KeyService {
       keyPair.publicKeyMultibase,
       secrets
     );
-    if (keyFormat === KeyType.MULTIKEY) {
-      return {
-        id: keyPair.id,
-        type: keyFormat,
-        controller: keyPair.controller,
-        publicKeyMultibase: keyPair.publicKeyMultibase,
-      };
-    }
-    return {
-      id: keyPair.id,
-      type: keyFormat.toString(),
-      controller: keyPair.controller,
-      publicKeyJwk: await EcdsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as ECJsonWebKey,
-    };
+    return await this.toVerificationMethod(
+      keyPair.id,
+      SignatureType.ES256,
+      keyFormat,
+      keyPair.publicKeyMultibase,
+      keyPair.secretKeyMultibase
+    );
   }
 
   async generateRsaMultikey(
@@ -204,20 +194,13 @@ export class KeyService {
       keyPair.publicKeyMultibase,
       secrets
     );
-    if (keyFormat === KeyType.MULTIKEY) {
-      return {
-        id: keyPair.id,
-        type: keyFormat,
-        controller: keyPair.controller,
-        publicKeyMultibase: keyPair.publicKeyMultibase,
-      };
-    }
-    return {
-      id: keyPair.id,
-      type: keyFormat,
-      controller: keyPair.controller,
-      publicKeyJwk: await RsaMultikey.toJwk({keyPair: keyPair, secretKey: false}) as RSAJsonWebKey,
-    };
+    return await this.toVerificationMethod(
+      keyPair.id,
+      SignatureType.PS256,
+      keyFormat,
+      keyPair.publicKeyMultibase,
+      keyPair.secretKeyMultibase
+    );
   }
 
   /**
@@ -228,5 +211,159 @@ export class KeyService {
    */
   async deleteKey(identifier: string, secrets: string[]): Promise<void> {
     return await this.keyStorageService.deleteKey(identifier, secrets);
+  }
+
+  /**
+   * Decrypt a stored key with `secrets` and return it as a passphrase-encrypted
+   * compact JWE. The original key stays in storage.
+   */
+  async exportKey(
+    identifier: string,
+    secrets: string[],
+    passphrase: string
+  ): Promise<string> {
+    this.assertSecrets(secrets);
+    const storedKey = await this.keyStorageService.retrieveKey(
+      identifier,
+      secrets
+    );
+    this.assertMultibaseKey(storedKey);
+    return await this.keyExportService.encrypt(
+      {
+        version: KEY_EXPORT_VERSION,
+        id: identifier,
+        signatureType: storedKey.signatureType,
+        keyType: storedKey.keyType,
+        publicKey: storedKey.publicKey,
+        privateKey: storedKey.privateKey,
+      },
+      passphrase
+    );
+  }
+
+  /**
+   * Decrypt a passphrase-encrypted export and store it under `secrets`.
+   * `identifier` overrides the id carried inside the export.
+   * The returned verification method is built from the stored row.
+   */
+  async importKey(
+    exportedKey: string,
+    passphrase: string,
+    secrets: string[],
+    identifier?: string
+  ): Promise<VerificationMethod> {
+    this.assertSecrets(secrets);
+    const document = await this.keyExportService.decrypt(
+      exportedKey,
+      passphrase
+    );
+    const id = identifier ?? document.id;
+    await this.keyStorageService.storeKey(
+      id,
+      document.signatureType,
+      document.keyType,
+      document.privateKey,
+      document.publicKey,
+      secrets
+    );
+    const storedKey = await this.keyStorageService.retrieveKey(id, secrets);
+    this.assertMultibaseKey(storedKey);
+    return await this.toVerificationMethod(
+      storedKey.id,
+      storedKey.signatureType,
+      storedKey.keyType,
+      storedKey.publicKey,
+      storedKey.privateKey
+    );
+  }
+
+  private assertSecrets(secrets: string[]): void {
+    if (!secrets || secrets.length === 0) {
+      throw new Error("At least one secret must be provided");
+    }
+  }
+
+  private assertMultibaseKey<
+    T extends { publicKey: unknown; privateKey: unknown; signatureType: SignatureType }
+  >(
+    storedKey: T
+  ): asserts storedKey is T & { publicKey: string; privateKey: string } {
+    if (
+      typeof storedKey.publicKey !== "string" ||
+      typeof storedKey.privateKey !== "string"
+    ) {
+      throw new UnsupportedException(
+        `Unsupported key material for signature type ${storedKey.signatureType}`
+      );
+    }
+  }
+
+  /**
+   * Public verification method for a stored multibase key.
+   * Generate and import both return this shape. `JsonWebKey` is converted
+   * from the multibase material; `Multikey` copies the public multibase.
+   */
+  private async toVerificationMethod(
+    id: string,
+    signatureType: SignatureType,
+    keyFormat: KeyType,
+    publicKeyMultibase: string,
+    secretKeyMultibase: string
+  ): Promise<VerificationMethod> {
+    const controller = id.split("#")[0];
+    if (keyFormat === KeyType.MULTIKEY) {
+      return {
+        id,
+        type: keyFormat,
+        controller,
+        publicKeyMultibase,
+      };
+    }
+    const multikey = {
+      type: "Multikey",
+      id,
+      controller,
+      publicKeyMultibase,
+      secretKeyMultibase,
+    };
+    if (signatureType === SignatureType.ED25519_2020) {
+      const keyPair = await Ed25519Multikey.from(multikey);
+      return {
+        id,
+        type: keyFormat,
+        controller,
+        publicKeyJwk: (await Ed25519Multikey.toJwk({
+          keyPair,
+          secretKey: false,
+        })) as ECJsonWebKey,
+      };
+    }
+    if (signatureType === SignatureType.ES256) {
+      const keyPair = await EcdsaMultikey.from(multikey);
+      return {
+        id,
+        type: keyFormat,
+        controller,
+        publicKeyJwk: (await EcdsaMultikey.toJwk({
+          keyPair,
+          secretKey: false,
+        })) as ECJsonWebKey,
+      };
+    }
+    if (signatureType === SignatureType.PS256) {
+      const keyPair = (await RsaMultikey.from(multikey)) as any;
+      return {
+        id,
+        type: keyFormat,
+        controller,
+        publicKeyJwk: (await RsaMultikey.toJwk({
+          keyPair,
+          secretKey: false,
+        })) as RSAJsonWebKey,
+      };
+    }
+    throw new UnsupportedException(
+      `Unsupported signature type ${signatureType}`
+    );
   }
 }

@@ -35,6 +35,8 @@ openssl rand -base64 32 | cut -c1-32
 
 All POST endpoints automatically support encrypted requests:
 - `POST /generate`
+- `POST /export`
+- `POST /import`
 - `POST /sign/vc/:type`
 - `POST /sign/vp/:type`
 

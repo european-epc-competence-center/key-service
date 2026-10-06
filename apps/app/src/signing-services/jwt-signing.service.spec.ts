@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { JwtSigningService } from "./jwt-signing.service";
 import { KeyService } from "../key-services/key.service";
+import { KeyExportService } from "../key-services/key-export.service";
 import { KeyStorageService } from "../key-services/key-storage.service";
 import { SecretService } from "../key-services/secret.service";
 import { FailedAttemptsCacheService } from "../key-services/failed-attempts-cache.service";
@@ -260,6 +261,7 @@ describe("JwtSigningService", () => {
       providers: [
         JwtSigningService,
         KeyService,
+        KeyExportService,
         KeyStorageService,
         SecretService,
         FailedAttemptsCacheService,
