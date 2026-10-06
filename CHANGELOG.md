@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.9.0] - 2026-10-06
 
 ### Added
 - `POST /export` and `POST /import` move a stored key between deployments. The caller unlocks the stored key with `secrets`, and a separate `passphrase` encrypts the export. The export is a compact JWE (`PBES2-HS512+A256KW` / `A256GCM`, 210000 PBKDF2-HMAC-SHA512 iterations) whose plaintext is a versioned JSON document (`application/eecc-key-export+json`) containing the multibase key material. Import stores that key under the caller's `secrets`, optionally under a new `identifier`.
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Key identifiers may include a `#` fragment, matching the ids this service stores after generation
+
 
 ## [2.8.0] - 2026-10-02
 
