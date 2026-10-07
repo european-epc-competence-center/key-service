@@ -482,7 +482,20 @@ POST /generate
 
 **Response:**
 
-Returns success confirmation without exposing the private key.
+```json
+{
+  "verificationMethod": {
+    "id": "did:web:example.com#z6Mk...",
+    "type": "JsonWebKey",
+    "controller": "did:web:example.com",
+    "publicKeyJwk": {}
+  },
+  "signatureType": "Ed25519",
+  "keyType": "JsonWebKey"
+}
+```
+
+`signatureType` and `keyType` are the values stored with the key. The private key is not returned. `POST /import` uses this same shape.
 
 ### Export Key
 
@@ -516,7 +529,7 @@ POST /export
 }
 ```
 
-`exportedKey` is a [compact JWE](https://www.rfc-editor.org/rfc/rfc7516) (`alg` `PBES2-HS512+A256KW`, `enc` `A256GCM`, content type `application/eecc-key-export+json`). The decrypted plaintext is JSON:
+`exportedKey` is a [compact JWE](https://www.rfc-editor.org/rfc/rfc7516) (`alg` `PBES2-HS512+A256KW`, `enc` `A256GCM`, content type `application/eecc-key-export+json`). The protected header also carries `signatureType` and `keyType` from the stored key, so the file can be identified before the passphrase. The decrypted plaintext is JSON:
 
 ```json
 {
@@ -559,7 +572,20 @@ POST /import
 
 **Response:**
 
-The public verification method, in the same shape as `POST /generate`. The private key is not returned.
+```json
+{
+  "verificationMethod": {
+    "id": "did:web:other.example#z6Mk...",
+    "type": "Multikey",
+    "controller": "did:web:other.example",
+    "publicKeyMultibase": "z6Mk..."
+  },
+  "signatureType": "Ed25519",
+  "keyType": "Multikey"
+}
+```
+
+Same shape as `POST /generate`. `signatureType` and `keyType` are the values stored with the key. The private key is not returned.
 
 ### Health Check
 

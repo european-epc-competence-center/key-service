@@ -101,7 +101,7 @@
 
 ### Key export
 
-`POST /export` decrypts a stored key with the caller's secrets, then `KeyExportService` returns a compact JWE (`PBES2-HS512+A256KW`, `A256GCM`, `p2c` 210000, `cty` `application/eecc-key-export+json`). The passphrase is the only secret on that blob; the vault secret is not mixed in, so another deployment can `POST /import` it. Decrypt rejects any other `alg`, `enc`, `cty`, or `p2c`. Import stores the key with the caller's new secrets. Code: `apps/app/src/key-services/key-export.service.ts`.
+`POST /export` decrypts a stored key with the caller's secrets, then `KeyExportService` returns a compact JWE (`PBES2-HS512+A256KW`, `A256GCM`, `p2c` 210000, `cty` `application/eecc-key-export+json`). The protected header also carries `signatureType` and `keyType`, copied from the stored key so the file can be identified before the passphrase. The passphrase is the only secret on that blob; the vault secret is not mixed in, so another deployment can `POST /import` it. Decrypt rejects any other `alg`, `enc`, `cty`, or `p2c`. `POST /generate` and `POST /import` both return `{ verificationMethod, signatureType, keyType }` from the stored row. Code: `apps/app/src/key-services/key-export.service.ts`, `key.service.ts`.
 
 ### Security Headers
 

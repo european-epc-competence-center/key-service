@@ -13,7 +13,7 @@ import {
   ImportKeyRequestDto,
 } from "./types/request.dto";
 import { VerifiableCredential, VerifiablePresentation } from "./types/verifiable-credential.types";
-import { VerificationMethod } from "./types";
+import { KeyResponse } from "./types";
 import { EncryptedPayloadDto } from "./types/encrypted-payload.dto";
 
 @Injectable()
@@ -215,19 +215,16 @@ export class AppService {
     return { signature: Buffer.from(signatureBytes).toString("base64") };
   }
 
-  async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<VerificationMethod> {
-    // Decrypt payload if encrypted
+  async generateKey(request: GenerateRequestDto | EncryptedPayloadDto): Promise<KeyResponse> {
     const decryptedRequest = this.decryptPayloadIfNeeded<GenerateRequestDto>(request);
-    
     const { keyType, signatureType, identifier, secrets } = decryptedRequest;
-
-    // Generate the key pair using the existing KeyService
-    return await this.keyService.generateKeyPair(
+    const verificationMethod = await this.keyService.generateKeyPair(
       signatureType,
       keyType,
       identifier,
       secrets
     );
+    return { verificationMethod, signatureType, keyType };
   }
 
   async deleteKey(request: KeyRequestDto | EncryptedPayloadDto): Promise<void> {
@@ -253,7 +250,7 @@ export class AppService {
 
   async importKey(
     request: ImportKeyRequestDto | EncryptedPayloadDto
-  ): Promise<VerificationMethod> {
+  ): Promise<KeyResponse> {
     const { exportedKey, passphrase, secrets, identifier } =
       this.decryptPayloadIfNeeded<ImportKeyRequestDto>(request);
     return await this.keyService.importKey(

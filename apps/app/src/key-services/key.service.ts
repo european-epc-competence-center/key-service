@@ -13,6 +13,7 @@ import * as EcdsaMultikey from "@digitalbazaar/ecdsa-multikey";
 // @ts-ignore
 import * as RsaMultikey from "@eecc/rsa-multikey";
 import { VerificationMethod } from "../types/verification-method.types";
+import { KeyResponse } from "../types/request.types";
 import { KeyStorageService } from "./key-storage.service";
 import { KeyExportService, KEY_EXPORT_VERSION } from "./key-export.service";
 import { KeyType } from "../types";
@@ -244,14 +245,15 @@ export class KeyService {
   /**
    * Decrypt a passphrase-encrypted export and store it under `secrets`.
    * `identifier` overrides the id carried inside the export.
-   * The returned verification method is built from the stored row.
+   * The verification method is built from the stored row. `signatureType` and
+   * `keyType` are the values stored with that row.
    */
   async importKey(
     exportedKey: string,
     passphrase: string,
     secrets: string[],
     identifier?: string
-  ): Promise<VerificationMethod> {
+  ): Promise<KeyResponse> {
     this.assertSecrets(secrets);
     const document = await this.keyExportService.decrypt(
       exportedKey,
@@ -268,13 +270,17 @@ export class KeyService {
     );
     const storedKey = await this.keyStorageService.retrieveKey(id, secrets);
     this.assertMultibaseKey(storedKey);
-    return await this.toVerificationMethod(
-      storedKey.id,
-      storedKey.signatureType,
-      storedKey.keyType,
-      storedKey.publicKey,
-      storedKey.privateKey
-    );
+    return {
+      verificationMethod: await this.toVerificationMethod(
+        storedKey.id,
+        storedKey.signatureType,
+        storedKey.keyType,
+        storedKey.publicKey,
+        storedKey.privateKey
+      ),
+      signatureType: storedKey.signatureType,
+      keyType: storedKey.keyType,
+    };
   }
 
   private assertSecrets(secrets: string[]): void {
@@ -300,8 +306,9 @@ export class KeyService {
 
   /**
    * Public verification method for a stored multibase key.
-   * Generate and import both return this shape. `JsonWebKey` is converted
-   * from the multibase material; `Multikey` copies the public multibase.
+   * Generate returns this shape. Import wraps it with the stored
+   * `signatureType` and `keyType`. `JsonWebKey` is converted from the
+   * multibase material; `Multikey` copies the public multibase.
    */
   private async toVerificationMethod(
     id: string,

@@ -32,6 +32,8 @@ describe("KeyExportService", () => {
       enc: KEY_EXPORT_ENC,
       cty: KEY_EXPORT_CONTENT_TYPE,
       p2c: KEY_EXPORT_P2C,
+      signatureType: document.signatureType,
+      keyType: document.keyType,
     });
     await expect(service.decrypt(exportedKey, passphrase)).resolves.toEqual(
       document

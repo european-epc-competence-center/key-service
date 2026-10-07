@@ -1205,11 +1205,17 @@ describe("KeyService", () => {
         importedSecrets,
         importedId
       );
-      expect(imported.id).toBe(importedId);
+      expect(imported.verificationMethod.id).toBe(importedId);
+      expect(imported.signatureType).toBe(signatureType);
+      expect(imported.keyType).toBe(keyType);
       if (keyType === KeyType.MULTIKEY) {
-        expect(imported.publicKeyMultibase).toBe(created.publicKeyMultibase);
+        expect(imported.verificationMethod.publicKeyMultibase).toBe(
+          created.publicKeyMultibase
+        );
       } else {
-        expect(imported.publicKeyJwk).toEqual(created.publicKeyJwk);
+        expect(imported.verificationMethod.publicKeyJwk).toEqual(
+          created.publicKeyJwk
+        );
       }
 
       const importedKey = await service.getKeyPair(importedId, importedSecrets);
@@ -1323,8 +1329,12 @@ describe("KeyService", () => {
         passphrase,
         importedSecrets
       );
-      expect(imported.id).toBe(identifier);
-      expect(imported.publicKeyMultibase).toBe(created.publicKeyMultibase);
+      expect(imported.verificationMethod.id).toBe(identifier);
+      expect(imported.signatureType).toBe(SignatureType.ED25519_2020);
+      expect(imported.keyType).toBe(KeyType.MULTIKEY);
+      expect(imported.verificationMethod.publicKeyMultibase).toBe(
+        created.publicKeyMultibase
+      );
       const stored = await service.getKeyPair(identifier, importedSecrets);
       expect(stored.publicKey).toBe(created.publicKeyMultibase);
     });

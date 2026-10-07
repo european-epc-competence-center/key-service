@@ -44,14 +44,16 @@ describe("AppController (e2e)", () => {
       .post("/export")
       .send({
         secrets,
-        identifier: generated.body.id,
+        identifier: generated.body.verificationMethod.id,
         passphrase,
       })
       .expect(201);
 
     expect(exported.body.exportedKey).toEqual(expect.any(String));
+    expect(generated.body.signatureType).toBe("Ed25519");
+    expect(generated.body.keyType).toBe("Multikey");
     expect(exported.body.exportedKey).not.toContain(
-      generated.body.publicKeyMultibase
+      generated.body.verificationMethod.publicKeyMultibase
     );
 
     const imported = await request(app.getHttpServer())
@@ -64,10 +66,12 @@ describe("AppController (e2e)", () => {
       })
       .expect(201);
 
-    expect(imported.body.publicKeyMultibase).toBe(
-      generated.body.publicKeyMultibase
+    expect(imported.body.verificationMethod.publicKeyMultibase).toBe(
+      generated.body.verificationMethod.publicKeyMultibase
     );
-    expect(imported.body.id).toBe(importedId);
+    expect(imported.body.verificationMethod.id).toBe(importedId);
+    expect(imported.body.signatureType).toBe("Ed25519");
+    expect(imported.body.keyType).toBe("Multikey");
 
     const signed = await request(app.getHttpServer())
       .post("/sign/raw")
@@ -82,7 +86,7 @@ describe("AppController (e2e)", () => {
 
     await request(app.getHttpServer())
       .post("/delete")
-      .send({ secrets, identifier: generated.body.id })
+      .send({ secrets, identifier: generated.body.verificationMethod.id })
       .expect(201);
     await request(app.getHttpServer())
       .post("/delete")

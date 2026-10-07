@@ -2,6 +2,7 @@ import {
   VerifiableCredential,
   VerifiablePresentation,
 } from "./verifiable-credential.types";
+import { VerificationMethod } from "./verification-method.types";
 import { SignatureType } from "./key-types.enum";
 import { KeyType } from "./key-format.enum";
 
@@ -48,3 +49,13 @@ export interface GenerateRequestBody
  */
 export interface SignRequestBody
   extends Omit<ServiceRequestBody, "signatureType" | "keyType"> {}
+
+/**
+ * `POST /generate` and `POST /import` response. `signatureType` and `keyType`
+ * are the values stored with the key, beside the public verification method.
+ */
+export interface KeyResponse {
+  verificationMethod: VerificationMethod;
+  signatureType: SignatureType;
+  keyType: KeyType;
+}

@@ -97,9 +97,9 @@ Based on `docs/security_and_key_management_concept.md`, the system implements:
 - `POST /sign/vc/:type` - Sign verifiable credentials (type: jwt, data-integrity, sd-jwt)
 - `POST /sign/vp/:type` - Sign verifiable presentations (type: jwt, data-integrity, sd-jwt)
 - `POST /sign/pop/:type` - Same `type` enum as `/sign/vp`; body `SignRequestDto` (same as `/sign/vp`)
-- `POST /generate` - Generate new key pairs (algorithms: Ed25519, ES256, PS256)
+- `POST /generate` - Generate new key pairs (algorithms: Ed25519, ES256, PS256). Response is `{ verificationMethod, signatureType, keyType }`, same shape as `POST /import`
 - `POST /export` - Export a stored key as a passphrase-encrypted compact JWE (`PBES2-HS512+A256KW` + `A256GCM`). Caller sends storage `secrets` plus a `passphrase`
-- `POST /import` - Import that JWE with the `passphrase` and store it under new `secrets` (optional new `identifier`)
+- `POST /import` - Import that JWE with the `passphrase` and store it under new `secrets` (optional new `identifier`). Response is `{ verificationMethod, signatureType, keyType }` from the stored row. The JWE protected header carries the same two type fields so the file can be identified before decrypt
 - **Note**: All POST endpoints automatically support encrypted requests (decryption handled in AppService layer for enhanced security)
 - `GET /health` - General health check
 - `GET /health/liveness` - Kubernetes liveness probe

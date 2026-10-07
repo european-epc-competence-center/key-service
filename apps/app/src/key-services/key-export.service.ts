@@ -22,6 +22,8 @@ import {
  *   decrypt ceiling, so a crafted header cannot force more work.
  * - enc: A256GCM
  * - cty: application/eecc-key-export+json
+ * - signatureType, keyType: copied from the stored key so the file can be
+ *   identified before the passphrase
  *
  * Plaintext is a versioned JSON document with the multibase key material.
  */
@@ -51,6 +53,8 @@ export class KeyExportService {
         alg: KEY_EXPORT_ALG,
         enc: KEY_EXPORT_ENC,
         cty: KEY_EXPORT_CONTENT_TYPE,
+        signatureType: document.signatureType,
+        keyType: document.keyType,
       })
       .setKeyManagementParameters({ p2c: KEY_EXPORT_P2C })
       .encrypt(new TextEncoder().encode(passphrase));
