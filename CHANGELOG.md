@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-10-07
 
 ### Changed
 - `POST /generate` and `POST /import` return `{ verificationMethod, signatureType, keyType }`. `signatureType` and `keyType` are the values stored with the key. The response body is no longer the verification method itself. Breaking; a major version will carry this change
 - Key export JWE protected headers include `signatureType` and `keyType`, copied from the stored key so the file shows what it contains before the passphrase
+
 
 ## [2.9.0] - 2026-10-06
 
