@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Mitigate `proxy-addr` CVE-2026-90711 / GHSA-jqcg-44mw-7w3h (IPv4-mapped IPv6 trust prefixes shorter than 96 bits match every IPv4 address, so `X-Forwarded-For` is trusted from any client): override to `>=2.0.8`. Express pulls `proxy-addr` transitively; 2.0.7 was in the affected range 1.1.0–2.0.7.
+- Mitigate `brace-expansion` CVE-2026-102277 / GHSA-q2hr-2g5m-vwhr (quadratic rescans of `{a},b}`-shaped input block the event loop) and CVE-2026-102278 / GHSA-qhr7-859c-m2p7 (nested brace groups exhaust the stack): bump overrides from `1.1.18` / `5.0.9` to `1.1.21` / `5.0.12`. Prior pins remain inside both affected ranges.
+- Mitigate `undici` CVE-2026-19534 / GHSA-rfgv-xxqx-mfg5 (an unrequested `Sec-WebSocket-Protocol` on a 101 response throws an uncaught `TypeError` and terminates the process): raise the 6.x override floor from `>=6.24.0` to `>=6.28.1` (resolves to 6.29.0). Stay below 7 because undici 8 breaks Jest. 6.28.0 was the last affected 6.x release.
 
 
 ## [3.0.0] - 2026-10-07

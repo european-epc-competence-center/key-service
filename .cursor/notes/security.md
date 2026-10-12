@@ -181,7 +181,7 @@ Express depends on `proxy-addr` for `req.ip` / `req.ips`. Override to `>=2.0.8` 
 
 ### Malware / key-theft scan (direct crypto stack)
 
-No install scripts on Digital Bazaar / jose / noble direct packages; pattern scan of those trees showed no SSH/credential exfil (false positives only: W3C “credentials” URLs, FFT method named `eval`). `npm audit` issues are undici desync/DoS and js-yaml/fast-uri DoS — not key exfiltration. Overrides for `undici` / `js-yaml` / `fast-uri` are partially ineffective (still resolving vulnerable patch versions).
+No install scripts on Digital Bazaar / jose / noble direct packages; pattern scan of those trees showed no SSH/credential exfil (false positives only: W3C “credentials” URLs, FFT method named `eval`). `undici` is overridden to `>=6.28.1 <7` (resolves to 6.29.0; CVE-2026-19534 WebSocket subprotocol crash). Stay below 7 because undici 8 breaks Jest. `npm audit` still flags `js-yaml` and `fast-uri` DoS despite their overrides — not key exfiltration.
 
 ### Runtime network in signing path
 
