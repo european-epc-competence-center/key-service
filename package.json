@@ -92,6 +92,7 @@
     "brace-expansion": "5.0.9",
     "minimatch@9": "10.2.5",
     "body-parser": ">=2.3.0",
-    "fast-uri": ">=3.1.4"
+    "fast-uri": ">=3.1.4",
+    "proxy-addr": ">=2.0.8"
   }
 }

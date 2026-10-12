@@ -171,6 +171,10 @@ Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (Type
 
 `@nestjs/platform-express` pulls `multer` for multipart parsing. Override `multer` to `>=2.3.0` (CVE-2026-77078 / AIKIDO-2026-18568: uncaught `RangeError` on crafted bracket field names). Currently resolves to 2.4.0.
 
+### Transitive `proxy-addr` (Express `req.ip`)
+
+Express depends on `proxy-addr` for `req.ip` / `req.ips`. Override to `>=2.0.8` (CVE-2026-90711 / GHSA-jqcg-44mw-7w3h: an IPv4-mapped IPv6 trust subnet with an IPv4-sized prefix, such as `::ffff:10.0.0.0/8`, matches every IPv4 address). This app does not set `trust proxy`; the override still removes the vulnerable resolver from the tree.
+
 ### Highest practical install-time risk
 
 `@eecc/rsa-multikey` ≤1.0.2 declared `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`), causing npm to auto-install the unrelated npm package `node` (~116MB binary via `preinstall`). Fixed upstream in local `../rsa-multikey` (`engines` instead); pending patch publish + bump in this repo. Until then, omit the binary package from production images if auto-installed.
