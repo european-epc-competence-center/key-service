@@ -246,6 +246,13 @@ See `docker/README.md` for TLS certificate regeneration and troubleshooting.
   - Pushed only for version tags (e.g., `v1.7.0`)
   - Requires `GO_CONTAINER_PUSH_PASSWD` secret in GitHub Actions
 
+#### Image tags (version tag `vX.Y.Z`, both registries)
+- `X.Y.Z` (full version)
+- `X.Y` (major.minor)
+- `X` (major)
+- `latest`
+- GHCR also tags `main` on main-branch pushes
+
 ### GitHub Synchronization
 
 The repository can be automatically synced to GitHub on releases or manually triggered.
