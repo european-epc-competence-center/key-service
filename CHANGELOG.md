@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.2] - 2026-10-22
+
+### Fixed
+
+(CVE-2026-106069, CVE-2026-106072) tls: reject non-canonical IP addresses (Matteo Collina) – High
+(CVE-2026-105482) dns: validate resolve inputs for null bytes (James M Snell) – High
+(CVE-2026-105483) tls: fix ip normalization regression (James M Snell) – High
+(CVE-2026-111497) deps: brotli: cherry-pick 0ed4268a4401abcb44720963 (Evgenii Kliuchnikov) – High
+(CVE-2026-105481) http: ensure agent data guard works without I/O (James M Snell) – Medium
+(CVE-2026-106074) crypto: reset random caches across snapshots (Filip Skokan) – Medium
+(CVE-2026-106073) permission: check permission model in realpathSync (RafaelGSS) – Low
 
 ### Added
 - Versioned container images are also tagged with the major version (`3` for `v3.0.0`) on GitHub Container Registry and Azure Container Registry
+
 
 ## [3.0.1] - 2026-10-12
 
