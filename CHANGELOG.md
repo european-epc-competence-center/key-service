@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Mitigate `multer` CVE-2026-113872 / GHSA-q7qp-rjg7-q26m (an async `fileFilter` that is still pending when the request is aborted resumes a torn-down parser and crashes the process): bump override from `>=2.3.0` to `>=2.5.0`. This service does not configure `fileFilter` or accept uploads; the override removes the vulnerable release from the image. 2.4.0 was in the affected range 2.0.0–2.4.x.
+
+
 ## [3.0.2] - 2026-10-22
 
 ### Fixed

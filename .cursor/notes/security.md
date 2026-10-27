@@ -169,7 +169,7 @@ Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (Type
 
 ### Transitive `multer` (NestJS / Express)
 
-`@nestjs/platform-express` pulls `multer` for multipart parsing. Override `multer` to `>=2.3.0` (CVE-2026-77078 / AIKIDO-2026-18568: uncaught `RangeError` on crafted bracket field names). Currently resolves to 2.4.0.
+`@nestjs/platform-express` pulls `multer` for multipart parsing. Override `multer` to `>=2.5.0`. That floor covers CVE-2026-77078 / AIKIDO-2026-18568 (uncaught `RangeError` on crafted bracket field names, fixed in 2.3.0) and CVE-2026-113872 / GHSA-q7qp-rjg7-q26m (async `fileFilter` still pending after request teardown crashes the process; fixed in 2.5.0). This app does not configure `fileFilter` or mount upload middleware.
 
 ### Transitive `proxy-addr` (Express `req.ip`)
 
