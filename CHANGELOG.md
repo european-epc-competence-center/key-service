@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- Refresh dependencies and drop overrides whose parent ranges already resolve to a patched release
+  - `body-parser` 2.4.0 (GHSA-27r3-jxmh-p828, trailing bytes after a compressed body). Express `^2.2.1` already allows it
+  - `qs` 6.17.1 (GHSA-6pq8-jhm2-2vcw)
+  - `handlebars` 4.7.10 (GHSA-8r5x-fm3f-whwj, GHSA-p8wg-vrv2-v86f, GHSA-xw65-4hp5-5hc7), via `ts-jest` `^4.7.10`
+  - `fast-uri` stays on 3.1.9. The old `>=3.1.4` override was floating Ajv's `^3` range onto vulnerable 4.x (GHSA-w74x-v6f9-j3xg and related)
+  - `js-yaml` stays on 4.3.2 and 3.15.2. The old `>=4.3.0` override was selecting vulnerable 5.2.3 (GHSA-r3ph-w7gj-g6xm, fixed in 5.5.0, which these parents do not use)
+  - `multer` 2.5.0 now comes from `@nestjs/platform-express` 11.2.9, so the override is gone
+  - `proxy-addr` 2.0.8, `form-data` 4.0.6, and `brace-expansion` 1.1.21 / 5.0.12 resolve from parent ranges
+- Keep overrides where the parent range cannot reach the fix
+  - `undici@5` to `>=6.29.1 <7` (GHSA-2m5v-pch6-74hx, GHSA-qrxm-fqhp-jwvm, GHSA-9fm3-97px-rjf6, GHSA-4qv8-2p9j-2685, GHSA-xjj6-f33q-929c). `@digitalbazaar/http-client` 3.x still requests undici 5. Stay below 7 so Jest keeps working
+  - `glob` 10 and 13 to `>=14.0.4 <15` (GHSA-3g3m-2fjr-6pw4). No patched 10.x or 13.x exists
+  - `minimatch` 10 to `>=11.0.8 <12` (GHSA-g3hv-75wg-m249). `test-exclude` 7 requests minimatch 10. minimatch 3.1.5 is outside the affected range and is left alone
+- `deepmerge` 4.3.1 (GHSA-gcqx-w48m-w2h4) has no patched release. It is only pulled by Jest and `@nestjs/cli` (`fork-ts-checker-webpack-plugin`). npm's suggested fix is a downgrade to Jest 25 / Nest CLI 7
+
+### Fixed
+- Jest compiles tests as ES2022. `jose` 6.2.17 puts `code` on its `Error` subclasses as a class field, and the app `tsconfig` target `es2016` emits that assignment before `super()`
+
+### Changed
+- Bump NestJS packages on the 11.2 line to 11.2.9, Jest to 30.5.2, `jose` to 6.2.17, `pg` to 8.23.1, `supertest` to 7.3.2, `ts-jest` to 29.4.15, `tsx` to 4.23.15, and `@types/node` to 24.19.2
+- Stay on NestJS 11, TypeORM 0.3.31, and TypeScript 5.9.3. `@nestjs/cli` 12 depends on TypeScript 6
+
+
 ## [3.0.3] - 2026-10-27
 
 ### Security

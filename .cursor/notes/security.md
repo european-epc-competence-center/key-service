@@ -159,7 +159,7 @@
 - SBOM in CycloneDX format for dependency tracking
 - Risk-prioritized findings with remediation recommendations
 
-## Dependency / supply-chain notes (2026-08-05)
+## Dependency / supply-chain notes
 
 ### Unused direct deps (removed 2026-08-05)
 
@@ -167,21 +167,25 @@ Removed from `package.json`: `@digitalbazaar/ed25519-signature-2020`, `@digitalb
 
 Keep despite no app imports: `reflect-metadata`, `rxjs` (Nest peers), `pg` (TypeORM driver), `ts-loader` (Nest webpack via `nest-cli.json` `webpack: true`).
 
-### Transitive `multer` (NestJS / Express)
+### Overrides (`package.json`)
 
-`@nestjs/platform-express` pulls `multer` for multipart parsing. Override `multer` to `>=2.5.0`. That floor covers CVE-2026-77078 / AIKIDO-2026-18568 (uncaught `RangeError` on crafted bracket field names, fixed in 2.3.0) and CVE-2026-113872 / GHSA-q7qp-rjg7-q26m (async `fileFilter` still pending after request teardown crashes the process; fixed in 2.5.0). This app does not configure `fileFilter` or mount upload middleware.
+Only parents whose own range cannot reach a patched release are overridden. Everything else (`multer` 2.5.0 from `@nestjs/platform-express` 11.2.9, `body-parser` 2.4.0, `proxy-addr` 2.0.8, `qs` 6.17.1, `form-data` 4.0.6, `handlebars` 4.7.10, `fast-uri` 3.1.9, `js-yaml` 4.3.2 / 3.15.2, `brace-expansion` 1.1.21 / 5.0.12) resolves from the parent range. Do not put a `>=` floor on a package whose latest major is outside that range: the old `fast-uri` and `js-yaml` floors floated Ajv and cosmiconfig onto vulnerable newer majors.
 
-### Transitive `proxy-addr` (Express `req.ip`)
+- `undici@5` → `>=6.29.1 <7`. `@digitalbazaar/http-client` 3.x (`jsonld` 8, via `@eecc/rsa-rdfc-2025-cryptosuite`) requests undici 5, which is inside GHSA-2m5v-pch6-74hx / GHSA-qrxm-fqhp-jwvm / GHSA-9fm3-97px-rjf6. http-client 4.x already requests `^6.23.0` and resolves to 6.29.1 on its own. Stay below 7; undici 7+ breaks Jest.
+- `glob@10` and `glob@13` → `>=14.0.4 <15` (GHSA-3g3m-2fjr-6pw4). Jest, TypeORM 0.3, and `@nestjs/cli` 11 request glob 10 or 13. Call sites use `glob.sync` / `require("glob").sync`, which 14 still exports. glob 7 is not in the advisory range.
+- `minimatch@10` → `>=11.0.8 <12` (GHSA-g3hv-75wg-m249). `test-exclude` 7 calls `minimatch(path, pattern, options)`. minimatch 3.1.5 (fork-ts-checker) is below the affected range.
 
-Express depends on `proxy-addr` for `req.ip` / `req.ips`. Override to `>=2.0.8` (CVE-2026-90711 / GHSA-jqcg-44mw-7w3h: an IPv4-mapped IPv6 trust subnet with an IPv4-sized prefix, such as `::ffff:10.0.0.0/8`, matches every IPv4 address). This app does not set `trust proxy`; the override still removes the vulnerable resolver from the tree.
+`deepmerge` 4.3.1 (GHSA-gcqx-w48m-w2h4, prototype poisoning of the returned object) is the latest release and is only used by Jest and `fork-ts-checker-webpack-plugin` in the Nest CLI. No override can move it to a fix.
 
-### Highest practical install-time risk
+`@nestjs/platform-express` depends on `multer` 2.5.0 directly (CVE-2026-77078, CVE-2026-113872). This app does not configure `fileFilter` or mount upload middleware. Express `^2.0.7` resolves `proxy-addr` 2.0.8 (CVE-2026-90711). This app does not set `trust proxy`.
 
-`@eecc/rsa-multikey` ≤1.0.2 declared `"peerDependencies": { "node": ">=22.0.0" }` (should be `engines`), causing npm to auto-install the unrelated npm package `node` (~116MB binary via `preinstall`). Fixed upstream in local `../rsa-multikey` (`engines` instead); pending patch publish + bump in this repo. Until then, omit the binary package from production images if auto-installed.
+### `@eecc/rsa-multikey` install
+
+1.0.3 declares `"engines": { "node": ">=22.0.0" }`. Versions ≤1.0.2 put that constraint in `peerDependencies`, which made npm install the unrelated `node` binary package.
 
 ### Malware / key-theft scan (direct crypto stack)
 
-No install scripts on Digital Bazaar / jose / noble direct packages; pattern scan of those trees showed no SSH/credential exfil (false positives only: W3C “credentials” URLs, FFT method named `eval`). `undici` is overridden to `>=6.28.1 <7` (resolves to 6.29.0; CVE-2026-19534 WebSocket subprotocol crash). Stay below 7 because undici 8 breaks Jest. `npm audit` still flags `js-yaml` and `fast-uri` DoS despite their overrides — not key exfiltration.
+No install scripts on Digital Bazaar / jose / noble direct packages; pattern scan of those trees showed no SSH/credential exfil (false positives only: W3C “credentials” URLs, FFT method named `eval`).
 
 ### Runtime network in signing path
 

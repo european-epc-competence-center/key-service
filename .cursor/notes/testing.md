@@ -49,6 +49,10 @@ CI (`.github/workflows/ci-cd.yml`) runs `test:unit` with a Postgres 17 service o
 ### Env vars before imports
 Config modules that read `process.env` at import time need vars set at module top level (before imports), not in `beforeAll`. See `payload-encryption.service.spec.ts`.
 
+### Jest emit target
+
+Unit, e2e, and perf Jest configs set ts-jest `target` to `ES2022`. The app `tsconfig` target is `es2016`, and that downlevel moves `jose` 6.2 class fields (`code` on `Error` subclasses) ahead of `super()`. Webpack externalizes `jose` (`require("jose")`), so production Node runs the published file.
+
 ### Signing key
 `SecretService` requires a signing key file (≥32 chars). E2E uses a temp key from `test-setup.ts`; some unit tests mock `fs.readFileSync`.
 

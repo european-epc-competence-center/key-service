@@ -8,7 +8,10 @@
     "^.+\\.(t|j)s$": [
       "ts-jest",
       {
-        "useESM": true
+        "useESM": true,
+        "tsconfig": {
+          "target": "ES2022"
+        }
       }
     ]
   },
